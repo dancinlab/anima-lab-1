@@ -1,0 +1,48 @@
+# verdict QD-3
+# cmd: python3 bench_psi_memory.py
+# tier: FAIL  exit=1  at 2026-07-26T18:40:50.714Z
+# ── captured stdout+stderr (verbatim) ──
+
+  QD-3 · 170 stimuli × 5 seeds × 5000 steps · D=6
+  ratio 1.0 = stimuli indistinguishable · converged := |p̄ - 0.5| < 0.05
+
+  arm             strength  marginals        Ψ     Ψ sd    r@500   r@2000
+  none                 0.0    100.0%   0.4851   0.0003     0.97     0.97  ← control
+  habituation         0.01    100.0%   0.4921   0.0002     0.99     0.98
+  habituation         0.05    100.0%   0.4970   0.0001     1.01     0.97
+  habituation          0.2    100.0%   0.4991   0.0000     1.01     0.97
+  habituation          1.0    100.0%   0.4998   0.0000     1.01     1.00
+  episodic            0.01    100.0%   0.4851   0.0003     0.97     0.99
+  episodic            0.05    100.0%   0.4841   0.0004     0.95     0.98
+  episodic             0.2     77.6%   0.4676   0.0079     1.07     1.00
+  episodic             1.0     61.1%   0.4557   0.0323     1.04     1.03
+
+  ── pre-registered hypotheses ──────────────────────────────────────────
+  primary strength (smallest passing H10):  habituation=0.01 · episodic=0.01
+  habituation    μ/ν=0.01  r@500=0.99 FAIL  ·  r@2000=0.98 FAIL  ·  Ψ=0.4921 sd=0.0002
+  episodic       μ/ν=0.01  r@500=0.97 FAIL  ·  r@2000=0.99 FAIL  ·  Ψ=0.4851 sd=0.0003
+
+  H9   any arm r@500 ≥ 2.0, control < 1.2     control=0.97     FAIL
+  H10  marginals ≥ 80% at every primary                     PASS
+  H11  Ψ sd < 0.02, |Ψ-0.5| < 0.05 at every primary          PASS
+  H12  a passing arm still ≥ 2.0 at step 2000             FAIL
+
+  verdict: FAIL (2/4)
+
+  ── exploratory (post-hoc · not pre-registered) ──────────────────────
+  correlation with the stimulus signature (1.0 = intact · 0.0 = gone)
+    step    state p    habit m
+       1      0.971      0.998
+       5      0.612      0.979
+      15      0.061      0.907
+      50      0.054      0.731
+     500      0.039      0.124
+
+  at step 500 — does recall reach what the store holds?
+    best anchor in the store   0.991
+    the query (current state)  0.039
+    the anchor recall returned 0.039
+    picked the best anchor     0.0% of the time (chance 4.8%)
+    2000      0.057      0.067
+
+

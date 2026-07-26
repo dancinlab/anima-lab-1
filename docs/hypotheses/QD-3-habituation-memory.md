@@ -148,3 +148,91 @@ window positions are fixed before the first run.
   cell population is a state this toy does not have.
 
 Evidence via `sidecar verdict record` either way.
+
+---
+
+# Results
+
+`python3 bench_psi_memory.py` — 170 stimuli × 5 seeds × 5000 steps, D=6.
+Verdict 🔴 **FAIL (2/4)**, evidence in `state/QD-3.txt`.
+
+| arm | strength | marginals | Ψ | Ψ sd | r@500 | r@2000 |
+|---|---|---|---|---|---|---|
+| none (control) | — | 100.0% | 0.4851 | 0.0003 | 0.97 | 0.97 |
+| habituation | 0.01 | 100.0% | 0.4921 | 0.0002 | 0.99 | 0.98 |
+| habituation | 0.05 | 100.0% | 0.4970 | 0.0001 | 1.01 | 0.97 |
+| habituation | 0.20 | 100.0% | 0.4991 | 0.0000 | 1.01 | 0.97 |
+| habituation | 1.00 | 100.0% | 0.4998 | 0.0000 | 1.01 | 1.00 |
+| episodic | 0.01 | 100.0% | 0.4851 | 0.0003 | 0.97 | 0.99 |
+| episodic | 0.05 | 100.0% | 0.4841 | 0.0004 | 0.95 | 0.98 |
+| episodic | 0.20 | 77.6% | 0.4676 | 0.0079 | 1.07 | 1.00 |
+| episodic | 1.00 | 61.1% | 0.4557 | 0.0323 | 1.04 | 1.03 |
+
+**H9 FAIL · H10 PASS · H11 PASS · H12 FAIL.** No arm reaches the 2.0 bar at any
+strength in its grid. Stronger recall (ν ≥ 0.2) buys nothing (1.07) while
+costing convergence (77.6%, then 61.1%). Stronger habituation makes Ψ *tighter*
+— 0.4998 with sd 0.0000 at μ = 1.0 — which is the opposite of holding a pattern.
+
+## Where the stimulus actually dies
+
+Correlation between the stimulus signature and the state, post-hoc:
+
+| step | state `p` | habituation `m` |
+|---|---|---|
+| 1 | 0.971 | 0.998 |
+| 5 | 0.612 | 0.979 |
+| 15 | **0.061** | 0.907 |
+| 50 | 0.054 | 0.731 |
+| 500 | 0.039 | **0.124** |
+| 2000 | 0.057 | 0.067 |
+
+**Habituation is a working memory.** At step 15 the state is at 0.061 — gone —
+while `m` still holds 0.907. It is not that accumulation fails to remember; it
+is that with τ = 200 the trace is down to 0.124 by step 500, which is where the
+pre-registered window sits. Wrong time constant, right mechanism. That cannot
+be rescued by re-picking τ after the fact; it is QD-4's question.
+
+## The episodic arm fails for a different and sharper reason
+
+At step 500:
+
+| | correlation with the stimulus |
+|---|---|
+| best anchor in the store | **0.991** |
+| the query (current state) | 0.039 |
+| the anchor recall returned | **0.039** |
+| picked the best anchor | **0.0%** of the time (chance 4.8%) |
+
+The store holds the stimulus almost perfectly and recall never reaches it —
+below chance, not merely at it. Retrieval is cued by the current state, and the
+current state is the thing that has forgotten. A query made of noise matches
+the many converged, noise-like anchors and systematically avoids the one
+informative one.
+
+**Storing is not the problem. Cueing is.** A memory addressed by the present
+cannot return what only the past contained.
+
+### Bearing on `anima`
+
+anima's `.kosmos` anchors enter the engine through one door
+(`kosmos_io → brain_decide`, `a_core_engine_map`). If that cue is derived from
+a converged substrate state, this result says the anchors carrying identity are
+exactly the ones retrieval will miss. Stated as a hypothesis about anima's
+design, not a measurement of it: this bench models storage and recall, not
+`brain_decide`'s actual cue, and not the N3/REM consolidation that blends
+co-replayed pairs (`core/dream_persist.py`).
+
+## Consequence
+
+The pre-registered rule for an H9 failure said to stop adding terms and move to
+the real C engine. The diagnostics point somewhere more specific first, and
+both follow-ons are named by the evidence rather than by taste:
+
+- **τ is the only thing between habituation and a pass** — it holds 0.731 at
+  step 50 and 0.124 at step 500. Sweep it.
+- **Cue recall by `m`, not by `p`** — `m` still has the stimulus when `p` does
+  not, so it is the query that could actually find the right anchor.
+
+`docs/qualia-decoder-spec.md` Phase 3 stays blocked. The equilibrium half of
+the claim remains established (H10, H11: 100% marginal convergence, Ψ sd
+0.0002–0.0003); the pattern half is still unbuilt after three attempts.

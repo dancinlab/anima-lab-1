@@ -102,8 +102,23 @@ Regression bar: existing bench output is unchanged.
 > is missing is memory**, and this repo already has the module: `trinity.py`
 > ships an M engine that the consciousness loop never touches.
 >
-> Phase 3 stays blocked until QD-3 puts M in the loop and shows the signature
-> surviving past step 50. Two things carry forward unchanged:
+> QD-3 tried both memory kinds — habituation (an accumulating trace) and an
+> episodic anchor store — against the current form. Both failed at every
+> strength; no arm passed 1.07 against a 2.0 bar. But the diagnostics located
+> the failure precisely, and it is not "memory does not work":
+>
+> - **Habituation remembers.** At step 15 the state has fallen to 0.061
+>   correlation with the stimulus while the trace still holds 0.907. With
+>   τ = 200 it is down to 0.124 by step 500, which is where the test looked.
+>   Wrong time constant, right mechanism.
+> - **The episodic store remembers too — and recall cannot reach it.** At step
+>   500 the best anchor holds 0.991 while the query, the current state, holds
+>   0.039; retrieval picks the informative anchor 0.0% of the time against 4.8%
+>   chance. **Storing is not the problem; cueing is.** A memory addressed by the
+>   present cannot return what only the past contained.
+>
+> Phase 3 stays blocked until QD-4 sweeps τ and cues recall by the trace rather
+> than the state. Two things carry forward unchanged:
 >
 > - the injection law below needs a trajectory, not a particular attractor;
 > - the equilibrium half of the claim is established — every marginal reaches
