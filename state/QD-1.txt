@@ -1,0 +1,32 @@
+# verdict QD-1
+# cmd: python3 bench_psi_honest.py
+# tier: FAIL  exit=1  at 2026-07-26T18:20:23.803Z
+# ── captured stdout+stderr (verbatim) ──
+
+  QD-1 · 170 stimuli × 5 seeds × 5000 steps
+  converged := |p_T - 0.5| < 0.05
+
+  ── convergence by variant (content features) ────────────────────────
+  variant            pull  rule→state   |p-0.5|   converged
+  A pull              yes          no    0.0547      50.5%
+  B control            no          no    0.2638       9.4%
+  C rule               no         yes    0.0203      93.4%
+
+  gate g mean |g-0.5|:  A pull=0.0547  B control=0.2801  C rule=0.2801
+  (g has no rule mechanism in any variant — only the pull moved it)
+
+  ── pre-registered hypotheses ────────────────────────────────────────
+  H1  C≥80% and B<20%      A=50.5%  B=9.4%  C=93.4%          PASS
+  H2  between/within ≥ 2.0       within=0.0324 between=0.0368 ratio=1.13   FAIL
+  H3  related names stay closer     content 0.444<0.785 · hash 1.034/1.155   PASS
+  H4  |content - hash| ≤ 10%        content=93.4% hash=93.2% gap=0.2%        PASS
+
+  verdict: FAIL (3/4)
+
+  ── exploratory (post-hoc · not pre-registered) ──────────────────────
+  transient window        first 200 steps, every step recorded
+  between/within ratio    1.13   (within=0.0324 between=0.0368)
+  arrival step at |p-0.5|<0.05   min=0 median=4 max=15 std=3.4
+  distinct arrival steps  15 of 170 stimuli
+
+

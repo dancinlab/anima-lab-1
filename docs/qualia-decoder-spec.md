@@ -86,6 +86,22 @@ Regression bar: existing bench output is unchanged.
 
 ### Phase 3 — trajectory-as-gate decoder
 
+> **Revised after QD-1.** H2 failed: the trajectory arrives at the equilibrium
+> in a median of 4 steps and only 15 distinct arrival steps separate 170
+> stimuli. Built on today's dynamics, this decoder would emit ~4 near-identical
+> tokens no matter what it was shown. The stimulus must be made to persist
+> before the decoder is worth building:
+>
+> - **carry the stimulus forward** — it currently enters only as `p₀` plus a
+>   `0.0001` bias, so the attractor erases it. It has to enter the rule scoring
+>   at every step, not just seed it.
+> - **stop asking a scalar to hold an experience** — one number under a strong
+>   attractor has exactly one path. The vibration has to be multi-dimensional
+>   for `서예` and `만다라` to differ in anything but arrival time.
+>
+> The injection law below is unaffected: it needs a trajectory, not a
+> particular attractor.
+
 `trinity.py`: add `HFDecoder.generate_from_trace(trace, max_new_tokens)`.
 Custom greedy loop — per step, inject `gate_strength · |p_t − 1/2| · W·c_t`
 into the residual stream, then sample the next token. No explicit stop rule:

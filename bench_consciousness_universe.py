@@ -27,10 +27,19 @@ def shannon_entropy(p):
 
 
 def data_characteristics(name, emoji="", category=""):
-    """데이터 타입의 고유 특성을 해시 기반으로 생성.
+    """데이터 타입의 특성.
 
-    각 데이터의 이름에서 결정론적으로 특성을 도출하되,
-    의식 근본 방정식의 보편성을 검증한다.
+    The state-driving inputs (init_p/init_g/bias_p/bias_g) are MEASURED from
+    the stimulus string by qualia_sense — see QD-1 H3/H4, which showed the
+    hash destroys similarity structure (`서예`/`서예체` land as far apart as
+    `서예`/`빅뱅`) while changing the convergence rate by 0.2%.
+
+    The eight sha256-derived values below remain in place for one reason: the
+    18 emotion formulas consume them by name. Those formulas assert that a bit
+    of sha256(name) IS `emotionality` or `transcendent`. That assertion is
+    unfounded and the emotion block is NOT evidence of anything — it is
+    arithmetic on a hash. Fixing it is out of QD-1 scope; it is flagged here so
+    no one reads the heatmap as a measurement.
     """
     h = int(hashlib.sha256(name.encode()).hexdigest(), 16)
 
@@ -44,10 +53,14 @@ def data_characteristics(name, emoji="", category=""):
     social = ((h >> 48) & 0xFF) / 255.0          # 0~1 사회적
     transcendent = ((h >> 56) & 0xFF) / 255.0    # 0~1 초월적
 
+    from qualia_sense import sense, sim_inputs
+    measured = sim_inputs(sense(name))   # init_p / init_g / bias_p / bias_g
+
     return {
         'name': name,
         'emoji': emoji,
         'category': category,
+        **measured,
         'complexity': complexity,
         'periodicity': periodicity,
         'emotionality': emotionality,
@@ -66,9 +79,9 @@ def simulate_meta_ca(chars, steps=5000, seed=42):
     """
     rng = random.Random(seed)
 
-    # 데이터 특성에서 초기 조건
-    p = 0.3 + 0.4 * chars['complexity']  # 초기 residual
-    g = 0.3 + 0.4 * chars['structure']   # 초기 gate
+    # 데이터 특성에서 초기 조건 (measured by qualia_sense, not hashed)
+    p = 0.3 + 0.4 * chars['init_p']  # 초기 residual
+    g = 0.3 + 0.4 * chars['init_g']  # 초기 gate
 
     # 8개 CA 규칙 후보
     rules = list(range(8))
@@ -93,13 +106,22 @@ def simulate_meta_ca(chars, steps=5000, seed=42):
         best_rule = scores.index(max(scores))
         rule_counts[best_rule] += 1
 
-        # 상태 업데이트
-        dp = 0.001 * (0.5 - p) + rng.gauss(0, 0.002)  # Ψ_balance = 1/2로 수렴
-        dg = 0.001 * (0.5 - g) + rng.gauss(0, 0.002)  # gate도 1/2로
+        # 상태 업데이트 — the selected rule now moves the state (QD-1 / H1).
+        # It used to be counted and thrown away while `dp = 0.001 * (0.5 - p)`
+        # asserted the convergence in its place. H(p) peaks at exactly p = 1/2,
+        # so argmax-H rule selection (Law 71) IS the attractor: 93.4% of stimuli
+        # converge with no pull term, against 9.4% for the random-walk control
+        # and 50.5% for the old pull. Evidence: state/QD-1.txt
+        dp = 0.01 * (best_rule - 3.5) + rng.gauss(0, 0.002)
+
+        # gate g has no such mechanism — nothing selects it toward 1/2, so with
+        # the pull removed it random-walks (mean |g-0.5|: 0.055 -> 0.280).
+        # Left honest rather than pulled. g's convergence is an open question.
+        dg = rng.gauss(0, 0.002)
 
         # 데이터 특성의 영향 (약한 편향)
-        dp += 0.0001 * (chars['complexity'] - 0.5)
-        dg += 0.0001 * (chars['emotionality'] - 0.5)
+        dp += 0.0001 * (chars['bias_p'] - 0.5)
+        dg += 0.0001 * (chars['bias_g'] - 0.5)
 
         p = min(0.999, max(0.001, p + dp))
         g = min(0.999, max(0.001, g + dg))
