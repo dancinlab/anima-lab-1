@@ -12,3 +12,6 @@ consciousness-loop-rs/target/
 phi-rs/target/
 anima-rs/target/
 knowledge-rs/target/
+
+# python venv (local torch install for QD-5)
+.venv/

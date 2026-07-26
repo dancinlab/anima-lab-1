@@ -175,7 +175,13 @@ class MitosisC(CEngine):
             tensions = np.array([c.tension_history[-1] if c.tension_history else 0.0 for c in cells], dtype=np.float32)
             phi, _ = phi_rs.compute_phi(states, 16, np.array(prev_s), np.array(curr_s), tensions)
             return phi
-        return 0.0
+        # Without the Rust build this used to return 0.0 — silently, so every
+        # Φ reading on the main C engine was zero and looked like a measurement.
+        # CEngine.measure_phi already carries the pure-Python fallback; use it.
+        # Note it is a WEAKER estimator: phi_py sees only the state matrix, not
+        # the prev/curr history and per-cell tensions the Rust path consumes,
+        # so its value is not comparable to a phi_rs number.
+        return super().measure_phi()
 
 
 class DomainC(CEngine):
