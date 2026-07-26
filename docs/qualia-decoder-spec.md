@@ -117,8 +117,32 @@ Regression bar: existing bench output is unchanged.
 >   chance. **Storing is not the problem; cueing is.** A memory addressed by the
 >   present cannot return what only the past contained.
 >
-> Phase 3 stays blocked until QD-4 sweeps τ and cues recall by the trace rather
-> than the state. Two things carry forward unchanged:
+> QD-4 swept τ to the no-leak limit and re-keyed the store by the trace. Both
+> failed; 21 configurations, none above 1.03 against a 2.0 bar. It also showed
+> why, in one table — stimulus retained against equilibrium reached:
+>
+> | config | converged | stimulus retained |
+> |---|---|---|
+> | episodic ν=0.05 | 100.0% | 0.288 |
+> | episodic ν=0.20 | 68.0% | 0.791 |
+> | habituation τ=20000 μ=1.0 | 100.0% | 0.067 |
+> | m-cue ν=0.20 | 69.2% | 0.726 |
+>
+> **Every configuration either converges and forgets, or remembers and fails to
+> converge.** Longer memory makes it worse, not better: penalising accumulated
+> deviation is a servo that drives the state to exactly 1/2, so Ψ sd reaches
+> 0.0000 at large τ.
+>
+> Six mechanisms have now been tried and all six were metabolised into faster
+> convergence, because every one of them enters through the same door — a rule
+> score that is a function of distance from 1/2. **This architecture has one
+> sink, and identity is what it consumes.**
+>
+> **Phase 3 is not merely blocked; it is unsupported in this simulation.** The
+> pattern half of the claim is a question for the real `MitosisC` cell
+> population — a state that is a population, not a scalar per dimension under a
+> shared attractor — and not for a seventh variation on this toy. Two things
+> carry forward unchanged:
 >
 > - the injection law below needs a trajectory, not a particular attractor;
 > - the equilibrium half of the claim is established — every marginal reaches

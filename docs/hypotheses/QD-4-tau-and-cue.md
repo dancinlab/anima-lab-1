@@ -89,3 +89,95 @@ arm C stays < 1.2. Both required.
   hold Phase 3 open indefinitely.
 
 Evidence via `sidecar verdict record` either way.
+
+---
+
+# Results
+
+`python3 bench_psi_recall.py` — 170 stimuli × 5 seeds × 5000 steps, D=6, 21
+configurations. Verdict 🔴 **FAIL (1/3)**, evidence in `state/QD-4.txt`.
+
+**No configuration exceeds `r@500` = 1.03 against a 2.0 bar.** Neither fix works.
+
+| arm | best qualifying | r@500 | r@2000 | Ψ | Ψ sd |
+|---|---|---|---|---|---|
+| control (QD-3) | τ=200, ν=0.2 | 0.97 | — | — | — |
+| T τ-sweep | τ=1000, μ=0.2 | 1.03 | 0.98 | 0.4998 | 0.0000 |
+| K m-cue | τ=5000, ν=0.2 | 1.00 | 1.04 | 0.4806 | 0.0047 |
+
+**H13 FAIL · H14 both FAIL · H15 FAIL · H16 PASS.**
+
+## Longer memory makes the state *more* identical, not less
+
+Across the τ sweep, Ψ tightens monotonically onto the equilibrium:
+
+| τ | Ψ at μ=1.0 | Ψ sd |
+|---|---|---|
+| 200 | 0.4998 | 0.0000 |
+| 1000 | 0.5000 | 0.0000 |
+| 5000 | 0.5000 | 0.0000 |
+| 20000 | 0.5000 | 0.0000 |
+
+The trace records how far the state has been from 1/2, and penalising that is a
+servo that drives it to exactly 1/2. **A memory of deviation becomes a machine
+for eliminating deviation.** The longer the memory, the more perfectly every
+stimulus ends in the same place.
+
+## The wall, measured
+
+The pre-registered ratio reads the *shape* of the window's time series. Reading
+what is actually being asked — how much of the stimulus signature the state
+still carries — against how much of it converged:
+
+| config | converged | stimulus retained |
+|---|---|---|
+| control p-cue ν=0.05 | 100.0% | 0.288 |
+| control p-cue ν=0.20 | 68.0% | **0.791** |
+| T habituation τ=1000 μ=0.2 | 100.0% | 0.076 |
+| T habituation τ=20000 μ=1.0 | 100.0% | 0.067 |
+| K m-cue ν=0.05 | 100.0% | 0.071 |
+| K m-cue ν=0.20 | 69.2% | **0.726** |
+
+Read the two columns together. **Every configuration either converges and
+forgets, or remembers and fails to converge.** The stimulus is retained exactly
+in proportion to how badly the equilibrium is broken — 0.79 at 68% convergence,
+0.07 at 100%.
+
+### A correction made mid-analysis
+
+An intermediate single-seed probe showed the m-cue query correlating 0.827 with
+the stimulus against the p-cue's 0.039, and the recalled anchor 0.685 against
+0.039, which read as "the key was the problem and fixing it worked". Re-running
+through the bench's own code path across five seeds, with the control at
+*matched recall strength*, overturns that: at ν=0.2 the p-cue control retains
+0.791 and the m-cue 0.726. **The m-cue is not better than the p-cue.** The
+earlier reading came from comparing a fixed cue against an unmatched control —
+the retention in both cases is bought by breaking convergence, not by the key.
+
+## Consequence — the pre-registered rule fires
+
+Four attempts have now failed on this simulation:
+
+| attempt | mechanism | result |
+|---|---|---|
+| QD-2 | six dimensions | ratio 1.08 |
+| QD-2 | stimulus coupling | 1.11 |
+| QD-3 | habituation trace | 1.01 |
+| QD-3 | episodic store, p-cue | 1.07 |
+| QD-4 | τ swept to no-leak | 1.03 |
+| QD-4 | episodic store, m-cue | 1.00 |
+
+Every mechanism enters through the same door — the rule score — and that score
+is a function of distance from 1/2. Whatever is added is metabolised into
+converging faster. **The architecture has one sink, and identity is what it
+consumes.**
+
+Per the pre-registered decision rule for an H13 failure: stop extending this
+simulation. `docs/qualia-decoder-spec.md` should say plainly that the pattern
+half of the claim is unsupported *in this toy*, rather than hold Phase 3 open
+on a fifth variation. The claim is now a question for the real `MitosisC` cell
+population, whose state is a population of cells rather than a scalar per
+dimension under a shared attractor.
+
+The equilibrium half remains established and is not in doubt (H16: Ψ sd
+0.0000–0.0047, |Ψ − 0.5| ≤ 0.02 at every primary).

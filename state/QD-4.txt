@@ -1,0 +1,55 @@
+# verdict QD-4
+# cmd: python3 bench_psi_recall.py
+# tier: FAIL  exit=1  at 2026-07-26T18:49:27.415Z
+# ── captured stdout+stderr (verbatim) ──
+
+  QD-4 · 170 stimuli × 5 seeds × 5000 steps · D=6
+  ratio 1.0 = stimuli indistinguishable · gate: convergence ≥ 80%
+
+  arm              τ    μ/ν  converged        Ψ     Ψ sd   r@500  r@2000
+  control        200   0.01    100.0%   0.4851   0.0003    0.97    0.99
+  tau            200   0.01    100.0%   0.4921   0.0002    0.99    0.98
+  tau            200   0.05    100.0%   0.4970   0.0001    1.01    0.97
+  tau            200    0.2    100.0%   0.4991   0.0000    1.01    0.97
+  tau            200    1.0    100.0%   0.4998   0.0000    1.01    1.00
+  tau           1000   0.01    100.0%   0.4970   0.0001    0.99    0.97
+  tau           1000   0.05    100.0%   0.4993   0.0000    1.01    0.98
+  tau           1000    0.2    100.0%   0.4998   0.0000    1.03    0.98
+  tau           1000    1.0    100.0%   0.5000   0.0000    0.99    0.98
+  tau           5000   0.01    100.0%   0.4993   0.0001    0.99    0.99
+  tau           5000   0.05    100.0%   0.4998   0.0000    1.00    0.99
+  tau           5000    0.2    100.0%   0.5000   0.0000    1.01    0.97
+  tau           5000    1.0    100.0%   0.5000   0.0000    1.01    1.00
+  tau          20000   0.01    100.0%   0.4998   0.0001    0.99    0.99
+  tau          20000   0.05    100.0%   0.5000   0.0000    1.01    0.97
+  tau          20000    0.2    100.0%   0.5000   0.0000    0.99    0.99
+  tau          20000    1.0    100.0%   0.5000   0.0000    0.99    1.01
+  mcue          5000   0.01    100.0%   0.4858   0.0004    0.97    0.99
+  mcue          5000   0.05    100.0%   0.4870   0.0011    0.99    0.99
+  mcue          5000    0.2     87.9%   0.4806   0.0047    1.00    1.04
+  mcue          5000    1.0     47.2%   0.4757   0.0256    0.98    1.01  ✗gate
+
+  ── pre-registered hypotheses ──────────────────────────────────────────
+  T τ-sweep    best qualifying: τ=1000 μ/ν=0.2 → r@500=1.03 FAIL · r@2000=0.98 · Ψ=0.4998 sd=0.0000
+  K m-cue      best qualifying: τ=5000 μ/ν=0.2 → r@500=1.00 FAIL · r@2000=1.04 · Ψ=0.4806 sd=0.0047
+
+  H13  any qualifying r@500 ≥ 2.0, control < 1.2    control=0.97   FAIL
+  H14  which fix                                tau=FAIL, mcue=FAIL
+  H15  a passing config still ≥ 2.0 at step 2000            FAIL
+  H16  Ψ sd < 0.02, |Ψ-0.5| < 0.05 at every primary          PASS
+
+  verdict: FAIL (1/3)
+
+  ── exploratory (post-hoc · not pre-registered) ──────────────────────
+  stimulus retained vs equilibrium reached, in the same window
+  config                   τ    μ/ν  converged  stimulus
+  control p-cue          200   0.05    100.0%     0.288
+  control p-cue          200    0.2     68.0%     0.791
+  T habituation         1000    0.2    100.0%     0.076
+  T habituation        20000    1.0    100.0%     0.067
+  K m-cue               5000   0.05    100.0%     0.071
+  K m-cue               5000    0.2     69.2%     0.726
+  Read the two right-hand columns together: nothing here holds the
+  stimulus while also converging. That trade is the result.
+
+
