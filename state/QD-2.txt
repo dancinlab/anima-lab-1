@@ -1,0 +1,32 @@
+# verdict QD-2
+# cmd: python3 bench_psi_field.py
+# tier: FAIL  exit=1  at 2026-07-26T18:28:18.360Z
+# ── captured stdout+stderr (verbatim) ──
+
+  QD-2 · 170 stimuli × 5 seeds × 5000 steps · D=6
+  converged := |p_i,T - 0.5| < 0.05
+
+  ── κ sweep ──────────────────────────────────────────────────────────
+        κ   marginals conv   Ψ=mean(p)     Ψ sd  traj ratio  corr ratio
+      0.0           92.1%      0.4849   0.0042        1.08        2.36  ← control
+    0.005           91.5%      0.4848   0.0041        1.09        2.48
+     0.01           89.6%      0.4837   0.0043        1.11        2.61  ← primary
+     0.02           81.7%      0.4796   0.0044        1.22        2.88
+
+  ── pre-registered hypotheses (κ = 0.01) ──────────────────────────────
+  H5  marginals ≥ 80%              89.6%                      PASS
+  H6  ratio ≥ 2.0 and control < 1.5   primary=1.11 control=1.08       FAIL
+  H7  Ψ sd < 0.02 and |Ψ-0.5| < 0.05  sd=0.0043 Ψ=0.4837       PASS
+  H8  correlation ratio ≥ 2.0          2.61                      PASS
+
+  verdict: FAIL (3/4)
+
+  ── exploratory (post-hoc · not pre-registered) ──────────────────────
+  correlation ratio by window position (1.0 = stimuli indistinguishable)
+    window start    κ=0 control     κ=0.01
+          step 0           2.36       2.61
+         step 50           1.01       1.01
+        step 500           0.97       0.98
+       step 2000           0.97       1.00
+
+

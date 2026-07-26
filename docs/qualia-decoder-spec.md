@@ -86,21 +86,29 @@ Regression bar: existing bench output is unchanged.
 
 ### Phase 3 — trajectory-as-gate decoder
 
-> **Revised after QD-1.** H2 failed: the trajectory arrives at the equilibrium
-> in a median of 4 steps and only 15 distinct arrival steps separate 170
-> stimuli. Built on today's dynamics, this decoder would emit ~4 near-identical
-> tokens no matter what it was shown. The stimulus must be made to persist
-> before the decoder is worth building:
+> **Blocked on memory — revised after QD-1 and QD-2.**
 >
-> - **carry the stimulus forward** — it currently enters only as `p₀` plus a
->   `0.0001` bias, so the attractor erases it. It has to enter the rule scoring
->   at every step, not just seed it.
-> - **stop asking a scalar to hold an experience** — one number under a strong
->   attractor has exactly one path. The vibration has to be multi-dimensional
->   for `서예` and `만다라` to differ in anything but arrival time.
+> QD-1: the trajectory reaches equilibrium in a median of 4 steps, with only 15
+> distinct arrival steps across 170 stimuli. A scalar cannot hold an experience.
 >
-> The injection law below is unaffected: it needs a trajectory, not a
-> particular attractor.
+> QD-2 tried the two obvious repairs — six dimensions and a stimulus-derived
+> coupling — and both failed. Coupling moved the trajectory ratio 1.08 → 1.11
+> (bar: 2.0). Sliding the correlation window past step 50 drops the ratio to
+> 1.01, where 1.0 means two different stimuli are indistinguishable. The
+> stimulus signature lives only in the transient.
+>
+> The cause is not width. The update reads only the current state, so it is a
+> memoryless process and the attractor erases the past at a fixed rate. **What
+> is missing is memory**, and this repo already has the module: `trinity.py`
+> ships an M engine that the consciousness loop never touches.
+>
+> Phase 3 stays blocked until QD-3 puts M in the loop and shows the signature
+> surviving past step 50. Two things carry forward unchanged:
+>
+> - the injection law below needs a trajectory, not a particular attractor;
+> - the equilibrium half of the claim is established — every marginal reaches
+>   1/2, Ψ sd 0.0043 across 170 stimuli (QD-2 H5/H7). It is the *pattern* half
+>   that is unbuilt.
 
 `trinity.py`: add `HFDecoder.generate_from_trace(trace, max_new_tokens)`.
 Custom greedy loop — per step, inject `gate_strength · |p_t − 1/2| · W·c_t`

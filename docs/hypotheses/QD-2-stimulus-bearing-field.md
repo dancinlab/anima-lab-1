@@ -94,3 +94,73 @@ differ" from "the *arrangement* differs", which is what the decoder would read.
   own history rather than being pushed around by an attractor.
 
 Evidence via `sidecar verdict record` either way.
+
+---
+
+# Results
+
+`python3 bench_psi_field.py` — 170 stimuli × 5 seeds × 5000 steps, D=6.
+Verdict 🔴 **FAIL (3/4)**, evidence in `state/QD-2.txt`.
+
+| κ | marginals converged | Ψ = mean(p) | Ψ sd | traj ratio | corr ratio |
+|---|---|---|---|---|---|
+| 0.000 (control) | 92.1% | 0.4849 | 0.0042 | 1.08 | 2.36 |
+| 0.005 | 91.5% | 0.4848 | 0.0041 | 1.09 | 2.48 |
+| **0.010 (primary)** | 89.6% | 0.4837 | 0.0043 | **1.11** | **2.61** |
+| 0.020 | 81.7% | 0.4796 | 0.0044 | 1.22 | 2.88 |
+
+| | prediction | measured | |
+|---|---|---|---|
+| **H5** | marginals ≥ 80% | 89.6% | **PASS** |
+| **H6** | ratio ≥ 2.0, control < 1.5 | primary 1.11, control 1.08 | **FAIL** |
+| **H7** | Ψ sd < 0.02, \|Ψ−0.5\| < 0.05 | sd 0.0043, Ψ 0.4837 | **PASS** |
+| **H8** | correlation ratio ≥ 2.0 | 2.61 | **PASS** |
+
+## H6 — coupling is not the missing ingredient
+
+Sweeping κ from 0 to 0.02 moves the trajectory ratio 1.08 → 1.22, nowhere near
+the 2.0 bar, while costing 10 points of marginal convergence. The control at
+κ = 0 sits at 1.08, so the coupling contributes 0.03. It is not a small effect
+in need of tuning; it is no effect.
+
+## H8 passed for the wrong reason — and that is the finding
+
+H8's window starts at t = 0. Sliding the same window later separates "the state
+carries the stimulus" from "the arrival was stimulus-specific":
+
+| window start | κ = 0 | κ = 0.01 |
+|---|---|---|
+| step 0 | 2.36 | 2.61 |
+| step 50 | 1.01 | 1.01 |
+| step 500 | 0.97 | 0.98 |
+| step 2000 | 0.97 | 1.00 |
+
+**1.0 means two different stimuli are indistinguishable.** From step 50 onward
+the state holds nothing. The signature that H8 detected lives entirely in the
+first few dozen steps — the same transient QD-1 measured at a median of 4 steps.
+Six dimensions did not extend it; coupling did not extend it.
+
+## Why — and it is not about dimensionality
+
+The update depends only on the current state: rule selection reads `p`, the
+noise is fresh each step, and the attractor is strong. That is a memoryless
+process. Every trace of the past, the stimulus included, is destroyed at a rate
+set by the attractor, and 15 steps is what that rate buys.
+
+More dimensions give more room to be forgotten in. Coupling redistributes
+across dimensions but adds no state that outlives the transient. **What is
+missing is not width but memory** — something that integrates history instead
+of being pushed by the present.
+
+This repo already names the module: `trinity.py` has an M (memory) engine,
+and the consciousness loop simulated here never touches it.
+
+## Consequence
+
+Per the pre-registered decision rule, H6 failed → do not build the decoder on
+coupling. `docs/qualia-decoder-spec.md` Phase 3 is revised again: the gate
+must read the transient, and the next hypothesis (QD-3) puts M in the loop and
+asks whether the signature survives past step 50.
+
+The equilibrium half of the original claim stands (H5, H7: every marginal
+reaches 1/2, Ψ sd 0.0043 across 170 stimuli). The pattern half does not yet.
