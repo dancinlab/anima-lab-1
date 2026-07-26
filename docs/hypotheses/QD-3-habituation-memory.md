@@ -49,29 +49,67 @@ That is habituation in one line — the longer the state has sat above 1/2, the
 less attractive being above 1/2 becomes. The equilibrium is unchanged; the
 *approach* becomes path-dependent, and the path is where the stimulus lives.
 
-D = 6 and the κ coupling are dropped: QD-2 showed coupling contributes ~0.03,
-so carrying it would confound this test. QD-3 runs the QD-1 scalar dynamics
-plus habituation, which isolates the one variable under test.
+The κ coupling is dropped — QD-2 measured its contribution at ~0.03, so
+carrying it would only confound this test.
+
+## Three arms — both memory kinds, against the current form
+
+Amended at owner request, before any data was run: test **both** memory
+devices rather than picking one, with the present dynamics as the control.
+
+| arm | memory | mechanism |
+|---|---|---|
+| **N** none | — | QD-1/QD-2 dynamics unchanged — the current form |
+| **H** habituation | within-trajectory | leaky integral `m` of the deviation, acting on rule selection |
+| **E** episodic | across-trajectory | store states periodically, retrieve the nearest, let recall bias selection |
+
+Arm E is the `.kosmos` anchor / `VectorMemory` shape, reduced to what this
+numpy toy can carry: a bounded store written every `store_every` steps, top-1
+cosine retrieval against the current state, and a recall term
+`−ν·|p_i + δ_r − a_i|` that pulls the state toward what it remembers being.
+
+In `anima` an anchor is written on emission and, during N3/REM sleep ticks,
+by blending **co-replayed pairs** into a new `lane="dream"` node
+(`core/dream_persist.py::dp_persist_sleep_replay`; prior dream nodes are
+excluded from the pool, which is what stops runaway). That consolidation step
+is **not** modelled here — arm E tests storage and recall only, and the
+pair-blending is left for a later card. Stated so the result is not read as a
+verdict on anima's dream consolidation.
+
+The honest risk in arm E is that it is nearly circular: storing a
+stimulus-specific state and pulling toward it will preserve stimulus identity
+almost by construction. That is what makes H10/H11 the real test for this arm —
+whether identity is bought at the cost of the equilibrium.
+
+> **Amended before any data was run.** The first draft of this section said
+> "D = 6 and the κ coupling are dropped … QD-3 runs the QD-1 scalar dynamics".
+> That is incoherent: H9 and H12 are correlation ratios across dimensions and
+> are undefined for a scalar. D = 6 is kept (uncoupled, κ = 0); only the
+> coupling is dropped. Amended at pre-registration time, before the first run —
+> the original wording is in commit `ae375df`.
 
 ## Grid and the primary condition
 
-- τ ∈ {50, 200, 1000}, μ ∈ {0, 0.01, 0.05, 0.2, 1.0}. τ = 200 fixed for the
-  primary row.
-- **μ = 0 is the negative control** — QD-1 exactly. It must fail H9.
-- **Primary μ is chosen by a rule fixed here, before any data**: the smallest
-  non-zero μ in the grid whose marginal convergence (H10) still passes. If no μ
-  passes H10, the primary is undefined, H9 is not evaluated, and the sweep
-  itself is the result — the scale would have to be re-registered, not
-  re-picked after looking.
+- Arm H: τ = 200 fixed, μ ∈ {0.01, 0.05, 0.2, 1.0}.
+- Arm E: `store_every` = 25, capacity 64, ν ∈ {0.01, 0.05, 0.2, 1.0}.
+- **Arm N is the negative control** — QD-1 exactly (μ = ν = 0). It must fail H9,
+  or the test has no discriminating power.
+- **The primary strength for each arm is chosen by a rule fixed here, before
+  any data**: the smallest value in that arm's grid whose marginal convergence
+  (H10) still passes. If no value passes H10 for an arm, that arm's primary is
+  undefined, H9/H12 are not evaluated for it, and the sweep is the result —
+  the scale gets re-registered, never re-picked after looking.
 
 ## Hypotheses
 
 **H9 (primary — the QD-2 failure, re-measured)** — the signature outlives the
 transient. Correlation ratio in a 200-step window **starting at step 500** is
-≥ 2.0 at the primary μ, and < 1.2 at μ = 0. Both required.
+≥ 2.0 for at least one memory arm at its primary strength, and < 1.2 for
+arm N. Both required. Reported per arm, so "which memory works" is answered
+rather than "does memory work".
 
 **H10 (equilibrium survives)** — ≥ 80% of (stimulus, dimension) pairs have a
-time-averaged `p` over the last 1000 steps within 0.05 of 1/2. Time-averaged
+time-averaged `p` over the last 1000 steps within 0.05 of 1/2, per arm. Time-averaged
 rather than instantaneous, because habituation is expected to produce
 oscillation around the equilibrium rather than rest at it.
 
@@ -79,7 +117,7 @@ oscillation around the equilibrium rather than rest at it.
 has sd < 0.02 and |Ψ − 0.5| < 0.05.
 
 **H12 (durable, not merely delayed)** — correlation ratio in a window starting
-at **step 2000** is ≥ 2.0 at the primary μ. Distinguishes a longer transient
+at **step 2000** is ≥ 2.0 for any arm that passed H9. Distinguishes a longer transient
 from an actual memory.
 
 ## Method
@@ -98,8 +136,10 @@ window positions are fixed before the first run.
 
 ## Decision rules
 
-- **H9 and H12 pass** → the trajectory is stimulus-bearing and durable.
-  `docs/qualia-decoder-spec.md` Phase 3 unblocks; the gate reads (p, m).
+- **H9 and H12 pass for an arm** → that arm's trajectory is stimulus-bearing
+  and durable. `docs/qualia-decoder-spec.md` Phase 3 unblocks on that arm; the
+  gate reads its state. If both arms pass, the simpler one wins and the other
+  is recorded as a second route.
 - **H9 passes, H12 fails** → habituation lengthens the transient without
   creating memory. Usable only if the decoder reads early; record the usable
   window and revise Phase 3 to that budget.
