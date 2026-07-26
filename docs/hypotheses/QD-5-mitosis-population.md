@@ -105,3 +105,75 @@ means the population is degenerate regardless of what the correlations say.
   retire Phase 3 rather than keep looking for a substrate that rescues it.
 
 Evidence via `sidecar verdict record` either way.
+
+---
+
+# Results
+
+`.venv/bin/python bench_psi_mitosis.py` — 34 stimuli × 3 seeds × 600 steps.
+Verdict 🔴 **FAIL (0/4)**, evidence in `state/QD-5.txt`.
+
+| | prediction | measured | |
+|---|---|---|---|
+| **H17** | retained ≥ 0.50 while settled | 0.409, settled 100% | **FAIL** |
+| **H18** | live cells > 2 | **2.0** | **FAIL** |
+| **H19** | between/within ≥ 2.0 | within 0.764, between 0.158, **ratio 0.21** | **FAIL** |
+| **H20** | Φ > 0 in ≥ half the runs | 0% alive, Φ = 0.00 | **FAIL** |
+
+## The headline is H18, not the 0/4
+
+**The population never formed.** Cell count stayed at the `min_cells` floor of
+2 for all 600 steps, in every run. H18 exists precisely so this cannot be
+glossed: whatever the other numbers show is a property of two cells, and
+**QD-5 did not test the population hypothesis it was written to test.**
+
+## Why — measured, not inferred
+
+| | value |
+|---|---|
+| `split_threshold` | 0.30 |
+| `merge_threshold` | 0.05 |
+| tension actually produced | mean 0.0220 · max 0.0369 · min 0.0074 |
+| steps above the split bar | **0 / 300** |
+| steps below the merge bar | **300 / 300** |
+
+The tension this engine generates is an order of magnitude below the bar that
+gates division — max 0.037 against a 0.30 threshold, **8× short** — and sits
+below the merge bar on every single step. **The engine is permanently in merge
+territory and never reaches split.** The population can only shrink. Mitosis,
+in the mitosis engine, never fires.
+
+Checked against three input regimes — one fixed stimulus, fresh noise every
+step, and 24 stimuli in rotation — the cell count was 2 in all three. This is
+not a novelty-starved protocol; it is a threshold set for a tension scale the
+engine does not reach.
+
+## What the run does show, attributed honestly
+
+- **Retention 0.409 at 100% settled.** Better than the toy's best settled
+  retention (0.288 at 100% convergence) and below the 0.50 bar. It is a
+  two-cell number, not a population number.
+- **H19 ratio 0.21 — the seed beats the stimulus.** Within-seed distance
+  (0.764) is nearly five times the between-stimulus distance (0.158). Two runs
+  of *different* stimuli end up closer together than two runs of the *same*
+  stimulus with different random initialisation. Whatever this state encodes,
+  it is mostly where it started, not what it saw.
+- **Φ = 0 throughout**, which follows from two cells: the `phi_py` estimator has
+  nothing to integrate over. This is a consequence of H18, not an independent
+  failure.
+
+## Consequence
+
+The pre-registered rule for an H17 failure said to retire Phase 3. That rule
+does not fire cleanly here, because H18 failed first and the test was therefore
+void as a test of populations. Retiring the claim on a void test would be as
+wrong as rescuing it on one.
+
+What is now established instead is a defect in the substrate itself, with a
+number attached: **a division threshold 8× above the tension the engine
+produces**. That is the thing to fix before the population question can be
+asked at all — and it is a question about `MitosisEngine`'s calibration, not
+about the qualia decoder.
+
+`docs/qualia-decoder-spec.md` Phase 3 stays where QD-4 left it: unsupported in
+the toy, and now untested — not disproven — on the population.

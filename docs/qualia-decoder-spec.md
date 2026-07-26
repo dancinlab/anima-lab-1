@@ -138,11 +138,23 @@ Regression bar: existing bench output is unchanged.
 > score that is a function of distance from 1/2. **This architecture has one
 > sink, and identity is what it consumes.**
 >
-> **Phase 3 is not merely blocked; it is unsupported in this simulation.** The
-> pattern half of the claim is a question for the real `MitosisC` cell
-> population — a state that is a population, not a scalar per dimension under a
-> shared attractor — and not for a seventh variation on this toy. Two things
-> carry forward unchanged:
+> **Phase 3 is not merely blocked; it is unsupported in this simulation.**
+>
+> QD-5 took the question to the real `MitosisC` engine and could not ask it:
+> the population never formed. Cell count sat at the `min_cells` floor of 2 for
+> all 600 steps, under a fixed stimulus, under fresh noise, and under 24
+> stimuli in rotation alike. The cause is measured — the engine produces a
+> tension of at most 0.037 against a `split_threshold` of 0.30, **8× short**,
+> while sitting below the `merge_threshold` on 100% of steps. **The engine can
+> only merge; mitosis never fires.**
+>
+> So the population claim is **untested, not disproven**, and one number now
+> stands in front of it: a division threshold calibrated for a tension scale
+> the engine does not reach. That is a `MitosisEngine` calibration defect, not
+> a qualia-decoder question, and it is what has to be fixed before the
+> population can be asked anything.
+>
+> Two things carry forward unchanged:
 >
 > - the injection law below needs a trajectory, not a particular attractor;
 > - the equilibrium half of the claim is established — every marginal reaches

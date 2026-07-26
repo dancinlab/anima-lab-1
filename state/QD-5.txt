@@ -1,0 +1,36 @@
+# verdict QD-5
+# cmd: .venv/bin/python bench_psi_mitosis.py
+# tier: FAIL  exit=1  at 2026-07-26T18:58:39.348Z
+# ── captured stdout+stderr (verbatim) ──
+
+  QD-5 · 34 stimuli × 3 seeds × 600 steps
+  MitosisC(dim=32, hidden=64, max_cells=32) from 2 cells, grown by real mitosis
+
+  seed 0 done · cells 2.0 · Φ 0.00 · settled 100%
+  seed 1 done · cells 2.0 · Φ 0.00 · settled 100%
+  seed 2 done · cells 2.0 · Φ 0.00 · settled 100%
+
+    step  stimulus retained
+       1              0.413
+      15              0.409
+      50              0.409
+     500              0.409
+
+  ── pre-registered hypotheses ──────────────────────────────────────────
+  H17  retained ≥ 0.5 while settled   r@500=0.409 settled=100%      FAIL
+  H18  live cells > 2 at the end        mean=2.0                 FAIL
+  H19  between/within ≥ 2.0             within=0.7636 between=0.1579 ratio=0.21   FAIL
+  H20  Φ > 0 in ≥ half the runs          0% alive, mean Φ=0.00      FAIL
+
+  verdict: FAIL (0/4)
+
+  ── exploratory (post-hoc · not pre-registered) ──────────────────────
+  split_threshold=0.3  merge_threshold=0.05
+  tension actually produced: mean 0.0220 · max 0.0369 · min 0.0074
+  steps above the split bar: 0 / 300
+  steps below the merge bar: 300 / 300
+  peak cell count reached:   2
+  The engine sits permanently in merge territory and never reaches the
+  split bar, so the population can only shrink. There is no population.
+
+
