@@ -152,8 +152,13 @@ across dimensions but adds no state that outlives the transient. **What is
 missing is not width but memory** — something that integrates history instead
 of being pushed by the present.
 
-This repo already names the module: `trinity.py` has an M (memory) engine,
-and the consciousness loop simulated here never touches it.
+This repo already names the concept, though not — on inspection — the
+mechanism. `trinity.py` ships an M engine, but `VectorMemory` is an episodic
+key-value store retrieved by cosine similarity: it remembers *across*
+encounters and would leave the within-trajectory update as memoryless as it is
+now. What QD-2 shows is missing is an accumulating state variable, and the
+name for that in this repo's own Phase-1 list is **habituation**. QD-3 tests
+that, not `VectorMemory`.
 
 ## Consequence
 
