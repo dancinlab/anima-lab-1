@@ -1,1 +1,0 @@
-{"kind":"work","id":"1","ts":"2026-07-26T18:41:43.621Z","text":"QD-4: sweep habituation tau (holds 0.731@step50, 0.124@step500 with tau=200) AND cue episodic recall by the trace m instead of the state p (store holds 0.991, query holds 0.039, recall hit rate 0.0% vs 4.8% chance). Phase 3 of docs/qualia-decoder-spec.md blocked on this."}
