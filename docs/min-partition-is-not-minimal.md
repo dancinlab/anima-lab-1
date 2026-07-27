@@ -130,7 +130,52 @@ does prove.
 
 ---
 
-## Superseded — the original direction check, kept for the record
+## Second correction: my numbers were the cut term, and n=8 is off-path entirely
+
+The retraction above named one defect in my direction check. There were two, and
+the labels were wrong.
+
+**The figures I printed as "Φ" are `min_cut/(n−1)`, not Φ.** Rebuilt with every
+intermediate shown, n=8, dim 4000, 5 seeds:
+
+| case | cut/(n−1) | differentiation | `bench_v2` Φ |
+|---|---|---|---|
+| IDENTICAL | 3.0952 | **0.0000** | 0.000195 |
+| INDEPENDENT | 0.0003 | 0.9999 | 0.000508 |
+
+`cut/(n−1)` alone gives IDENTICAL/INDEPENDENT ≈ 10,460× — reproducing my 10,886×
+to within seed noise, so we measured the same quantity. But `bench_v2.py:175`
+multiplies by `differentiation = 1 − mean_cos`, which is **exactly 0** for
+identical rows, and the collapse preference is annihilated before Φ exists.
+`bench_v2`'s Φ ratio is **0.385×**, with per-seed values 0.380 / 1.172 / 0.387 /
+0.766 / 0.149 — scattered around and below 1, both arms at the floor (0.0002 vs
+0.0005). The honest statement is that **Φ separates neither construction**, not
+that it prefers INDEPENDENT.
+
+**And at n=8 `bench_v2` never runs the sign cut at all.** `_minimum_partition`
+branches to exhaustive search over all 2⁸ partitions at `n <= 8`
+(`bench_v2.py:215`). On one matrix: exhaustive 20.9124, sweep 20.9124 (identical —
+the sweep finds the true minimum), sign-cut 35.8525, **a number `bench_v2` does
+not compute at that n**. My sign-cut-versus-sweep comparison at n=8 compared
+nothing the shipped gate does. The dim-4000 / 16-bin regime is also not the
+gate's hidden-128 regime.
+
+**The conclusion survives; the evidence for it does not.** "Do not land the
+sweep" stands — but on the matched-coupling RING/SPLIT test at **n=32**, where
+the sign cut is what actually runs and the sweep flips RING's 3.90×/7.06×
+advantage to 1.14× the wrong way. Not on IDENTICAL/INDEPENDENT.
+
+Single line to attack if this is wrong: `bench_v2.py:175`,
+`spatial_phi = (min_partition_mi / max(n-1,1)) * differentiation`.
+
+---
+
+## Superseded twice — the original direction check, kept for the record
+
+The table below is `min_cut/(n−1)` mislabelled as Φ, at an n where the gate uses
+exhaustive search. Kept so the correction has something to point at.
+
+
 
 ## The sweep buys stability, not direction
 
