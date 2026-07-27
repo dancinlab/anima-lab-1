@@ -191,6 +191,16 @@ class ConsciousnessEngine:
         self.merge_patience = merge_patience
         self.min_cells = 2  # CB1: consciousness requires ≥2 cells
 
+        # Reachability tracking. This engine's tension happens to peak near 0.5
+        # against its 0.3 bar, so it fires — but that is luck, not protection:
+        # tension tracks input magnitude here exactly as it does in
+        # MitosisEngine, where the same 0.3 sits 8x above a 0.037 peak and has
+        # never fired on any path. Change cell_dim, hidden_dim or the input
+        # scale and the same silent failure is available. mitosis.py got a
+        # guard; this had none. See docs/tension-is-not-one-quantity.md.
+        self._tension_peak = 0.0
+        self._warned_unreachable = False
+
         # Cell modules (nn.Module for GRU weights)
         self.cell_modules: List[ConsciousnessCell] = []
         # Cell states (runtime: hidden, tension history, faction, etc.)
@@ -219,6 +229,25 @@ class ConsciousnessEngine:
         self._init_coupling()
 
     # ─── Cell lifecycle ─────────────────────────────────
+
+    def _check_threshold_reachable(self, grace=200, margin=0.5):
+        """Warn once if split_threshold is out of this engine's reach.
+
+        Not a fix and not a knob — the threshold is untouched. It only makes a
+        silent failure audible, because "no cell ever divided" and "no cell ever
+        needed to" are indistinguishable without it. Mirrors the guard in
+        mitosis.py, which this engine lacked.
+        """
+        if self._warned_unreachable or self._step < grace:
+            return
+        if self._tension_peak >= self.split_threshold * margin:
+            return
+        self._warned_unreachable = True
+        print(f"  [ConsciousnessEngine] split_threshold={self.split_threshold} "
+              f"is unreachable: peak tension over {self._step} steps was "
+              f"{self._tension_peak:.4f} "
+              f"({self.split_threshold / max(self._tension_peak, 1e-9):.0f}x below). "
+              f"Cells cannot divide. See docs/tension-is-not-one-quantity.md.")
 
     def _create_cell(self, parent_module: Optional[ConsciousnessCell] = None,
                      parent_state: Optional[CellState] = None,
@@ -327,18 +356,36 @@ class ConsciousnessEngine:
             # Compute tension: distance from mean of previous outputs
             if outputs:
                 out_stack = torch.stack(outputs)
-                # NOTE: this is deviation from the POPULATION MEAN, not the output
-                # magnitude mitosis.py:60 computes under the same name. Both engines
-                # take split_threshold=0.3; typical peaks are 0.500 here and 0.037
-                # there. The bars are not interchangeable — see
+                # Deviation from the mean of the cells processed SO FAR in this
+                # loop — not from the whole population. It is therefore
+                # ORDER-DEPENDENT: measured cell 1 ≈ 0.024, cell 2 ≈ 0.009,
+                # cell 4 ≈ 0.007, falling with loop position because later cells
+                # are compared against more peers. The same cell in a different
+                # position gets a different "tension".
+                #
+                # Its real range is ~0.037 peak, 8x BELOW split_threshold=0.3 —
+                # the same mismatch mitosis.py has. See
                 # docs/tension-is-not-one-quantity.md.
                 cell_tension = ((output - out_stack.mean(dim=0)) ** 2).mean().item()
             else:
+                # `outputs` is empty only for the FIRST cell of the loop, so cell 0
+                # receives this constant on EVERY step — not as a rare fallback.
+                # 0.5 is above split_threshold=0.3, so cell 0 satisfies
+                # `all(t > bar)` after split_patience steps and divides on a timer.
+                # Measured: all 148 splits in a 300-step run originate here; the
+                # computed tension never once reaches the bar.
+                #
+                # A hardcoded constant named like a measurement, and it is the
+                # thing actually driving the behaviour. Not changed here —
+                # removing it stops division entirely, which is a design
+                # decision. Recorded in docs/tension-is-not-one-quantity.md.
                 cell_tension = 0.5
 
             # Update state
             state.hidden = new_h.detach()
             state.tension_history.append(cell_tension)
+            if cell_tension > self._tension_peak:
+                self._tension_peak = cell_tension
             if len(state.tension_history) > 100:
                 state.tension_history = state.tension_history[-100:]
             state.hidden_history.append(new_h.detach().clone())
@@ -498,6 +545,7 @@ class ConsciousnessEngine:
             if len(state.tension_history) < self.split_patience:
                 continue
             recent = state.tension_history[-self.split_patience:]
+            self._check_threshold_reachable()
             if all(t > self.split_threshold for t in recent):
                 to_split.append(i)
 
