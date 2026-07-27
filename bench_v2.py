@@ -1687,7 +1687,7 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
         same = float((ra[:m] - rc[:m]).norm())
         spreads.append(differing / max(same, 1e-9) if same > 1e-9
                        else (float('inf') if differing > 1e-9 else 1.0))
-    engine.hiddens = base
+    _put(handle)
     response = float(np.median([min(v, 1e6) for v in spreads]))
 
     return (integration > 0.001 and response > 1.5,
@@ -2174,11 +2174,21 @@ def _run_controls(cells: int, dim: int, hidden: int):
     This is CLAUDE.md's own rule — that baselines come from the population's own
     null rather than from a constant — applied to the gate itself.
 
-    Returns {test_name: [labels of controls that passed]}.
+    A control that RAISES is not a control that was rejected. It used to be
+    scored `passed = False` -- "a crash is not a pass" -- which reads as the
+    condition having correctly turned the corpse away, when in fact the
+    condition never ran on it. That is the same conflation the engine loop had,
+    and it points the wrong way here: a crashing corpse makes the gate look
+    MORE discriminating than it is. An unrunnable control leaves the condition
+    unvalidated, which is not something an engine may bank.
+
+    Returns ({test_name: [labels that passed]}, {test_name: [labels that
+    raised]}).
     """
     from bench_verify_audit import CONTROLS, factory_for   # lazy: it imports us
 
     voided = {name: [] for name, _, _ in VERIFICATION_TESTS}
+    unrun = {name: [] for name, _, _ in VERIFICATION_TESTS}
     for label, cls, _desc in CONTROLS[1:]:              # [0] is the real engine
         for test_name, test_fn, _d in VERIFICATION_TESTS:
             # A control that clears the bar on ANY seed voids the condition.
@@ -2191,12 +2201,14 @@ def _run_controls(cells: int, dim: int, hidden: int):
                     passed, _detail = test_fn(
                         lambda c, d, h: factory_for(cls, c, d, h),
                         cells, dim, hidden)
-                except Exception:
-                    passed = False                      # a crash is not a pass
+                except Exception as e:
+                    unrun[test_name].append(
+                        f"{label}(seed {sd}: {type(e).__name__})")
+                    break                    # unmeasured, not rejected
                 if passed:
                     voided[test_name].append(f"{label}(seed {sd})")
                     break
-    return voided
+    return voided, unrun
 
 
 def run_verify(cells: int, dim: int, hidden: int, with_controls: bool = True):
@@ -2227,15 +2239,23 @@ def run_verify(cells: int, dim: int, hidden: int, with_controls: bool = True):
     if with_controls:
         print("\n  Running negative controls first — a condition a corpse passes")
         print("  is void for this run, and no engine may bank it.")
-        voided = _run_controls(cells, dim, hidden)
-        live = [n for n, v in voided.items() if not v]
+        voided, unrun = _run_controls(cells, dim, hidden)
+        live = [n for n, v in voided.items() if not v and not unrun[n]]
         print(f"  {len(live)}/{len(voided)} conditions survived the controls.")
         for name, by in voided.items():
             if by:
                 print(f"    VOID  {name:<22s} passed by: {', '.join(by)}")
+        for name, by in unrun.items():
+            if by:
+                # Unvalidated, not survived. The condition never ran against
+                # this corpse, so nothing was learned about whether it can tell
+                # the two apart -- and an engine may not bank it either way.
+                print(f"    UNVALIDATED  {name:<15s} raised on: {', '.join(by)}")
+                voided[name] = voided[name] + [f"UNRUN:{b}" for b in by]
 
     engine_names = list(ENGINE_REGISTRY.keys())
     results = {}  # (engine_name, test_name) -> (passed, detail)
+    errored = {}  # (engine_name, test_name) -> harness raised, so NOT measured
 
     for eng_name in engine_names:
         print(f"\n  {'~' * 70}")
@@ -2252,15 +2272,28 @@ def run_verify(cells: int, dim: int, hidden: int, with_controls: bool = True):
             # deployment verdict that depends on which seed was drawn is a coin
             # flip wearing a number. This is the repo's own rule -- "1개라도
             # 실패 시 배포 금지" -- applied to the seed axis.
-            per_seed = []
+            # A raised exception is NOT a failed condition. It used to be
+            # folded into `ok = False`, so a harness bug read as every engine
+            # scoring 0/5 -- which is precisely what a catastrophic-but-real
+            # regression looks like, and the controls make it MORE convincing
+            # rather than less, because a corpse scoring 0/5 is expected. This
+            # session shipped a NameError into _three_axes and a teammate's
+            # 250-cell grid came back a perfect field of zeros; it was caught
+            # only because that teammate knew NarrativeEngine to be 5/5 on
+            # PERSISTENCE at that scale from an hour earlier. So an exception is
+            # its own state: it says the condition was not measured. That
+            # includes an engine's own divergence guard, whose message already
+            # says the right thing -- scores from a diverged pair say nothing.
+            per_seed, errors = [], []
             for sd in VERIFY_SEEDS:
                 torch.manual_seed(sd)
                 try:
                     ok, det = test_fn(factory, cells, dim, hidden)
                 except Exception as e:
-                    ok, det = False, f"ERROR: {e}"
+                    ok, det = False, f"{type(e).__name__}: {e}"
+                    errors.append((sd, det))
                 per_seed.append((sd, ok, det))
-            passed = all(ok for _sd, ok, _d in per_seed)
+            passed = all(ok for _sd, ok, _d in per_seed) and not errors
             failed_seeds = [sd for sd, ok, _d in per_seed if not ok]
             detail = next((d for _sd, ok, d in per_seed if not ok),
                           per_seed[0][2])
@@ -2269,8 +2302,12 @@ def run_verify(cells: int, dim: int, hidden: int, with_controls: bool = True):
                           f"{VERIFY_SEEDS}; {detail}")
             elapsed = time.time() - t0
 
-            mark = "PASS" if passed else "FAIL"
+            if errors:
+                detail = (f"NOT MEASURED — harness raised on seed(s) "
+                          f"{[s for s, _ in errors]}: {errors[0][1]}")
+            mark = "ERR!" if errors else ("PASS" if passed else "FAIL")
             results[(eng_name, test_name)] = (passed, detail)
+            errored[(eng_name, test_name)] = bool(errors)
             print(f"    [{mark}] {test_name:<22s} ({elapsed:.1f}s) -- {detail}")
 
     # ── Summary table ──
