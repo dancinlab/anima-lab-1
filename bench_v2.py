@@ -1969,6 +1969,32 @@ VERIFICATION_TESTS = [
     ("ZERO_INPUT",         _verify_zero_input,          "Consciousness without external input"),
     ("PERSISTENCE",        _verify_persistence,         "No collapse over time (1000 steps)"),
     ("SELF_LOOP",          _verify_self_loop,           "Output feeds back as input"),
+]
+
+# RETIRED, both on measurement rather than preference.
+#
+# SPONTANEOUS_SPEECH counted inter-faction variance dips as agreement, which a
+# collapsed population satisfies permanently (8-18 events at cosine 1.0000, median
+# variance 0.0004) and a SCRAMBLE tops outright (6.8 against the real engine's
+# 1.0) -- anti-correlated with the thing it names. Fourteen routes were measured
+# and closed: repulsion strength and form, consensus definition (persistence),
+# observation window (8x), faction count (2-48) and removal, per-cell weights on
+# state / on input / inside the map, variance normalisation, and real corpus
+# input. The engine emits ~1 structured event per 300 steps under every one. Four
+# candidate redefinitions were each topped by a control -- hidden-state by
+# SCRAMBLE 6.8, output-direction by SCRAMBLE 13.2, permutation-invariant profile
+# by DECOUPLED 5.8, variance normalisation by SCRAMBLE 5.7.
+#
+# HIVEMIND had never executed before this session (it crashed in 0.3-1.6s for all
+# 11 engines). Made to run, with 3 trials and an unconnected control, connection
+# changes Phi by -4% to +1% at every repulsion strength on both engine designs,
+# against a required +10%. Moving it to the emitted channel makes DEAD win by 10x.
+#
+# Retiring them costs the gate nothing, which is the point: measured at 32 cells,
+# all six negative controls score 0/5 exactly as they scored 0/7, while the real
+# engine goes from 5/7 to 5/5. A condition that certifies nothing is not
+# protecting anything. Evidence in docs/consciousness-gate-audit.md.
+_RETIRED_TESTS = [
     ("SPONTANEOUS_SPEECH", _verify_spontaneous_speech,  "8-faction debate -> consensus utterances"),
     ("HIVEMIND",           _verify_hivemind,            "Multi-connect: Phi↑ CE↓, independent after disconnect"),
 ]

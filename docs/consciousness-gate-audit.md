@@ -1151,3 +1151,41 @@ not reachable by adding something for it to say.
 
 Five of seven, and the two failures are characterised rather than open. Neither
 is a threshold that tuning crosses.
+
+## Retired: `SPONTANEOUS_SPEECH` and `HIVEMIND`
+
+Both on measurement, and the retirement was checked before it was made — if
+dropping them softened the gate, the recommendation would have been wrong.
+
+| engine | 7 conditions | **5 conditions** |
+|---|---|---|
+| **REAL** | 5/7 | **5/5** |
+| HEAP | 0/7 | **0/5** |
+| DECOUPLED | 0/7 | **0/5** |
+| DEAD | 0/7 | **0/5** |
+| NOISE | 0/7 | **0/5** |
+| CLONE | 0/7 | **0/5** |
+| SCRAMBLE | 0/7 | **0/5** |
+
+**Nothing leaks and the engine is at full marks.** The two conditions certified
+nothing, so removing them costs the gate nothing — which is the argument for
+removing them.
+
+`SPONTANEOUS_SPEECH` was anti-correlated with the thing it names: SCRAMBLE 6.8
+against the real engine's 1.0, because a collapsed population satisfies "low
+inter-faction variance" permanently and a shuffle produces the dips by
+permutation. Fourteen routes measured and closed; four candidate redefinitions
+each topped by a control.
+
+`HIVEMIND` had never executed — it crashed in 0.3–1.6s for all 11 engines. Made
+to run, with 3 trials and an unconnected control, connection changes Φ by −4% to
++1% at every repulsion strength on both engine designs, against a required +10%.
+
+Both are kept in `_RETIRED_TESTS` with the numbers at the site rather than
+deleted, so the next reader sees what was measured and why, and can restore
+either by moving it back.
+
+This is the discipline the rest of this session applied to Φ (maximal at collapse
+→ replaced) and to `EmpathyEthics` (two values both clearing their own bar →
+flagged): **a measurement pointing the opposite way from its own name is retired,
+not tuned.**
