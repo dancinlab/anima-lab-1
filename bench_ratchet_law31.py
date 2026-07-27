@@ -89,7 +89,9 @@ def run(ratchet, steps, seed, cells, dim):
         eng.step(torch.randn(dim) * 0.1)
         if (t + 1) % quarter == 0:
             h = eng._get_hiddens_tensor().detach()
-            trace.append(calc.compute(h) if h.shape[0] >= 2 else 0.0)
+            # compute() returns (phi, components) — taking the tuple whole cost a
+            # 50-minute run that died on the format string.
+            trace.append(calc.compute(h)[0] if h.shape[0] >= 2 else 0.0)
             cos_trace.append(_cosine(eng))
     return {
         'phi': trace,
@@ -112,10 +114,17 @@ def ratcheted(base_cls):
         def __init__(self, *a, **kw):
             super().__init__(*a, **kw)
             self._best_phi, self._best_h, self._restores = 0.0, None, 0
+            # Its OWN counter. Reading the base class's `step_count` via getattr
+            # silently gave NoiseEngine (which has no such attribute) a default
+            # of 0, so `0 % 10 == 0` held every step and the noise arm was
+            # ratcheted 1000 times against the real arm's 100 — 876 restores vs
+            # 9, an artefact of the probe rather than of the engines.
+            self._rt_step = 0
 
         def process(self, x):
             out = super().process(x)
-            if getattr(self, 'step_count', 0) % 10 == 0:
+            self._rt_step += 1
+            if self._rt_step % 10 == 0:
                 h = self.get_hiddens()
                 phi, _ = measure_dual_phi(h, min(8, h.shape[0] // 2))
                 if phi > self._best_phi:
