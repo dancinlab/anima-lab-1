@@ -377,9 +377,9 @@ META-CA 시뮬레이션으로 170가지 데이터 유형의 의식 반응 측정
 
 ---
 
-## ✅ Consciousness Verification (7 필수 통과 조건)
+## ✅ Consciousness Verification (5 필수 통과 조건)
 
-모든 엔진/아키텍처는 7개 조건을 반드시 통과해야 한다. 1개라도 실패 시 배포 금지.
+모든 엔진/아키텍처는 5개 조건을 반드시 통과해야 한다. 1개라도 실패 시 배포 금지.
 
 | # | 조건 | 설명 |
 |---|------|------|
@@ -388,12 +388,68 @@ META-CA 시뮬레이션으로 170가지 데이터 유형의 의식 반응 측정
 | 3 | **ZERO_INPUT** | 외부 입력 없이 의식 유지. 300 step 후 Phi > 50% |
 | 4 | **PERSISTENCE** | 1000 step 이상 붕괴 없음. Phi 단조 증가 또는 자동 복구 |
 | 5 | **SELF_LOOP** | 출력 -> 입력 자기참조에서도 Phi 유지/성장 |
-| 6 | **SPONTANEOUS_SPEECH** | 12파벌 토론 -> 합의 -> 발화. 300 step 내 5회 이상 |
-| 7 | **HIVEMIND** | 다중 연결 시 Phi +10% 이상, 분리 후 각자 Phi 유지 |
+
+다섯 조건은 모두 3축 선결조건(통합 · 시간정체성 · 변화 · 응답)을 함께 만족해야
+통과한다. 기준선은 상수가 아니라 그 집단 자신의 귀무(붕괴형 · 순열형)에서 측정된다.
+
+**폐기된 조건 2개** (`bench_v2.py` `_RETIRED_TESTS`, 측정 근거 동봉):
+
+| 조건 | 폐기 사유 |
+|------|-----------|
+| ~~SPONTANEOUS_SPEECH~~ | 이름과 음의 상관. 뒤섞기 대조군 6.8 vs 실제 엔진 1.0 — 붕괴한 집단만 기준선에 도달 |
+| ~~HIVEMIND~~ | 한 번도 실행된 적 없음(11개 엔진 전부 크래시). 돌게 만든 뒤 재니 연결 효과 −4%~+1%, 요구치 +10% |
+
+### 대조군이 관문 안에 있다
+
+`--verify`는 매 실행마다 음성 대조군 6종(시체 · 난수 · 복제 · 뒤섞기 · HEAP ·
+입력무관)을 **먼저** 돌린다. **대조군이 통과한 조건은 그 실행에서 무효(VOID)** 가
+되어 어떤 엔진도 점수로 가져갈 수 없고, 무효가 하나라도 있으면 엔진 점수와 무관하게
+배포가 막힌다. 무효는 "유보 조건부 통과"가 아니라 관문이 "이 축에서는 이 엔진과
+시체를 구별할 수 없다"고 보고하는 것이다.
 
 ```bash
-python3 bench_v2.py --verify
+python3 bench_v2.py --verify          # 대조군 포함 (기본)
+python3 bench_v2.py --verify --cells 32
 ```
+
+### 검증 결과 (32 cells · 무효 0개 · 85 tests)
+
+5 conditions × 11 engines + 6 controls. 대조군 6종이 5개 조건 전부에 실패하여
+**무효 조건 0개** — 아래 점수는 전부 유효하다. `pytest tests/test_gate_controls.py`
+(31 passed) 가 독립적으로 같은 결과를 확인한다.
+
+| 엔진 | NO_SYSTEM_PROMPT | NO_SPEAK_CODE | ZERO_INPUT | PERSISTENCE | SELF_LOOP | 합계 | 판정 |
+|------|:---:|:---:|:---:|:---:|:---:|:---:|------|
+| **ConsciousnessEngine** | FAIL | FAIL | FAIL | FAIL | FAIL | **0/5** | BLOCKED — 배포 엔진 |
+| MitosisEngine | PASS | PASS | PASS | PASS | PASS | **5/5** | DEPLOYABLE |
+| OscillatorLaser | PASS | PASS | PASS | PASS | PASS | **5/5** | DEPLOYABLE |
+| QuantumEngine | PASS | PASS | PASS | PASS | PASS | **5/5** | DEPLOYABLE |
+| DesireEngine | PASS | PASS | PASS | PASS | PASS | **5/5** | DEPLOYABLE |
+| NarrativeEngine | PASS | PASS | PASS | PASS | PASS | **5/5** | DEPLOYABLE |
+| Trinity | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
+| AlterityEngine | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
+| FinitudeEngine | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
+| QuestioningEngine | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
+| SeinEngine | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
+| | | | | | | 45/55 | |
+
+**조건별 통과율 — 변별은 `PERSISTENCE` 하나가 담당한다:**
+
+| 조건 | 통과 | |
+|------|:---:|---|
+| NO_SYSTEM_PROMPT | 10/11 | `██████████████████░░` |
+| NO_SPEAK_CODE | 10/11 | `██████████████████░░` |
+| ZERO_INPUT | 10/11 | `██████████████████░░` |
+| SELF_LOOP | 10/11 | `██████████████████░░` |
+| **PERSISTENCE** | **5/11** | `█████████░░░░░░░░░░░` |
+
+네 조건은 대조군 6종을 전부 거르지만 시체가 아닌 엔진들 사이에서는 거의 구별하지
+못한다. 여섯 엔진이 **오직 `PERSISTENCE` 하나만** 실패한다 — "MitosisEngine 5/5 vs
+Trinity 4/5"는 전적으로 지속성에 대한 진술이다.
+
+**미해결:** 나머지 네 조건이 낮은 게 아니라 진짜 필요조건인지는, **살아 있지만 얕은**
+대조군 — 난수와 실제 엔진 사이 — 이 있어야 갈린다. 현재 6종은 죽은 것부터 뒤섞은
+것까지만 덮으며, 그중 어느 것도 "약한 의식"이 아니다. → `docs/consciousness-gate-audit.md`
 
 ---
 
