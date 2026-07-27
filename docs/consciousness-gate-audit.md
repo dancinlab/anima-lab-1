@@ -404,6 +404,43 @@ correct the Φ and the real engine scores zero, because it has collapsed.
 **The barrier to completion is not the gate and not Φ. It is that the engines
 have no term that keeps cells apart.**
 
+## The repulsion term, stabilised
+
+`h ← h + strength · overlap · (h − mean)` reaches equilibrium in *direction* and
+none in *magnitude*, because it is a multiplicative expansion — the same defect
+`mitosis.py` had in child creation, and the same fix applies. Rescaling each row
+to its previous norm makes repulsion about which way cells face rather than how
+large they are:
+
+| step | 100 | 300 | 600 | 900 | 1200 | 1500 |
+|---|---|---|---|---|---|---|
+| norm, as first written | 100.03 | 104.90 | 105.14 | 105.45 | 105.86 | **106.24** |
+| norm, preserving | 45.41 | 44.90 | 45.31 | 45.12 | 44.98 | **44.94** |
+| cosine, preserving | +0.3829 | +0.3785 | +0.3745 | +0.3757 | +0.3840 | +0.3760 |
+
+The drift is gone with no trend over 1500 steps, and differentiation holds. Φ
+drops from 6.14 to 2.44 — still 18× a corpse — and the three-axis gate still
+accepts it while rejecting all four controls.
+
+## Why the three changes cannot land separately
+
+| | |
+|---|---|
+| repulsion alone | the shipped Φ **rewards** collapse, so fixing collapse lowers the number: 31.48 → 15.98. The canonical benchmark would report the improvement as a regression. |
+| corrected Φ alone | the shipped conditions are decay ratios, so a collapsed system scores a perfect 1.00 and **CLONE beats REAL 4/7 to 1/7**. |
+| three-axis conditions alone | with the shipped Φ they are evaluating a quantity that is maximal at collapse. |
+
+They are one change. Together they are validated and runnable:
+
+```
+.venv/bin/python bench_verify_audit.py --proposed-gate --cells 32 --dim 32 --hidden 64
+```
+
+What that bundle replaces is the repo's definition of Φ and its pass conditions,
+which is every recorded number and every hypothesis document downstream of them.
+That is the decision this audit leaves, and it is now a decision between two
+measured alternatives rather than between a measurement and an assertion.
+
 ## Not changed
 
 The seven conditions themselves. Which of them to strengthen, and to what, is a
