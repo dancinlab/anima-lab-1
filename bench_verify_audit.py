@@ -261,192 +261,41 @@ def phi_sanity(cells=64, hidden=128, reps=8):
     return inverted
 
 
-def phi_candidate(cells=32, hidden=128):
-    """A Φ whose direction is right, measured beside the one that ships.
+def proposed_gate(cells=32, dim=32, hidden=64, steps=60):
+    """Run the gate's own axes against every control, and report each verdict.
 
-    The shipped `Φ = (total_mi − min_cut) / (n − 1)` keeps the MI that stays
-    INSIDE the parts, which is redundancy, and so is maximal at total collapse.
-    Integration needs something to cut AND something to join: N identical copies
-    have nothing to cut, N independent cells have nothing to join, and the
-    maximum belongs between them.
+    This used to re-derive the axes by hand — its own debiased MI, its own Φ, and
+    `identity > 0.05`, the hand-picked constant the landed gate replaced with a
+    measured null. So the reproduction command printed in the docs ran code that
+    no longer matched what shipped, and the two drifted further apart every time
+    the axes changed. A `/gap` audit caught it.
 
-        candidate = (min_cut / (n − 1)) × (1 − mean pairwise cosine)
-                     ^ what the best cut destroys   ^ differentiation
-
-    Direction alone is not enough. A 16-bin histogram MI estimator reads 2.21 /
-    1.58 / 0.94 / 0.53 / 0.27 nats between signals that are completely
-    independent at dim 32 / 64 / 128 / 256 / 512, where the truth is 0. That
-    floor keeps `min_cut` large for an unconnected population, so the candidate
-    without debiasing rises monotonically to its maximum at full independence —
-    the opposite inversion. Subtracting a shuffled null is what puts the maximum
-    back in the interior: measured at 32 cells, 0.000 collapsed → 0.474 at
-    cosine +0.92 → 0.102 independent.
-
-    This is not landed, and the reason is measured rather than cautious. With it
-    in `bench_v2`, CLONE scores 4/7 against REAL's 1/7, because the corrected Φ
-    correctly puts a collapsed population at the floor and the gate's conditions
-    are RATIOS — `phi_end / phi_start` is a perfect 1.00 for something that was
-    already zero. The Φ is not what fails there; the conditions are.
+    It now calls `bench_v2._three_axes` directly, which is also why the axis
+    names are integration/identity/change: differentiation was dropped after the
+    same audit showed it rejected nothing and that a HEAP walked the gate.
     """
-    from bench_v2 import PhiIIT
+    from bench_v2 import _three_axes
 
-    calc = PhiIIT(n_bins=16)
-    rng = np.random.default_rng(0)
+    print(f"\n  제안 관문 — {cells} 세포 · bench_v2._three_axes 를 그대로 호출")
+    print("  통합 · 시간정체성 · 변화 — 의식이 아닌 방식마다 하나씩\n")
+    print(f"  {'엔진':>12}  {'통합':>4}{'정체':>4}{'변화':>4}  {'판정':>6}  수치")
 
-    def mi_debiased(a, b, k=3):
-        raw = calc._mutual_information(a, b)
-        null = np.mean([calc._mutual_information(a, rng.permutation(b))
-                        for _ in range(k)])
-        return max(0.0, raw - null)
-    torch.manual_seed(0)
-    base = torch.randn(1, hidden) * 0.1
-    cases = [
-        ("완전 동일", base.repeat(cells, 1)),
-        ("거의 동일", base.repeat(cells, 1) + torch.randn(cells, hidden) * 0.001),
-        ("약간 분화", base.repeat(cells, 1) + torch.randn(cells, hidden) * 0.02),
-        ("중간 분화", base.repeat(cells, 1) + torch.randn(cells, hidden) * 0.06),
-        ("충분히 분화", base.repeat(cells, 1) + torch.randn(cells, hidden) * 0.15),
-        ("완전 독립", torch.randn(cells, hidden) * 0.1),
-    ]
-
-    print(f"\n  Φ 후보 — 방향 비교 ({cells} 세포)")
-    print("  통합은 자를 것과 이을 것이 둘 다 있어야 한다\n")
-    print(f"  {'상태':>16} {'코사인':>9} {'현재 Φ':>9} {'방향만':>9} {'후보 Φ':>9}")
-
-    shipped, undebiased, cand = [], [], []
-    for name, H in cases:
-        n = H.shape[0]
-        rows = [H[i].numpy() for i in range(n)]
-        mi = np.zeros((n, n))
-        mi_d = np.zeros((n, n))
-        for i in range(n):
-            for j in range(i + 1, n):
-                mi[i, j] = mi[j, i] = calc._mutual_information(rows[i], rows[j])
-                mi_d[i, j] = mi_d[j, i] = mi_debiased(rows[i], rows[j])
-        total = mi.sum() / 2
-        cut = calc._minimum_partition(n, mi)
-        cut_d = calc._minimum_partition(n, mi_d)
-        hn = H / torch.clamp(H.norm(dim=1, keepdim=True), min=1e-9)
-        cos = float(((hn @ hn.T).sum() - n) / (n * (n - 1)))
-        diff = max(0.0, 1.0 - cos)
-
-        cur = max(0.0, (total - cut) / (n - 1))
-        raw_dir = (cut / (n - 1)) * diff
-        new = (cut_d / (n - 1)) * diff
-        shipped.append(cur)
-        undebiased.append(raw_dir)
-        cand.append(new)
-        print(f"  {name:>16} {cos:>+9.4f} {cur:>9.2f} {raw_dir:>9.3f} {new:>9.3f}")
-
-    print()
-    print(f"  현재 Φ 최대: {cases[int(np.argmax(shipped))][0]}"
-          f"   방향만 최대: {cases[int(np.argmax(undebiased))][0]}"
-          f"   후보 Φ 최대: {cases[int(np.argmax(cand))][0]}")
-    print("  방향만 고치면 반대로 뒤집혀 완전 독립이 최고점을 받는다 —")
-    print("  독립 신호끼리도 상호정보 추정치가 양수라 절단값이 0 으로 안 떨어지기 때문.")
-    print("  뒤섞기로 그 바닥을 빼야 최대가 안쪽으로 온다.\n")
-    return shipped, cand
-
-
-def proposed_gate(cells=32, dim=32, hidden=64, steps=200):
-    """Three axes, because there are three ways to not be conscious.
-
-    The shipped conditions are decay ratios, and a ratio is meaningless at the
-    floor — something pinned at zero scores a perfect 1.00 for not decaying,
-    which is why a corpse passes three of them. Conjoining an absolute floor
-    fixes half of it: measured, it rejects CLONE and SCRAMBLE but not DEAD or
-    NOISE, because those two are not collapsed at all. They fail on time.
-
-    So the gate needs all three, and each control fails a different one:
-
-        분화   Φ above the Φ of THIS population collapsed to one state
-               (no constant — the floor is the population's own collapsed form)
-        정체성 a cell's next state follows from its own previous state more than
-               from another cell's — this is what SCRAMBLE destroys
-        변화   the state actually moves — this is the only thing DEAD lacks
-
-    Measured at 32 cells with the direction-corrected debiased Φ:
-
-                     Φ      floor   identity    change    분화 정체 변화
-        REPULSION  6.1409  0.0000   +0.8448   0.00874     O   O    O    PASS
-        REAL       0.0000  0.0000   +0.0001   0.10975     X   X    O     -
-        DEAD       0.1350  0.0000   +0.9985   0.00000     O   O    X     -
-        NOISE      0.1694  0.0000   +0.0012   1.41324     O   X    O     -
-        CLONE      0.0000  0.0000   -0.0000   0.11482     X   X    O     -
-        SCRAMBLE   0.0000  0.0000   -0.0000   0.10745     X   X    O     -
-
-    Exactly one passes and it is the proposed engine. A corpse is differentiated
-    and perfectly self-continuous — it fails only because it never moves, which
-    was worth measuring rather than assuming: the prediction that DEAD would
-    fail the identity axis was wrong, since a frozen thing is maximally
-    continuous with itself.
-
-    This is the first configuration in this repo that rejects all four negative
-    controls. It is a proposal, not a replacement for the seven conditions.
-    """
-    from bench_v2 import PhiIIT
-
-    calc = PhiIIT(n_bins=16)
-    rng = np.random.default_rng(0)
-
-    def mi_debiased(a, b, k=3):
-        raw = calc._mutual_information(a, b)
-        null = np.mean([calc._mutual_information(a, rng.permutation(b))
-                        for _ in range(k)])
-        return max(0.0, raw - null)
-
-    def phi(h):
-        n = h.shape[0]
-        rows = [h[i].numpy() for i in range(n)]
-        mi = np.zeros((n, n))
-        for i in range(n):
-            for j in range(i + 1, n):
-                mi[i, j] = mi[j, i] = mi_debiased(rows[i], rows[j])
-        unit = h / torch.clamp(h.norm(dim=1, keepdim=True), min=1e-9)
-        cos = float(((unit @ unit.T).sum() - n) / max(n * (n - 1), 1))
-        return (calc._minimum_partition(n, mi) / max(n - 1, 1)) * max(0.0, 1.0 - cos)
-
-    def probe(cls):
+    verdicts = {}
+    for label, cls, _ in PROPOSALS + CONTROLS:
         torch.manual_seed(42)
         eng = factory_for(cls, cells, dim, hidden)
         for _ in range(50):
             eng.process(torch.randn(1, dim) * 0.1)
-        prev = eng.get_hiddens().clone()
-        same, other, moved = [], [], []
-        for _ in range(steps):
-            eng.process(torch.randn(1, dim) * 0.1)
-            cur = eng.get_hiddens()
-            a = prev / torch.clamp(prev.norm(dim=1, keepdim=True), min=1e-9)
-            b = cur / torch.clamp(cur.norm(dim=1, keepdim=True), min=1e-9)
-            sim = a @ b.T
-            same.append(float(sim.diag().mean()))
-            other.append(float((sim.sum() - sim.diag().sum()) / max(cells * (cells - 1), 1)))
-            moved.append(float((cur - prev).norm() / max(float(prev.norm()), 1e-9)))
-            prev = cur.clone()
-        h = eng.get_hiddens()
-        return (phi(h), phi(h[0:1].repeat(cells, 1)),
-                float(np.mean(same) - np.mean(other)), float(np.mean(moved)))
-
-    print(f"\n  제안 관문 — 3축 ({cells} 세포)")
-    print("  분화 · 시간정체성 · 변화 — 의식이 아닌 세 가지 방식에 하나씩\n")
-    print(f"  {'엔진':>12} {'Φ':>8} {'붕괴형':>8} {'정체성':>9} {'변화':>9}  "
-          f"{'분화':>4}{'정체':>4}{'변화':>4}  {'판정':>6}")
-
-    verdicts = {}
-    for label, cls, _ in PROPOSALS + CONTROLS:
-        p, floor, identity, change = probe(cls)
-        ok_d = p > max(floor, 1e-6)
-        ok_i = identity > 0.05
-        ok_c = change > 0.001
-        verdicts[label] = ok_d and ok_i and ok_c
-        print(f"  {label:>12} {p:>8.4f} {floor:>8.4f} {identity:>+9.4f} {change:>9.5f}  "
-              f"{'O' if ok_d else 'X':>4}{'O' if ok_i else 'X':>4}{'O' if ok_c else 'X':>4}  "
-              f"{'통과' if verdicts[label] else '—':>6}")
+        ok_g, ok_i, ok_c, detail = _three_axes(eng, dim, cells, steps=steps)
+        verdicts[label] = ok_g and ok_i and ok_c
+        print(f"  {label:>12}  {'O' if ok_g else 'X':>4}{'O' if ok_i else 'X':>4}"
+              f"{'O' if ok_c else 'X':>4}  {'통과' if verdicts[label] else '—':>6}  "
+              f"{detail[:74]}")
 
     leaked = [l for l, _, _ in CONTROLS[1:] if verdicts[l]]
     print()
     print("  " + (f"⚠ 대조군 통과: {', '.join(leaked)}" if leaked else
-                  "이 네 대조군은 거부됨 — 다른 대조군까지 막는다는 뜻은 아니다."))
+                  "이 대조군들은 축 단계에서 거부됨 — 목록에 없는 우회로는 미검증."))
     print()
     return verdicts
 
@@ -458,18 +307,12 @@ def main():
     ap.add_argument("--hidden", type=int, default=HIDDEN)
     ap.add_argument("--phi-sanity", action="store_true",
                     help="only check whether Phi punishes or rewards collapse")
-    ap.add_argument("--phi-candidate", action="store_true",
-                    help="compare the shipped Phi against a direction-correct candidate")
     ap.add_argument("--proposed-gate", action="store_true",
                     help="run the three-axis gate that rejects all four controls")
     args = ap.parse_args()
 
     if args.phi_sanity:
         phi_sanity(cells=args.cells, hidden=args.hidden)
-        return
-
-    if args.phi_candidate:
-        phi_candidate(cells=args.cells, hidden=args.hidden)
         return
 
     if args.proposed_gate:

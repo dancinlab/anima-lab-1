@@ -371,8 +371,13 @@ Three measures, three different maxima. Only the debiased one has it in the
 interior, which is where integrated information requires it.
 
 ```
-.venv/bin/python bench_verify_audit.py --phi-candidate --cells 32 --hidden 128
+.venv/bin/python bench_verify_audit.py --proposed-gate --cells 32 --dim 32 --hidden 64
 ```
+
+*(The `--phi-candidate` mode this originally pointed at has been removed: the
+"candidate" Φ it compared against the shipped one is now the shipped one, so the
+comparison had no second term left. `--proposed-gate` calls the gate's own
+`_three_axes` and shows each control's verdict per axis.)*
 
 ## The floor was built, measured, and it does not rescue the gate — because the engine collapses
 
