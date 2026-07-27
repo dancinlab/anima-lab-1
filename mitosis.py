@@ -188,10 +188,26 @@ class MitosisEngine:
         """
         if parent is not None:
             mind = copy.deepcopy(parent.mind)
-            # Add noise to break symmetry (scaled by PSI_COUPLING for inter-cell influence)
+            # Break symmetry WITHOUT amplifying. Adding noise to a weight tensor
+            # grows its norm — the noise is orthogonal on average, so the result
+            # is sqrt(a^2 + b^2) > a — measured at +27.9% per division and +104%
+            # by the fifth generation. Larger weights mean larger outputs, and
+            # tension is (output**2).mean(), so every split raised the very
+            # quantity that triggers splitting: a positively self-reinforcing
+            # loop that only max_cells stopped (mean tension per cell went 0.0315
+            # at 3 cells to 0.3881 at 32).
+            #
+            # Rescaling each tensor back to its pre-noise norm keeps the whole
+            # point of the noise — the direction changes, the cells differentiate
+            # — and drops the side effect nobody asked for. See
+            # docs/mitosis-calibration.md.
             with torch.no_grad():
                 for p in mind.parameters():
+                    before = p.norm().item()
                     p.add_(torch.randn_like(p) * max(self.noise_scale, PSI_COUPLING))
+                    after = p.norm().item()
+                    if after > 1e-12 and before > 1e-12:
+                        p.mul_(before / after)
             hidden = parent.hidden.clone()
             specialty = parent.specialty
         else:

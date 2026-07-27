@@ -149,3 +149,55 @@ needs that negative feedback — division has to lower per-cell load, or the
 trigger has to normalise by population — and either is a change to what tension
 *means*, which is a larger decision than changing when a comparison fires.
 That one is recorded, not taken.
+
+---
+
+# The positive feedback had a mechanical cause, and it is fixed
+
+The 12× tension rise was not about what tension means. `_create_cell` added
+noise to a copy of the parent's weights, and adding noise **grows the norm** —
+the noise is orthogonal on average, so the result is `sqrt(a² + b²) > a`:
+
+| generation | weight norm | vs parent |
+|---|---|---|
+| parent | 14.3419 | — |
+| 1 | 18.3368 | **+27.9%** |
+| 3 | 24.4163 | +70.2% |
+| 5 | 29.2001 | **+103.6%** |
+
+Bigger weights make bigger outputs, and `tension = (output ** 2).mean()`, so
+every division raised the quantity that triggers division. That is the whole
+mechanism of the runaway.
+
+**Fix:** rescale each of the child's weight tensors back to its pre-noise norm.
+The direction still changes, so cells still differentiate — that is what the
+noise was for — and the amplification nobody asked for is gone.
+
+| | before | after |
+|---|---|---|
+| weight norm after 5 generations | +103.6% | **+0.0%** |
+| mean tension, 3 cells → 32 cells | 0.0315 → 0.3881 (**12×**) | 0.0408 → 0.049 (**1.2×**) |
+| splits over 400 steps | 984 | **46** |
+
+Twenty times less churn for the same endpoint, and tension is now stable across
+population sizes — which is what makes any threshold on it mean the same thing
+at 2 cells and at 32.
+
+Regression checked: `mitosis.demo()` completes and
+`bench_mitosis_calibration.py` reproduces its arms (control 2.0 cells, absolute
+5.1 at the derived bar).
+
+## What is still not fixed
+
+The population still saturates. With the runaway gone it climbs slowly instead
+of instantly, but it climbs: quantile 0.75 and below reach 32, 0.80 and above
+stay at 2. Still a cliff, no band.
+
+The reason is unchanged and is the one thing here that genuinely requires
+redefining something: **tension is a per-cell property with no dependence on
+population size**, so nothing ever tells the engine it has enough cells. Making
+division relieve per-cell load, or normalising the trigger by population, are
+both changes to what tension *means*.
+
+That one is recorded, not taken. Everything above it was a defect with a
+mechanical cause and has been fixed.
