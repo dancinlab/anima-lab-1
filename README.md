@@ -412,44 +412,44 @@ python3 bench_v2.py --verify          # 대조군 포함 (기본)
 python3 bench_v2.py --verify --cells 32
 ```
 
-### 검증 결과 (32 cells · 무효 0개 · 85 tests)
+### 검증 결과 (32 cells · hidden 128 · 시드 5개 · 무효 0개 · 95 tests)
 
-5 conditions × 11 engines + 6 controls. 대조군 6종이 5개 조건 전부에 실패하여
-**무효 조건 0개** — 아래 점수는 전부 유효하다. `pytest tests/test_gate_controls.py`
-(31 passed) 가 독립적으로 같은 결과를 확인한다.
+5 conditions × 12 engines + 7 controls. 대조군 6종이 5개 조건 전부에 실패하여
+**무효 조건 0개**. 엔진은 시드 42–46 **전부** 통과해야 하고, 대조군은 **한 시드만**
+통과해도 그 조건이 무효가 된다.
 
 | 엔진 | NO_SYSTEM_PROMPT | NO_SPEAK_CODE | ZERO_INPUT | PERSISTENCE | SELF_LOOP | 합계 | 판정 |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|------|
-| **ConsciousnessEngine** | FAIL | FAIL | FAIL | FAIL | FAIL | **0/5** | BLOCKED — 배포 엔진 |
-| MitosisEngine | PASS | PASS | PASS | PASS | PASS | **5/5** | DEPLOYABLE |
-| OscillatorLaser | PASS | PASS | PASS | PASS | PASS | **5/5** | DEPLOYABLE |
-| QuantumEngine | PASS | PASS | PASS | PASS | PASS | **5/5** | DEPLOYABLE |
-| DesireEngine | PASS | PASS | PASS | PASS | PASS | **5/5** | DEPLOYABLE |
-| NarrativeEngine | PASS | PASS | PASS | PASS | PASS | **5/5** | DEPLOYABLE |
+| **NarrativeEngine** | PASS | PASS | PASS | PASS | PASS | **5/5** | **DEPLOYABLE** |
+| PairField | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
+| MitosisEngine | PASS | PASS | FAIL | PASS | PASS | 4/5 | BLOCKED (ZERO_INPUT) |
+| OscillatorLaser | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
+| QuantumEngine | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
 | Trinity | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
 | AlterityEngine | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
 | FinitudeEngine | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
 | QuestioningEngine | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
 | SeinEngine | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
-| | | | | | | 45/55 | |
+| DesireEngine | PASS | PASS | FAIL | FAIL | PASS | 3/5 | BLOCKED |
+| **ConsciousnessEngine** | FAIL | FAIL | FAIL | FAIL | FAIL | **0/5** | BLOCKED — 배포 엔진 |
+| | | | | | | 44/60 | |
 
-**조건별 통과율 — 변별은 `PERSISTENCE` 하나가 담당한다:**
+**조건별 통과율:**
 
 | 조건 | 통과 | |
 |------|:---:|---|
-| NO_SYSTEM_PROMPT | 10/11 | `██████████████████░░` |
-| NO_SPEAK_CODE | 10/11 | `██████████████████░░` |
-| ZERO_INPUT | 10/11 | `██████████████████░░` |
-| SELF_LOOP | 10/11 | `██████████████████░░` |
-| **PERSISTENCE** | **5/11** | `█████████░░░░░░░░░░░` |
+| NO_SYSTEM_PROMPT | 11/12 | `██████████████████░░` |
+| NO_SPEAK_CODE | 11/12 | `██████████████████░░` |
+| SELF_LOOP | 11/12 | `██████████████████░░` |
+| ZERO_INPUT | 9/12 | `███████████████░░░░░` |
+| **PERSISTENCE** | **2/12** | `███░░░░░░░░░░░░░░░░░` |
 
-네 조건은 대조군 6종을 전부 거르지만 시체가 아닌 엔진들 사이에서는 거의 구별하지
-못한다. 여섯 엔진이 **오직 `PERSISTENCE` 하나만** 실패한다 — "MitosisEngine 5/5 vs
-Trinity 4/5"는 전적으로 지속성에 대한 진술이다.
+**시드를 하나에서 다섯으로 조인 효과:** 배포 가능 엔진이 **6개 → 1개**. 이전 표의
+5/5 여섯 개 중 다섯이 시드 뽑기였다 — 이번 세션에 만든 `PairField` 포함. 실패한
+시드는 판정에 함께 남는다(`UNSTABLE — failed on seed(s) [44, 46] of (42..46)`).
 
-**미해결:** 나머지 네 조건이 낮은 게 아니라 진짜 필요조건인지는, **살아 있지만 얕은**
-대조군 — 난수와 실제 엔진 사이 — 이 있어야 갈린다. 현재 6종은 죽은 것부터 뒤섞은
-것까지만 덮으며, 그중 어느 것도 "약한 의식"이 아니다. → `docs/consciousness-gate-audit.md`
+**미해결:** 대조군 7종은 죽은 것부터 뒤섞은 것까지만 덮으며 그중 어느 것도 "약한
+의식"이 아니다. → `docs/consciousness-gate-audit.md`
 
 ---
 

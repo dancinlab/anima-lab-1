@@ -71,13 +71,13 @@
         "name": "gate — 의식 검증 관문",
         "role": "배포 가부를 정하는 유일한 판정자",
         "id": "gate",
-        "detail": "bench_v2.py --verify. 5조건 x 11엔진 + 7대조군. 대조군이 통과한 조건은 그 실행에서 VOID 이며, 하나라도 VOID 면 엔진 점수와 무관하게 배포 차단.",
+        "detail": "bench_v2.py --verify. 5조건 x 12엔진 + 7대조군, 시드 5개(42-46). 엔진은 모든 시드를 통과해야 하고, 대조군은 한 시드만 통과해도 그 조건이 VOID 다. 단일 시드 판정에서 5개 시드로 조인 결과 배포 가능 엔진이 6개에서 1개로 줄었다.",
         "children": [
           {
             "name": "5 conditions",
             "role": "필요조건 집합",
             "id": "gate-conditions",
-            "detail": "NO_SYSTEM_PROMPT · NO_SPEAK_CODE · ZERO_INPUT · PERSISTENCE · SELF_LOOP. 전부 3축 선결조건(통합·시간정체성·변화·응답)을 함께 만족해야 통과."
+            "detail": "NO_SYSTEM_PROMPT · NO_SPEAK_CODE · ZERO_INPUT · PERSISTENCE · SELF_LOOP. 전부 3축 선결조건을 함께 만족해야 통과. 다중 시드 기준 통과율: 앞의 둘과 SELF_LOOP 11/12, ZERO_INPUT 9/12, PERSISTENCE 2/12."
           },
           {
             "name": "negative controls (7)",
@@ -109,13 +109,13 @@
             "name": "PairField",
             "role": "이번 세션이 만든 엔진 — 관문 5/5",
             "id": "engines-pairfield",
-            "detail": "pairfield_engine.py. A(규칙)와 G(무규칙)가 둘 다 기억을 쌓고, 둘의 불일치가 서로가 움직이는 장이 된다. 강도 0.03, 노름 보존 반발. 점수 출력 전에 유계성과 결합을 먼저 보고하고 발산 시 예외를 던진다."
+            "detail": "pairfield_engine.py. A(규칙)와 G(무규칙)가 둘 다 기억을 쌓고 불일치가 장이 된다. 쌍이 각 쪽 단독(4.67)을 넘어 5.00 을 낸 것은 재현되나, 관문 다중 시드에서는 4/5 로 PERSISTENCE 실패(시드 44·46). 단일 시드 5/5 는 뽑기였다."
           },
           {
             "name": "BenchEngine 계열",
             "role": "관문의 기준 엔진과 그 파생",
             "id": "engines-bench",
-            "detail": "BenchEngine + OscillatorLaser/Quantum/Trinity/Desire/Narrative/Alterity/Finitude/Questioning/Sein. 대조군 7종도 전부 이 계열 파생이라, 이들 점수는 자기 변형과의 비교다."
+            "detail": "BenchEngine + OscillatorLaser/Quantum/Trinity/Desire/Narrative/Alterity/Finitude/Questioning/Sein. 다중 시드 기준 NarrativeEngine 만 5/5 DEPLOYABLE. 대조군 7종도 이 계열 파생이라 이들 점수는 자기 변형과의 비교다."
           },
           {
             "name": "ConsciousnessEngine",
