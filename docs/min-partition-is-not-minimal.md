@@ -290,3 +290,58 @@ slightly on two (7.085 vs 6.610; 6.657 vs 6.251). The persistence audit reported
 6/6 exact. **The sweep is a very good approximation, not provably the minimum** —
 a weaker claim than "the sweep is the true minimum", which the measurements do
 not support.
+
+## 12/12 decomposed: eleven engines share the mechanism, one does not
+
+Φ decomposed per engine over 1000 steps at 32c/32d/128h, both failing seeds,
+reporting the partition size `k` alongside the variance of each factor:
+
+| engine | k range | distinct | cv(Φ) | cv(cut) | cv(diff) | corr(Φ,cut) |
+|---|---|---|---|---|---|---|
+| **ConsciousnessEngine** | **0–1** | **2** | 1.575/1.617 | 1.573/1.612 | 0.037/0.033 | +0.999/+0.999 |
+| PairField | 4–16 | 13/13 | 0.323/0.223 | 0.322/0.229 | 0.137/0.153 | +0.827/+0.282 |
+| MitosisEngine | 4–16 | 13/11 | 0.252/0.145 | 0.249/0.220 | 0.127/0.130 | +0.687/**−0.222** |
+| OscillatorLaser | 4–16 | 10/11 | 0.197/0.212 | 0.222/0.216 | 0.097/0.084 | +0.761/+0.849 |
+| QuantumEngine | 4–16 | 11/13 | 0.376/0.224 | 0.434/0.188 | 0.124/0.139 | +0.842/+0.625 |
+| Trinity | 3–16 | 13/13 | 0.253/0.201 | 0.260/0.191 | 0.129/0.131 | +0.704/+0.383 |
+| DesireEngine | 3–16 | 14/11 | 0.278/0.126 | 0.250/0.212 | 0.120/0.131 | +0.936/**−0.454** |
+| NarrativeEngine | 4–16 | 13/13 | 0.258/0.268 | 0.268/0.303 | 0.119/0.128 | +0.717/+0.518 |
+| AlterityEngine | 4–16 | 12/12 | 0.259/0.221 | 0.257/0.265 | 0.121/0.133 | +0.797/+0.321 |
+| FinitudeEngine | 4–16 | 12/11 | 0.235/0.161 | 0.241/0.232 | 0.117/0.126 | +0.712/**−0.003** |
+| QuestioningEngine | 4–16 | 13/13 | 0.433/0.237 | 0.446/0.265 | 0.125/0.133 | +0.854/+0.421 |
+| SeinEngine | 4–16 | 12/12 | 0.209/0.208 | 0.186/0.256 | 0.105/0.125 | +0.875/+0.354 |
+
+**Holds 24/24 without exception:** `cv(cut) > cv(diff) > cv(cplx)`, and `cv(cut)`
+tracks `cv(Φ)` throughout. **Does not hold:** `corr(Φ, cut)` is positive in 21/24
+but goes negative for Mitosis (−0.222) and Desire (−0.454) and to zero for
+Finitude (−0.003) at seed 46. So "Φ's variance **is** the cut" is false for three;
+"the cut has the largest spread" survives everywhere. The weaker claim is the one
+to carry.
+
+### The carve-out is the deployed engine, and its failure is real
+
+`ConsciousnessEngine` takes only **k ∈ {0, 1}** against 10–14 distinct partition
+sizes for every other engine — `k = 0` being an empty cut, the Fiedler sign
+putting every cell on one side. Its Φ mean is 0.0267 against 1.4–2.3; cut mean
+0.0264 against 74–123; differentiation 1.0125 (cells essentially orthogonal);
+complexity exactly 0.0000. **Its population never integrates, so Φ is pinned at
+the floor and there is no partition left to flip.**
+
+It is the only engine failing all five seeds, and on this evidence **it fails
+honestly.** That bounds the general claim in the useful direction: "the estimator
+is unreliable" must not be read as "every verdict is void". Eleven verdicts are
+suspect. One is not — and it is the one attached to the engine this project
+actually deploys.
+
+### What this does to the PASS rows
+
+`NarrativeEngine` passes 5/5 at this scale with 13 distinct k spanning 4–16 and
+`cv(cut)` 0.268/0.303 — indistinguishable from `PairField`'s 13 spanning 4–16 at
+0.322/0.229, which fails. Its own verdict also moves with scale: **5/5 at
+32/32/128, 2/5 at 32/64/128, 4/5 at 256c.**
+
+So the PASS row carries no more information than the eleven BLOCKED rows beside
+it. Passing is not evidence the mechanism is absent; it is evidence the lottery
+landed well. **Any deployment decision resting on which engines this condition
+passed is resting on the same coin the FAIL verdicts came from** — with the single
+exception above.

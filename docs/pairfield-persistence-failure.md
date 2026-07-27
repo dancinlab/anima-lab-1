@@ -225,41 +225,56 @@ twelve engines**, and no two agree on which seeds are bad:
 lottery looks like, not a property being detected.
 
 **But scattered seed sets are suggestive, not attribution.** They are equally
-consistent with nine engines failing for nine unrelated reasons. So the
-decomposition from §2 was run per-engine, on the full 1000 steps at the gate's
-scale, to ask directly whether the same factor carries Φ's variance in each:
+consistent with twelve engines failing for twelve unrelated reasons. So the
+decomposition from §2 was run on **all twelve**, both failing seeds, full 1000
+steps at the gate's scale. `k` is the size of the partition Φ's cut selected —
+if an engine's partition is stable while its Φ still wanders, the cut is not the
+mechanism there.
 
-| engine | seed | cv(Φ) | cv(cut) | cv(diff) | cv(cplx) | corr(Φ, cut) | distinct k |
+| engine | k range | distinct k | cv(Φ) | cv(cut) | cv(diff) | cv(cplx) | corr(Φ, cut) |
 |---|---|---|---|---|---|---|---|
-| PairField | 44 | 0.323 | **0.322** | 0.137 | 0.063 | +0.827 | 13 (4–16) |
-| PairField | 46 | 0.223 | **0.229** | 0.153 | 0.075 | +0.282 | 13 (4–16) |
-| OscillatorLaser | 44 | 0.197 | **0.222** | 0.097 | 0.047 | +0.761 | 10 (4–16) |
-| OscillatorLaser | 46 | 0.212 | **0.216** | 0.084 | 0.042 | +0.849 | 11 (4–16) |
-| QuantumEngine | 44 | 0.376 | **0.434** | 0.124 | 0.072 | +0.842 | 11 (4–16) |
-| QuantumEngine | 46 | 0.224 | **0.188** | 0.139 | 0.087 | +0.625 | 13 (4–16) |
-| NarrativeEngine | 44 | 0.258 | **0.268** | 0.119 | 0.068 | +0.717 | 13 (4–16) |
-| NarrativeEngine | 46 | 0.268 | **0.303** | 0.128 | 0.068 | +0.518 | 13 (4–16) |
+| **ConsciousnessEngine** | **0–1** | **2** | 1.575 / 1.617 | 1.573 / 1.612 | 0.037 / 0.033 | 0.000 / 0.000 | +0.999 / +0.999 |
+| PairField | 4–16 | 13 / 13 | 0.323 / 0.223 | 0.322 / 0.229 | 0.137 / 0.153 | 0.063 / 0.075 | +0.827 / +0.282 |
+| MitosisEngine | 4–16 | 13 / 11 | 0.252 / 0.145 | 0.249 / 0.220 | 0.127 / 0.130 | 0.069 / 0.077 | +0.687 / **−0.222** |
+| OscillatorLaser | 4–16 | 10 / 11 | 0.197 / 0.212 | 0.222 / 0.216 | 0.097 / 0.084 | 0.047 / 0.042 | +0.761 / +0.849 |
+| QuantumEngine | 4–16 | 11 / 13 | 0.376 / 0.224 | 0.434 / 0.188 | 0.124 / 0.139 | 0.072 / 0.087 | +0.842 / +0.625 |
+| Trinity | 3–16 | 13 / 13 | 0.253 / 0.201 | 0.260 / 0.191 | 0.129 / 0.131 | 0.075 / 0.079 | +0.704 / +0.383 |
+| DesireEngine | 3–16 | 14 / 11 | 0.278 / 0.126 | 0.250 / 0.212 | 0.120 / 0.131 | 0.062 / 0.074 | +0.936 / **−0.454** |
+| NarrativeEngine | 4–16 | 13 / 13 | 0.258 / 0.268 | 0.268 / 0.303 | 0.119 / 0.128 | 0.068 / 0.068 | +0.717 / +0.518 |
+| AlterityEngine | 4–16 | 12 / 12 | 0.259 / 0.221 | 0.257 / 0.265 | 0.121 / 0.133 | 0.057 / 0.079 | +0.797 / +0.321 |
+| FinitudeEngine | 4–16 | 12 / 11 | 0.235 / 0.161 | 0.241 / 0.232 | 0.117 / 0.126 | 0.075 / 0.086 | +0.712 / **−0.003** |
+| QuestioningEngine | 4–16 | 13 / 13 | 0.433 / 0.237 | 0.446 / 0.265 | 0.125 / 0.133 | 0.075 / 0.080 | +0.854 / +0.421 |
+| SeinEngine | 4–16 | 12 / 12 | 0.209 / 0.208 | 0.186 / 0.256 | 0.105 / 0.125 | 0.065 / 0.084 | +0.875 / +0.354 |
 
-In all eight runs the cut is the highest-variance factor, at 1.5–5× the spread of
-differentiation and complexity, and `cv(cut) ≈ cv(Φ)` throughout. The partition
-size wanders over 10–13 distinct values spanning k = 4 to 16 in **every** engine.
-`corr(Φ, cut)` is positive in all eight (+0.28 to +0.85).
+**What holds in all 24 runs:** `cv(cut) > cv(diff) > cv(cplx)`, without exception.
+The cut is the highest-variance factor for every engine at both seeds, and
+`cv(cut) ≈ cv(Φ)` throughout. In eleven of twelve the partition wanders over
+10–14 distinct sizes spanning k = 3 or 4 up to 16.
 
-**The mechanism is shared, including by an engine that passes.** NarrativeEngine
-is 5/5 at this scale and shows the same wandering partition and the same
-cut-dominated variance as the two engines it beats. Passing is not evidence that
-the mechanism is absent — only that the lottery landed well.
+**What does not hold:** `corr(Φ, cut)` is positive in 21 of 24 runs but goes
+negative at seed 46 for MitosisEngine (−0.222) and DesireEngine (−0.454), and to
+zero for FinitudeEngine (−0.003). "Φ's variance *is* the cut" is false for those.
+The weaker claim — the cut has the largest spread — survives 24/24.
 
-Two honest limits on this table. `corr(Φ, cut)` is not uniformly dominant —
-PairField seed 46 correlates more with differentiation (+0.595) than with the cut
-(+0.282), so "Φ's variance *is* the cut" is too strong for every seed; what holds
-everywhere is that the cut has the largest spread. And these are full-run
-statistics including the startup transient, which is why `cv(diff)` reads 0.084–0.153
-here against the ±1.5% quoted in §2 for the steady-state window around step 700.
+### The carve-out: ConsciousnessEngine fails for a different reason
 
-**Scope.** Four of the twelve engines were decomposed. For those four the
-mechanism is common. The other eight are unmeasured, and "PERSISTENCE 2/12 is the
-estimator" is not established for them by anything in this document.
+`ConsciousnessEngine` is the one engine where the wandering partition is absent,
+and the table shows it: **k takes 2 values, 0 and 1**, against 10–14 for every
+other engine. `k = 0` means the Fiedler cut put every cell on one side — a
+degenerate, empty partition.
+
+Its numbers are a different failure altogether. Φ mean 0.0267 against 1.4–2.3 for
+the rest; cut mean 0.0264 against 74–123; differentiation 1.0125, meaning its
+cells are essentially orthogonal; complexity exactly 0.0000. Its population never
+integrates at all, so Φ is pinned at the floor and there is no partition to flip.
+It is the only engine the gate fails on all five seeds, and it fails them
+honestly.
+
+**Scope, corrected.** The shared cut mechanism is established for **eleven of
+twelve** engines, not for all twelve, and ConsciousnessEngine is excluded by
+measurement rather than by omission. "PERSISTENCE is the estimator" holds for the
+eleven; for ConsciousnessEngine the verdict appears to be tracking something
+real.
 
 `NarrativeEngine` passes here, but not because its trajectory differs in kind —
 only at this grid and this scale:
@@ -555,9 +570,14 @@ describes it, while the partition `_minimum_partition` selects jumps between a
 
 The defect is in `PhiIIT._minimum_partition` (`bench_v2.py:225-237`) and in the
 shape of `_verify_persistence`'s pass rule (`bench_v2.py:1794-1796`), and it
-applies to every engine the gate scores — ten of twelve are blocked by it, on
-nine different seed sets. Seed 46 fails it by 0.006 with no drop in its
-trajectory.
+applies across the fleet: ten of twelve engines are blocked by it, on nine
+different seed sets, and **eleven of twelve share the mechanism** — the cut is
+the highest-variance factor in all 24 runs measured. Seed 46 fails by 0.006 with
+no drop in its trajectory at all.
+
+ConsciousnessEngine is the one exception and fails honestly: its partition takes
+two values instead of thirteen, and its Φ sits at the floor because its cells
+never integrate (§6).
 
 ### A PASS from this gate does not distinguish an engine from the ones it beat
 
@@ -665,7 +685,7 @@ none of them modify anything in the repo.
 .venv/bin/python $SP/direction3.py                                 # §9 direction, 25 seeds
 .venv/bin/python $SP/integ_null.py                                 # appendix
 .venv/bin/python $SP/reconcile5.py                                 # §9 reconciliation
-.venv/bin/python $SP/mechanism.py OscillatorLaser 32 32 128 44      # §6 shared mechanism
+.venv/bin/python $SP/mechanism.py OscillatorLaser 32 32 128 44      # §6, all 12 engines
 ```
 
 Runtime note: `corrected.py` takes ~15 min per system pair and the 256-cell
