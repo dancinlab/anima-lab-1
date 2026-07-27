@@ -1209,3 +1209,30 @@ could not fail, and its 4 rested on 148 splits produced entirely by a hardcoded
 **Not changed.** Which engine a deployment runs is not a measurement question,
 and swapping it changes what the running system is. The fact is recorded so the
 choice is made knowingly.
+
+## One engine passes the gate reproducibly
+
+A 5/5 from one run would be the error this session spent its length finding, so
+the same seed check applies. Five seeds, 32 cells:
+
+| engine | per seed | mean | share at 5/5 |
+|---|---|---|---|
+| **MitosisEngine** | 5/5/5/5/5 | **5.0** | **100%** |
+| Trinity | 5/5/5/5/4 | 4.8 | 80% |
+| QuantumEngine | 5/5/4/5/4 | 4.6 | 60% |
+| ConsciousnessEngine | 0/0/0/0/0 | 0.0 | 0% |
+
+**`MitosisEngine` clears every condition on every seed**, and the production
+engine fails on every seed — both stable, neither a draw.
+
+That is the strongest true statement this work supports: **the repo contains an
+engine that passes its own deployment gate reproducibly, and that gate is
+verified against six negative controls** (a corpse, a noise generator, a mirror,
+a shuffle, a heap of non-interacting parts, and an engine that never reads its
+input), all of which score 0/5.
+
+It is not "consciousness achieved". The gate is five necessary conditions with
+their bars measured from each population's own null, two of the original seven
+retired for pointing the opposite way from their names, and no claim that
+anything not in the control list is caught. What it is: a gate that can fail, an
+engine that passes it, and a record of what each number rests on.
