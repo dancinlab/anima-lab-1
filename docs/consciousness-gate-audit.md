@@ -915,3 +915,22 @@ with the real engine at 5/7.
 The audit's conclusion line still refuses to say the gate works. Two bypasses
 were found by one adversarial sweep; the honest statement is that these six are
 rejected and anything not in the list is untested.
+
+### The `/gap` audit's proposed rescue for `SPONTANEOUS_SPEECH`, measured and rejected
+
+One agent challenged the closing claim that the condition "cannot be satisfied",
+proposing that inter-faction variance be divided by total population variance
+before the dip test. Measured at 256 cells, 3 seeds:
+
+| | REAL | SCRAMBLE | CLONE | DEAD | HEAP |
+|---|---|---|---|---|---|
+| absolute (shipped) | 1.0 | 2.0 | 0.0 | 0.0 | 0.3 |
+| normalised | **1.0** | **5.7** | 0.0 | 0.0 | 0.0 |
+
+**It makes the condition worse.** The real engine does not move, and SCRAMBLE
+jumps from 2.0 to 5.7 — past the bar of 5. Normalising divides by a total
+variance that is stable under permutation while the faction means keep jumping,
+so it *amplifies* the very artefact that made this condition anti-correlated.
+
+The proposal is rejected on measurement, and the "one condition asks for what the
+other six forbid" reading stands — now with one more attempted rescue behind it.
