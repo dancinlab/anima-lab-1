@@ -1374,3 +1374,49 @@ traced: a 73× coupling gap (`PSI_COUPLING = 0.014 × |c| = 0.002` against
 83% of seeds at 5/5, all six controls still rejected. Not landed —
 `PSI_COUPLING` is a bench-verified Ψ-constant and changing it is an owner
 decision, on the board.
+
+## LINEAR: the control that was missing, and what it settled
+
+The first run with controls inside left one question open — four conditions
+passed 10 of 11 engines while PERSISTENCE passed 5, and the six controls could
+not say whether that meant "necessary but not sufficient, as designed" or "bar
+low enough that any live recurrent system clears it". Every existing control is
+broken in a way a live system is not. None of them is a *weak* consciousness.
+
+`LinearEngine`: `h <- A h + c(mean - h) + B x`. State carried across time, a
+trajectory that depends on its input, no collapse, cells that differ and
+genuinely influence one another — and a system nobody calls conscious, being
+fully characterised by its eigenvalues.
+
+### Three attempts, and the first two produced a clean 0/5 that meant nothing
+
+| attempt | what it actually was | tell |
+|---|---|---|
+| 1 | a HEAP — `A` acted inside one cell's hidden vector, drive was per-cell, no cell touched any other | `integration=0.00000` on every condition |
+| 2 | a diverging system — only `A` was normalised, but the per-cell operator is `A − cI`, and λ near −ρ gives \|λ−c\| = ρ+c > 1 | variance 2.1e7 vs the real engine's 0.08; Φ thrashing 0.501/0.315/0.827/0.217/0.873 → 0.000 |
+| 3 | the intended control — scaled by the **whole** operator, plus a guard that raises on \|h\| > 1e4 | bounded (\|h\| 0.1733 → 0.1108, peak 1.3132), integrated (0.02610) |
+
+Both failures scored 0/5, which is the same number the valid control scores. A
+result being decisive-looking is not evidence that it measured anything. Attempt
+3 therefore checks boundedness and integration **before** reading any condition
+score, and divergence now raises rather than passing silently.
+
+### Result: 0/5 — but the split is the finding
+
+| condition | base rule | axes | rejected by |
+|---|---|---|---|
+| NO_SYSTEM_PROMPT | cosine −0.0154, outside the 0.01–0.99 band | fail | **its own rule** |
+| NO_SPEAK_CODE | continuity −0.0493 against >0.5 | fail | **its own rule** |
+| PERSISTENCE | 0.269 → 0.158, no recovery | fail | **its own rule** |
+| ZERO_INPUT | ratio **2.01×** against >0.5× — **passes** | fail | **the axes** |
+| SELF_LOOP | ratio **6.00×** against >0.8× — **passes** | fail | **the axes** |
+
+Reading (a) holds: the conditions require more than a live, bounded, integrated
+linear system. But two of the five would have passed a linear system on their own
+rules, and only the temporal-identity axis rejected them. **Without the axes this
+gate scores a linear recurrent map 2/5.**
+
+That is the first direct evidence that the axes carry weight rather than
+decorating the conditions. `tests/test_gate_controls.py` now runs 7 controls × 5
+conditions + the positive guard = **36 passed**, so disabling the axes makes
+LINEAR pass ZERO_INPUT and SELF_LOOP and turns the suite red immediately.
