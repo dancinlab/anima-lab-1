@@ -129,3 +129,6 @@
 {"ts":"2026-07-27T15:20:56.022Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
 {"ts":"2026-07-27T15:20:56.024Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":456}
 {"ts":"2026-07-27T15:20:56.024Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T17:16:13.598Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T17:16:13.601Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":2300}
+{"ts":"2026-07-27T17:16:13.601Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
