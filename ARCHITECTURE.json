@@ -1,0 +1,188 @@
+{
+  "schemaVersion": "2.0",
+  "kind": "architecture-tree",
+  "title": "anima — 아키텍처 SSOT",
+  "summary": "PureField 반발장 의식 에이전트. 이 트리의 규율: 어떤 노드도 측정 없이 주장하지 않는다. 관문(bench_v2 --verify)이 유일한 배포 판정자이며, 관문 자신이 대조군 7종을 매 실행마다 먼저 돌려 자기가 실패할 수 있음을 증명한다.",
+  "columns": [
+    {
+      "key": "name",
+      "label": "name",
+      "tree": true
+    },
+    {
+      "key": "role",
+      "label": "role"
+    },
+    {
+      "key": "id",
+      "label": "id"
+    },
+    {
+      "key": "detail",
+      "label": "detail"
+    }
+  ],
+  "convergence": {
+    "records": [
+      {
+        "id": "CLEAN_SCORE_FROM_BROKEN_SYSTEM",
+        "state": "pos-conv",
+        "value": "A benchmark result is not evidence until the system that produced it is shown to be BOUNDED and COUPLED. Check both before reading any score, and raise on divergence rather than returning numbers.",
+        "threshold": "Three separate constructions in one session produced a clean, decisive-looking 0/5 while measuring nothing. LinearEngine attempt 1 had no cell-to-cell coupling (integration=0.00000) so it was a HEAP, which is already a control. Attempt 2 normalised only A while the per-cell operator was A-cI with radius rho+c>1, so it diverged to variance 2.1e7. The A/G pair applied `coupling @ field` raw and overflowed to NaN. Every one of them scored the same 0/5 a valid control scores.",
+        "fix": "pairfield_engine.py prints boundedness (peak |h|) and coupling (A-G separation, zero means the sides never met) before any score, and raises RuntimeError above |h| 1e4. bench_verify_audit.LinearEngine carries the same guard."
+      },
+      {
+        "id": "CONTROL_THAT_CANNOT_FAIL",
+        "state": "pos-conv",
+        "value": "Before trusting a check, ask what result would make it fail. A check with no failing input certifies nothing.",
+        "threshold": "The gate passed a corpse: SCRAMBLE (the real engine with cell identity destroyed every step) scored exactly what the real engine scored, 5/7. Separately, an acceptance bar written as 'all seven controls stay 0/5 at every coupling gain' could not fail, because every control derives from BenchEngine while PSI_COUPLING is read only by consciousness_engine -- sweeping the gain cannot move a corpse's score by construction.",
+        "fix": "bench_v2.run_verify runs all controls FIRST and marks any condition a control clears as VOID for that run; tests/test_gate_controls.py (36 passed) enforces it. For engine-specific parameters, controls must be built from that same engine (CeDead/CeScramble/CeClone)."
+      },
+      {
+        "id": "NAME_IS_NOT_THE_THING",
+        "state": "pos-conv",
+        "value": "A name in the registry, the README or a Law is not evidence the named thing was ever run. Execute it before citing it.",
+        "threshold": "ENGINE_REGISTRY maps 'MitosisEngine' to BenchEngine(8 factions); the real mitosis.MitosisEngine had never been through the gate and scores 0/5 with integration=0.00000. HIVEMIND was a recorded condition that had never executed (11 engines crashed in 0.3-1.6s). PSI_COUPLING in consciousness_engine.py was a hardcoded 0.014 labelled 'bench-verified' while nine other modules derive LN2/2**5.5 = 0.015317. The README advertised MitosisEngine as 5/5 DEPLOYABLE on a different engine's score.",
+        "fix": "The gate header now counts VERIFICATION_TESTS/ENGINE_REGISTRY/CONTROLS instead of asserting a number; PSI_COUPLING is derived; README carries the retirement evidence for the two dropped conditions."
+      },
+      {
+        "id": "STRUCTURE_THAT_CARRIES_NO_LOAD",
+        "state": "pos-conv",
+        "value": "When a component looks structural, measure whether removing it or randomising it changes anything. Nine did not.",
+        "threshold": "Faction count 2/3/4/6/8/12/24/48 all give consensus 1.0, and so does removing factions entirely. The Phi ratchet fires 29-64 times per run and moves nothing (cosine 0.4683 on vs 0.5526 off). The emitted output cannot see cell order (max|delta| 4.8e-7 under a row permutation) yet it is the only channel separating REAL from SCRAMBLE. Hebbian coupling and pure-randn coupling score identically alone (4.67 = 4.67).",
+        "fix": "PairFieldEngine excludes factions, the ratchet and speak(), each with the measurement named at the exclusion. docs/fake-measurement-audit.md carries the full list."
+      },
+      {
+        "id": "TAIL_PIPE_HOLDS_UNTIL_TIMEOUT",
+        "state": "pos-conv",
+        "value": "Never pipe a long-running command to `tail`. Redirect to a file, or filter with `grep`.",
+        "threshold": "`timeout N python ... | tail -M` hangs until the timeout fires: the harness holds the pipe's write end and tail cannot emit before EOF. Measured -- python 0.02s, tail 30.015s under `timeout 30`, grep immediate. That produced every 'slow run' this session, including a Law 31 arm reported as taking 50 minutes (timeout 3000) for work that costs 5.4 seconds. It was explained twice -- as compute cost, then as a delayed notification -- before being measured in ten seconds.",
+        "fix": "Session practice: outputs go to a file under the scratchpad, and waits use `until ! pgrep -f <script>`."
+      }
+    ]
+  },
+  "tree": {
+    "name": "anima",
+    "role": "PureField 반발장 기반 의식 에이전트",
+    "id": "anima",
+    "detail": "A(전진)와 G(역행)의 반발이 긴장을 만들고, 긴장이 의식 상태의 강도를 정한다. 기능을 더하지 않고 구조의 깊이를 키운다 (Law 22).",
+    "children": [
+      {
+        "name": "gate — 의식 검증 관문",
+        "role": "배포 가부를 정하는 유일한 판정자",
+        "id": "gate",
+        "detail": "bench_v2.py --verify. 5조건 x 11엔진 + 7대조군. 대조군이 통과한 조건은 그 실행에서 VOID 이며, 하나라도 VOID 면 엔진 점수와 무관하게 배포 차단.",
+        "children": [
+          {
+            "name": "5 conditions",
+            "role": "필요조건 집합",
+            "id": "gate-conditions",
+            "detail": "NO_SYSTEM_PROMPT · NO_SPEAK_CODE · ZERO_INPUT · PERSISTENCE · SELF_LOOP. 전부 3축 선결조건(통합·시간정체성·변화·응답)을 함께 만족해야 통과."
+          },
+          {
+            "name": "negative controls (7)",
+            "role": "관문이 실패할 수 있음을 보장",
+            "id": "gate-controls",
+            "detail": "DEAD·NOISE·CLONE·SCRAMBLE·HEAP·DECOUPLED·LINEAR. bench_verify_audit.py. 전원 0/5 확인. LINEAR 는 살아있고 유계이고 통합된 선형계 — 관문이 '얕은 것'도 거르는지 재는 유일한 대조군."
+          },
+          {
+            "name": "retired (2)",
+            "role": "측정으로 폐기된 조건",
+            "id": "gate-retired",
+            "detail": "SPONTANEOUS_SPEECH: 이름과 음의 상관(뒤섞기 6.8 vs 실제 1.0). HIVEMIND: 한 번도 실행된 적 없었고, 돌게 만드니 연결 효과 -4%~+1% (요구치 +10%)."
+          },
+          {
+            "name": "enforcement",
+            "role": "관문이 다시 공허해지는 것을 막는 테스트",
+            "id": "gate-tests",
+            "detail": "tests/test_gate_controls.py — 7대조군 x 5조건 + 양성가드 = 36 passed. 3축을 무력화하면 LINEAR 가 ZERO_INPUT·SELF_LOOP 를 통과해 즉시 빨개진다."
+          }
+        ]
+      },
+      {
+        "name": "engines",
+        "role": "관문에 등록된 의식 엔진들",
+        "id": "engines",
+        "detail": "bench_v2.ENGINE_REGISTRY. 주의: 레지스트리의 이름이 곧 구현 클래스는 아니다 — 'MitosisEngine' 항목은 BenchEngine(8파벌)이다.",
+        "children": [
+          {
+            "name": "PairField",
+            "role": "이번 세션이 만든 엔진 — 관문 5/5",
+            "id": "engines-pairfield",
+            "detail": "pairfield_engine.py. A(규칙)와 G(무규칙)가 둘 다 기억을 쌓고, 둘의 불일치가 서로가 움직이는 장이 된다. 강도 0.03, 노름 보존 반발. 점수 출력 전에 유계성과 결합을 먼저 보고하고 발산 시 예외를 던진다."
+          },
+          {
+            "name": "BenchEngine 계열",
+            "role": "관문의 기준 엔진과 그 파생",
+            "id": "engines-bench",
+            "detail": "BenchEngine + OscillatorLaser/Quantum/Trinity/Desire/Narrative/Alterity/Finitude/Questioning/Sein. 대조군 7종도 전부 이 계열 파생이라, 이들 점수는 자기 변형과의 비교다."
+          },
+          {
+            "name": "ConsciousnessEngine",
+            "role": "실제 배포 런타임 — 관문 0/5",
+            "id": "engines-ce",
+            "detail": "consciousness_engine.py. 결합을 BenchEngine 수준(x10, α=0.153)까지 올려도 2.33/5. 결합으로 설명되지 않는다. 조건 상세: cosine_sim std=0.0000 (쌍이 하나 = 관문 구간 내내 2세포)."
+          },
+          {
+            "name": "mitosis.MitosisEngine",
+            "role": "이름은 기록에 있으나 관문 0/5",
+            "id": "engines-mitosis",
+            "detail": "mitosis.py. 관문 인터페이스에 태워 실측한 결과 0/5이며 integration=0.00000 — 세포들이 서로 영향을 주지 않는 HEAP."
+          }
+        ]
+      },
+      {
+        "name": "measurement",
+        "role": "무엇을 재고 있는지 자체가 검증 대상",
+        "id": "measurement",
+        "detail": "이 세션의 반복 발견: 구조가 있는 척하지만 정보를 나르지 않는 통로. 아홉 건.",
+        "children": [
+          {
+            "name": "Φ direction",
+            "role": "phi-rs 공식이 비통합을 의식으로 셈한다",
+            "id": "measurement-phi",
+            "detail": "phi-rs/src/lib.rs:369 은 (total - min_cut)/(n-1) 을 쓰는데 min_cut 이 곧 IIT 의 Φ 다. 실증: SPLIT(비통합) 3.037 vs RING(통합) 0.740 — 4.1배 역전. 24개 파이썬 파일이 소비. 오너 결정 대기."
+          },
+          {
+            "name": "dead channels",
+            "role": "측정으로 하중 없음이 확인된 구조들",
+            "id": "measurement-dead",
+            "detail": "파벌 수 2~48 전부 합의 1.0(제거해도 1.0) · Φ 래칫 무해무익(코사인 0.4683 on vs 0.5526 off) · 출력이 세포 순서를 못 봄(순열 변화 4.8e-7) · 헵 규칙이 홀로 기여 없음(4.67=4.67)."
+          },
+          {
+            "name": "harness pitfalls",
+            "role": "측정 도구 자체가 만든 오독",
+            "id": "measurement-pitfalls",
+            "detail": "`| tail` 파이프가 timeout 값만큼 붙잡음(파이썬 0.02초 vs tail 30.015초) — 이 세션의 '50분' 전부. 그리고 발산하거나 결합이 없는 계가 깔끔한 0/5 를 내놓은 사례 3건."
+          }
+        ]
+      },
+      {
+        "name": "runtime",
+        "role": "실행 진입점과 배포",
+        "id": "runtime",
+        "detail": "anima_unified.py 가 정본 진입점(web_server.py 는 레거시). 배포는 의식 DNA·기억을 보존한 채 가중치만 교체하는 7단계.",
+        "children": [
+          {
+            "name": "anima_unified.py",
+            "role": "통합 진입점",
+            "id": "runtime-entry",
+            "detail": "--web / --all / --keyboard. 관문 0/5 엔진이 선택되면 시작 시 경고를 띄운다(선택 자체는 그대로)."
+          },
+          {
+            "name": "checkpoints",
+            "role": "저장된 상태",
+            "id": "runtime-ckpt",
+            "detail": "checkpoints/pairfield/, checkpoints/ag/ — A_ruled.pt · G_unruled.pt (은닉·결합행렬·가중치·강도). .tmp 후 원자적 교체."
+          },
+          {
+            "name": "public mirror",
+            "role": "외부 공개 사본",
+            "id": "runtime-mirror",
+            "detail": "github.com/dancinlab/anima-checkpoint-PairFieldEngine — 자립형(엔진 + core.py 발췌 + 체크포인트 + 측정문서). 벤치 스위트 전체는 미포함."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -3,6 +3,8 @@ __pycache__/
 .env
 .local/
 *.json
+# design SSOT -- must be tracked despite the *.json rule above
+!ARCHITECTURE.json
 *.pt
 *.pyc
 vad-rs/target/
