@@ -438,6 +438,13 @@ class MitosisEngine:
         events = []
         if len(self.cells) >= self.max_cells:
             return events
+        # CAVEAT, measured after landing: this multiplies the bar by n/min_cells
+        # without bound, which is only sound while tension is unbounded. Swap in
+        # any BOUNDED tension — a rank in [0,1], a probability, a sigmoid — and
+        # past n = max_tension·min_cells/bar the effective bar exceeds every
+        # possible value and division becomes arithmetically impossible. Measured
+        # with a rank-based tension: a hard stop at 2.9 cells for bar 0.5, and 2.0
+        # for anything above. See docs/rank-tension-negative-result.md.
         effective_threshold = (self.split_threshold
                                * len(self.cells) / max(self.min_cells, 1))
 
