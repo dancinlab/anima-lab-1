@@ -1383,6 +1383,47 @@ def run_compare(cells: int, steps: int, dim: int, hidden: int):
 
 # ── ConsciousnessEngine adapter for verify ──
 
+def _snapshotter(engine):
+    """The most complete save/restore an engine offers: (take, put).
+
+    `set_hiddens(tensor)` cannot express "put this engine back the way it was",
+    because an engine's state is not always a tensor. A private RNG stream, a
+    step counter, or a second cell population are all invisible to it, and
+    whatever they carry forward is handed to the perturbation probe as if it
+    were the engine's response to the nudge.
+
+    Measured on PairField at kick=0 -- no perturbation at all, so the honest
+    reading is zero -- across seeds 42-46:
+
+        restored                    mean null   verdict
+        A only (tensor protocol)      0.00452   above the 0.001 bar
+        A + G                         0.00027
+        A + G + both couplings        0.00000   exactly zero, all five seeds
+
+    Restoring G's generator alone changes nothing (0.00455 vs 0.00452): the
+    residue is state, not randomness. And completing it costs no signal -- the
+    kicked reading moves 0.05445 -> 0.05431, minus 0.3%. A spurious floor
+    disappears and the actual response is untouched.
+
+    Widening the READ instead of the restore makes it worse, not better:
+    exposing G's rows as well (2n rows) triples the null to 0.02031, because a
+    wider read sees more of the same residue. So the fix is the restore, and
+    what Phi is measured on does not have to change.
+
+    Engines that offer neither protocol fall back to direct attribute
+    assignment, which is what ten of the twelve registered engines use.
+    """
+    if hasattr(engine, "snapshot") and hasattr(engine, "restore"):
+        return engine.snapshot, engine.restore
+    if hasattr(engine, "set_hiddens"):
+        return (lambda: engine.get_hiddens().clone()), engine.set_hiddens
+
+    def _put(state):
+        engine.hiddens = state.clone()
+
+    return (lambda: engine.get_hiddens().clone()), _put
+
+
 class _CEAdapter:
     """Adapts ConsciousnessEngine to BenchEngine interface for --verify."""
 
@@ -1573,24 +1614,33 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
     # the other three are already rejected by the identity axis. Together
     # {integration, identity, change} rejects all five where the old set let
     # HEAP through.
-    def _restore(state):
+    _take, _put = _snapshotter(engine)
+
+    def _write_hiddens(state):
         if hasattr(engine, "set_hiddens"):
             engine.set_hiddens(state)
         else:
             engine.hiddens = state.clone()
 
-    base = engine.get_hiddens().clone()
+    handle = _take()
     ripples = []
     for _r in range(6):
         probe_x = drive(_r)
-        _restore(base)
+        _put(handle)
         engine.process(probe_x)
         undisturbed = engine.get_hiddens().clone()
 
-        nudged = base.clone()
-        kick = torch.randn(base.shape[1]) * 0.5
+        # Restore the WHOLE engine first, then perturb only the cell matrix on
+        # top of it. Building the nudged tensor from a stale `base` and writing
+        # it through the tensor path left everything the tensor cannot reach --
+        # a second population, coupling matrices, counters -- carrying the
+        # previous run forward, and the probe counted that residue as the
+        # engine's response to the kick.
+        _put(handle)
+        kick = torch.randn(engine.get_hiddens().shape[1]) * 0.5
+        nudged = engine.get_hiddens().clone()
         nudged[0] = nudged[0] + kick
-        _restore(nudged)
+        _write_hiddens(nudged)
         engine.process(probe_x)
         disturbed = engine.get_hiddens().clone()
 
@@ -1599,7 +1649,7 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
         m = min(undisturbed.shape[0], disturbed.shape[0])
         moved_others = float((undisturbed[1:m] - disturbed[1:m]).norm())
         ripples.append(moved_others / max(float(kick.norm()), 1e-9))
-    _restore(base)
+    _put(handle)
     integration = float(np.mean(ripples))
 
     # RESPONSE. Nothing above requires the engine to read its input at all. A
@@ -1612,18 +1662,15 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
     # results separate, against the same pair of steps under the SAME input
     # (which isolates whatever internal noise the engine has). An engine that
     # ignores x moves identically either way, so the ratio collapses to 1.
-    base = engine.get_hiddens().clone()
+    handle = _take()
 
-    def _set_state(state):
-        # Engines keep their cells in different places; assigning to a fixed
-        # attribute name silently no-ops on the ones that do not have it.
-        if hasattr(engine, "set_hiddens"):
-            engine.set_hiddens(state)
-        else:
-            engine.hiddens = state.clone()
-
-    def _step_from(state, drive):
-        _set_state(state)
+    def _step_from(drive):
+        # All three arms start from the SAME snapshot, so the state is the
+        # closure's, not a parameter. It used to be passed as a tensor and
+        # written through set_hiddens, which restores only what a tensor can
+        # carry -- on the pair, side A of two populations plus two coupling
+        # matrices -- so the three arms did not in fact share a starting point.
+        _put(handle)
         engine.process(drive)
         return engine.get_hiddens().clone()
 
@@ -1634,8 +1681,7 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
         # (zeros, or self-feedback) cannot express.
         xa = torch.randn(1, dim) * 0.1
         xb = torch.randn(1, dim) * 0.1
-        ra, rb, rc = (_step_from(base, xa), _step_from(base, xb),
-                      _step_from(base, xa))
+        ra, rb, rc = _step_from(xa), _step_from(xb), _step_from(xa)
         m = min(ra.shape[0], rb.shape[0], rc.shape[0])
         differing = float((ra[:m] - rb[:m]).norm())
         same = float((ra[:m] - rc[:m]).norm())

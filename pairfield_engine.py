@@ -170,6 +170,49 @@ class PairFieldEngine:
     def set_hiddens(self, states):
         self.A.hiddens = states.clone()
 
+    # ── snapshot / restore ───────────────────────────────────────────────
+    # `set_hiddens(tensor)` writes side A and nothing else, while the dynamics
+    # run on A, G and both coupling matrices. Anything a tensor cannot carry
+    # survives a "restore" and is handed to the harness's perturbation probe as
+    # if it were the engine's response to the nudge. Measured at kick=0 -- no
+    # perturbation at all, so the honest reading is zero -- over seeds 42-46:
+    #
+    #     restored                    mean null
+    #     A only                        0.00452   against a 0.001 bar
+    #     A + G                         0.00027
+    #     A + G + both couplings        0.00000   all five seeds
+    #     A + G's generator only        0.00455   i.e. unchanged
+    #
+    # The residue is state, not randomness -- restoring G's generator alone does
+    # nothing. The generators are carried anyway so that a restore is a restore;
+    # they cost nothing and their absence would be a silent exception to the
+    # word. Completing it costs no signal: kicked 0.05445 -> 0.05431, -0.3%.
+    def snapshot(self):
+        return {
+            "A_hiddens": self.A.hiddens.detach().clone(),
+            "G_hiddens": self.G.hiddens.detach().clone(),
+            "A_coupling": self.A.coupling.detach().clone(),
+            "G_coupling": self.G.coupling.detach().clone(),
+            # `_gen`, not `rng`. The first version of this guarded on
+            # hasattr(side, "rng"), which is False, so the generators were
+            # silently never saved -- and because A+G+couplings already reads
+            # 0.00000, the omission would have looked correct.
+            "A_rng": self.A._gen.get_state(),
+            "G_rng": self.G._gen.get_state(),
+            "step_count": self.step_count,
+            "peak": self.peak,
+        }
+
+    def restore(self, handle):
+        self.A.hiddens = handle["A_hiddens"].clone()
+        self.G.hiddens = handle["G_hiddens"].clone()
+        self.A.coupling = handle["A_coupling"].clone()
+        self.G.coupling = handle["G_coupling"].clone()
+        self.A._gen.set_state(handle["A_rng"])
+        self.G._gen.set_state(handle["G_rng"])
+        self.step_count = handle["step_count"]
+        self.peak = handle["peak"]
+
     def parameters_for_training(self):
         return list(self.A.mind.parameters()) + list(self.G.mind.parameters())
 
