@@ -116,3 +116,44 @@ the real one.**
 python3 audit_fake_measurements.py          # live code
 python3 audit_fake_measurements.py --all    # include archive/ and LEGACY
 ```
+
+## The Φ ratchet writes the answer onto the test
+
+`ConsciousnessEngine._phi_ratchet_check` restores the previous best hidden states
+whenever Φ drops more than 20%. `PERSISTENCE` asks whether Φ decays. **The device
+holds up the exact quantity the condition measures**, which is the shape this
+session found nine times over — a value that satisfies its own test by
+construction rather than by anything happening.
+
+It was almost missed. The failing seed at α=0.08 fails only `PERSISTENCE`, and
+the next step was going to be "does turning the ratchet on rescue it" — which is
+a question about how to pass, not about whether passing would mean anything. The
+right question is what a ratcheted Φ trajectory *is*.
+
+Measured at 32 cells, ratchet reimplemented on `BenchEngine` so the comparison is
+like-for-like:
+
+| engine | PERSISTENCE | Φ trajectory |
+|---|---|---|
+| NOISE, no ratchet | FAIL | 0.228 → 0.203 → 0.098 → 0.205 → 0.159 |
+| **NOISE + ratchet** | FAIL | 0.228 → 0.294 → **0.298 → 0.298 → 0.298** |
+| real engine | **PASS** | 2.540 → 1.862 → 2.504 → 2.201 → 2.244 |
+| **real + ratchet** | **FAIL** | **0.351 → 0.351 → 0.406 → 0.406** |
+
+Two things, and the second was not expected.
+
+**The ratchet pins Φ.** The repeated identical values are the signature — the
+trajectory stops being a measurement of the system and becomes a record of the
+best snapshot taken so far.
+
+**On a live engine it makes things worse, not better.** The real engine passes at
+Φ ≈ 2.2–2.5 and fails with the ratchet at Φ ≈ 0.35–0.41 — a 7× drop. Restoring on
+every 20% dip traps it in an early low state it would otherwise have grown out of.
+So the ratchet does not even succeed at the circular thing it is doing.
+
+**Bearing on Law 31.** `CLAUDE.md` records the ratchet as one of "영속성의 3가지
+열쇠", evidenced by `PERSIST3`: no collapse over 1000 steps, Φ growing ×62. If the
+absence of collapse is the ratchet restoring away every drop, that benchmark
+confirmed the device rather than the property. **Not resolved here** — `PERSIST3`
+would have to be rerun with the ratchet off to separate them, and that is a claim
+about a recorded law, not a defect to quietly fix.
