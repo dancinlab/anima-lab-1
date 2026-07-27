@@ -63,6 +63,29 @@ Comparable to running against the raw `anima` markdown (+5.4σ / +8.3σ / +7.5σ
 slightly lower because markdown stripping drops some context, grounding 142 of
 170 concepts rather than 154.
 
+## The scripts now say what they are training on
+
+`corpus_quality.warn_if_degenerate` runs at load time in `train_v9.py`,
+`train_v11.py` and `train_v12.py`. It changes nothing about what is loaded —
+switching a training default is the owner's call, being told what you are
+training on is not. A run on a degenerate corpus otherwise looks exactly like a
+run on real text from the console: same progress, same loss-curve shape.
+
+```
+  [corpus] ⚠️  data/corpus_v2.txt does not look like natural language:
+    ko: 247,104 tokens over 1,519 types = 0.61% type/token  ← natural is ≥1%
+    en: 306,700 tokens over 1,349 types = 0.44% type/token  ← natural is ≥1%
+    73% of lines are duplicates
+    Build a clean corpus with `python3 build_corpus.py` → data/corpus_v3.txt
+```
+
+`data/corpus_v3.txt` passes silently — ko 15.96%, en 4.86% on the same sample.
+
+**The first version of this check was wrong and its own corpus caught it.** It
+read the first 4MB of the file and reported v3 at 0.66% type/token, calling the
+clean corpus degenerate. A concatenated corpus is ordered by source, so its head
+is one source. The sample is now spread over eight positions across the file.
+
 ## Not done here
 
 `corpus_v2.txt` is left in place and untouched — replacing a training input is

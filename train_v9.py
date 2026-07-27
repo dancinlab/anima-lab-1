@@ -487,6 +487,13 @@ def load_text_data(path: str) -> torch.Tensor:
             all_bytes = bytearray(f.read())
 
     print(f"[data] Loaded {len(all_bytes):,} bytes from {path}")
+    # Say out loud when the corpus is not natural language. Does not change what
+    # is loaded — see corpus_quality for why (QD-10).
+    try:
+        from corpus_quality import warn_if_degenerate
+        warn_if_degenerate(str(path))
+    except Exception:
+        pass
     return torch.tensor(list(all_bytes), dtype=torch.long)
 
 

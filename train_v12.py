@@ -138,6 +138,13 @@ class GraphNeuralDecoder(nn.Module):
 # ═══ Data ═══
 
 def load_corpus(path):
+    # Say out loud when the corpus is not natural language. Does not
+    # change what is loaded — see corpus_quality for why (QD-10).
+    try:
+        from corpus_quality import warn_if_degenerate
+        warn_if_degenerate(path)
+    except Exception:
+        pass
     if not os.path.exists(path):
         print(f"  [WARN] {path} not found")
         return None
