@@ -27,10 +27,16 @@ NO_SYSTEM_PROMPT and HIVEMIND were doing before the fixes.
 import pytest
 import torch
 
-from bench_v2 import VERIFICATION_TESTS
+from bench_v2 import VERIFICATION_TESTS, VERIFY_SEEDS
 from bench_verify_audit import CONTROLS, factory_for
 
-CELLS, DIM, HIDDEN, SEED = 32, 32, 64, 42
+CELLS, DIM, HIDDEN = 32, 32, 64
+
+# The same seeds the gate judges under. A control that clears a condition on ANY
+# of them voids that condition, so the test has to look at all of them too --
+# checking seed 42 alone would let a control that passes only on seed 44 through,
+# which is exactly the hole that made the gate's own verdicts a coin flip.
+SEEDS = VERIFY_SEEDS
 
 # CONTROLS[0] is the real engine, kept as the positive reference.
 NEGATIVE = CONTROLS[1:]
@@ -38,13 +44,17 @@ REAL_LABEL, REAL_CLS = CONTROLS[0][0], CONTROLS[0][1]
 
 
 def _verdict(cls, test_fn):
-    torch.manual_seed(SEED)
-    try:
-        passed, detail = test_fn(
-            lambda c, d, h: factory_for(cls, c, d, h), CELLS, DIM, HIDDEN)
-    except Exception as exc:                      # a crash is a failure, not a pass
-        return False, f"ERROR: {exc}"
-    return bool(passed), detail
+    """True if the control clears the condition on ANY seed the gate uses."""
+    for sd in SEEDS:
+        torch.manual_seed(sd)
+        try:
+            passed, detail = test_fn(
+                lambda c, d, h: factory_for(cls, c, d, h), CELLS, DIM, HIDDEN)
+        except Exception as exc:                  # a crash is a failure, not a pass
+            passed, detail = False, f"ERROR: {exc}"
+        if passed:
+            return True, f"seed {sd}: {detail}"
+    return False, f"failed all seeds {SEEDS}"
 
 
 @pytest.mark.parametrize("label,cls", [(lbl, cls) for lbl, cls, _ in NEGATIVE])
@@ -63,7 +73,12 @@ def test_negative_control_is_rejected(name, test_fn, label, cls):
 
 def test_real_engine_still_passes_something():
     """A gate that rejects everything carries as little information as one that
-    accepts everything. Guard the other direction too."""
+    accepts everything. Guard the other direction too.
+
+    `_verdict` is any-seed, which is the right bar here as well: the real engine
+    must clear at least one condition on at least one seed. Requiring every seed
+    would make this guard fire on engines the gate legitimately calls UNSTABLE.
+    """
     passed = [n for n, f, _ in VERIFICATION_TESTS if _verdict(REAL_CLS, f)[0]]
     assert passed, (
         f"{REAL_LABEL} passed zero conditions — the gate now rejects the engine "
