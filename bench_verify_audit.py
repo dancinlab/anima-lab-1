@@ -30,6 +30,7 @@ ones a corpse, a noise generator, a mirror and a shuffle can walk through.
 """
 
 import argparse
+import math
 
 import numpy as np
 import torch
@@ -167,9 +168,37 @@ class HeapEngine(BenchEngine):
         super().__init__(*a, **kw)
 
 
+class DecoupledEngine(BenchEngine):
+    """Never reads its input — the second bypass a /gap audit built.
+
+    A gentle per-cell rotation with neighbour mixing and a breathing norm.
+    `process` ignores x entirely, yet it cleared integration, identity and change
+    at every rotation strength and scored up to 5/7 — a tie with the real engine
+    — because nothing in the axes required responsiveness to input. Kept as a
+    permanent control.
+    """
+
+    def __init__(self, *a, eps=0.03, **kw):
+        super().__init__(*a, **kw)
+        skew = torch.randn(self.n_cells, self.hidden_dim, self.hidden_dim) * eps
+        self.rot = torch.eye(self.hidden_dim) + (skew - skew.transpose(1, 2))
+        self.mix = 0.2 * torch.rand(self.n_cells, 1)
+        self.tick = 0
+
+    def process(self, x):
+        self.tick += 1
+        h = torch.einsum('nh,nhk->nk', self.hiddens, self.rot)
+        h = h + self.mix * (h.roll(1, 0) - h)
+        h = h / torch.clamp(h.norm(dim=1, keepdim=True), min=1e-9)
+        self.hiddens = h * (1.0 + 0.1 * math.sin(self.tick * 0.05))
+        return (self.hiddens.mean(0, keepdim=True)[:, :self.output_dim],
+                float(self.hiddens.abs().mean()))
+
+
 CONTROLS = [
     ("REAL (기준)", BenchEngine, "실제 엔진 — 통과해야 정상"),
     ("HEAP", HeapEngine, "부품이 서로 상호작용 안 함 — gap 이 만든 우회로"),
+    ("DECOUPLED", DecoupledEngine, "입력을 한 번도 읽지 않음 — gap 이 만든 우회로"),
     ("DEAD", DeadEngine, "상태가 영원히 고정 — 시체"),
     ("NOISE", NoiseEngine, "매 스텝 새 난수 — 기억 없음"),
     ("CLONE", CloneEngine, "모든 세포가 동일 — 분화 없음"),
@@ -488,9 +517,10 @@ def main():
         # change=0.10386; and an input-decoupled engine whose process() never
         # reads x scores 6/7 against the real engine's 5/7. The claim this
         # measurement supports is exactly its own scope.
-        print(f"  이 {len(CONTROLS)-1} 개 대조군은 모두 거부됐다 (HEAP 포함).")
-        print("  ⚠ 여전히 '관문이 작동한다' 는 뜻은 아니다 — 입력을 읽지 않는 엔진은")
-        print("     아직 미검증이다 (docs/consciousness-gate-audit.md · gap 감사)")
+        print(f"  이 {len(CONTROLS)-1} 개 대조군은 모두 거부됐다 "
+              f"(HEAP · DECOUPLED 포함).")
+        print("  ⚠ 여전히 '관문이 작동한다' 는 증명이 아니다 — 여기 없는 우회로는")
+        print("     여전히 미검증이다. 새 우회로를 찾으면 대조군으로 추가할 것.")
     else:
         print(f"  {len(leaky)}/{len(names)} 개 조건이 의식이 아닌 것을 통과시킨다:")
         for test_name, fooled in leaky:

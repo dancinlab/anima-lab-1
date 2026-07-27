@@ -1527,10 +1527,38 @@ def _three_axes(engine, dim, cells, steps=60):
     engine.hiddens = base
     integration = float(np.mean(ripples))
 
-    return (integration > 0.001,
+    # RESPONSE. Nothing above requires the engine to read its input at all. A
+    # /gap audit built one that never does -- a gentle per-cell rotation with
+    # neighbour mixing and a breathing norm, `process` ignoring x entirely --
+    # and it cleared integration, identity and change at every rotation
+    # strength, scoring up to 5/7: a tie with the real engine.
+    #
+    # From one state, take a step under two different inputs and see how far the
+    # results separate, against the same pair of steps under the SAME input
+    # (which isolates whatever internal noise the engine has). An engine that
+    # ignores x moves identically either way, so the ratio collapses to 1.
+    base = engine.get_hiddens().clone()
+
+    def _step_from(state, drive):
+        engine.hiddens = state.clone()
+        engine.process(drive)
+        return engine.get_hiddens().clone()
+
+    spreads = []
+    for _ in range(6):
+        xa = torch.randn(1, dim) * 0.1
+        xb = torch.randn(1, dim) * 0.1
+        differing = float((_step_from(base, xa) - _step_from(base, xb)).norm())
+        same = float((_step_from(base, xa) - _step_from(base, xa)).norm())
+        spreads.append(differing / max(same, 1e-9) if same > 1e-9
+                       else (float('inf') if differing > 1e-9 else 1.0))
+    engine.hiddens = base
+    response = float(np.median([min(v, 1e6) for v in spreads]))
+
+    return (integration > 0.001 and response > 1.5,
             identity > max(identity_floor, 1e-6),
             change > 0.001,
-            f"integration={integration:.5f} "
+            f"integration={integration:.5f} response={response:.2f} "
             f"identity={identity:+.4f}>floor={identity_floor:+.4f} change={change:.5f} "
             f"[Φ={phi_now:.4f} floor={phi_floor:.4f}]")
 

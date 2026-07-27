@@ -880,3 +880,38 @@ default changed the canonical benchmark for all six modes, not just `--verify`);
 constant this work replaced; three copies of the debias helper; the axes probe
 recomputed 7× per engine; no test anywhere fails if a condition is edited to pass
 a control again.
+
+### The second bypass: an engine that never reads its input
+
+The `/gap` audit's other high finding reproduced, and worse than reported. An
+engine whose `process` ignores `x` entirely — a gentle per-cell rotation with
+neighbour mixing and a breathing norm — clears integration, identity and change
+at every rotation strength:
+
+| rotation ε | 0.5 | 0.1 | 0.03 | 0.01 | 0.003 |
+|---|---|---|---|---|---|
+| three axes | all pass | all pass | all pass | all pass | all pass |
+| gate score | 0/7 | 3/7 | 4/7 | 3/7 | **5/7** |
+
+**5/7 — a tie with the real engine, from something that never looks at its
+input.** A first attempt with a *rigid* rotation scored 0/7 and I guessed the
+integration axis had caught it; it had not (integration passed at 0.02373). The
+identity axis rejected it, because a hard rotation carries each cell away from
+itself. Softening the rotation restores self-continuity and the bypass opens.
+
+So a fourth conjunct, **response**: from one state, step under two different
+inputs and compare the separation against the same pair of steps under the *same*
+input, which isolates the engine's own noise.
+
+| | REAL | ε=0.1 | ε=0.03 | ε=0.003 |
+|---|---|---|---|---|
+| response | **10⁶** | 1.05 | 1.05 | 1.05 |
+| verdict | pass | **reject** | **reject** | **reject** |
+
+An engine that ignores `x` moves identically either way, so the ratio collapses
+to 1. `DECOUPLED` joins `HEAP` as a permanent control — six now, all at 0/7,
+with the real engine at 5/7.
+
+The audit's conclusion line still refuses to say the gate works. Two bypasses
+were found by one adversarial sweep; the honest statement is that these six are
+rejected and anything not in the list is untested.
