@@ -350,3 +350,40 @@ Crossing the bar at 16 cells moves the gate:
 condition now passes on some seed and none passes on all — the spread is 0 to 4,
 so this is a configuration that sometimes clears the gate rather than one that
 does.
+
+## The 73× coupling gap, and what closing it would do
+
+`ConsciousnessEngine` couples cells through
+`coupled_input += PSI_COUPLING * c * other_hidden` — a Hebbian weight `c` scaled
+by `PSI_COUPLING = 0.014`, applied to the **input** rather than the state.
+`BenchEngine` mixes hidden states directly at 0.15. Measured effective strength:
+
+| | effective coupling |
+|---|---|
+| ConsciousnessEngine | `0.014 × |c|` = **0.002047** (measured `|c|` mean 0.1462) |
+| BenchEngine | ≈ **0.15** |
+| ratio | **73×** |
+
+That matches the 50–150× integration gap measured across cell counts — the
+architecture's coupling constant is where it comes from.
+
+Raising it, at `merge_threshold=0.01, merge_patience=50, initial_cells=16`, four
+seeds:
+
+| α | integration | per seed | mean |
+|---|---|---|---|
+| **0.014** (shipped) | 0.00183 | 3/4/0/1 | **2.0** |
+| 0.05 | 0.00652 | 3/4/5/4 | 4.0 |
+| **0.15** | 0.01949 | **5/5**/4/4 | **4.5** |
+| 0.50 | 0.06417 | 4/4/4/4 | 4.0 |
+
+**At 0.15 — `BenchEngine`'s value — two of four seeds reach 5/5.** And it is not
+the gate going soft: all six negative controls stay at 0/5 at both α values.
+(They are `BenchEngine` subclasses and do not read `PSI_COUPLING`, which is what
+makes the comparison fair rather than circular.)
+
+**Not changed.** `PSI_COUPLING` is one of the Ψ-constants `CLAUDE.md` records as
+bench-verified, and 0.014 vs 0.15 is a claim about what this architecture *is*,
+not a threshold to tune. The measurement is here so the constant can be revisited
+against evidence: at its current value the engine's cells barely influence one
+another, and that single number accounts for the gate result.
