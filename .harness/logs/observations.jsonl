@@ -440,3 +440,48 @@
 {"ts":"2026-07-27T21:49:20.147Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
 {"ts":"2026-07-27T21:49:20.148Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":270}
 {"ts":"2026-07-27T21:49:20.149Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:49:54.691Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:49:54.694Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":975}
+{"ts":"2026-07-27T21:49:54.694Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:49:56.534Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:49:56.537Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":885}
+{"ts":"2026-07-27T21:49:56.537Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:50:11.472Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"/private/tmp/claude-501/-Users-mini-dancinlab-anima-lab-1/d0396916-1383-4a82-b215-02ece85f6789/scratchpad/f7_probe9.py is in a volatile tmp dir (lost on reboot/reaper). Write progress/working data to state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:50:17.109Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:50:17.111Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":270}
+{"ts":"2026-07-27T21:50:17.111Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:50:36.167Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:50:36.170Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":3109}
+{"ts":"2026-07-27T21:50:36.170Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:50:49.163Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:50:49.169Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":1161}
+{"ts":"2026-07-27T21:50:49.169Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:51:37.367Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:51:37.370Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":1168}
+{"ts":"2026-07-27T21:51:37.370Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:52:04.922Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:52:04.924Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":978}
+{"ts":"2026-07-27T21:52:04.924Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:52:10.479Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:52:10.480Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":291}
+{"ts":"2026-07-27T21:52:10.480Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:52:36.390Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:52:36.391Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":318}
+{"ts":"2026-07-27T21:52:36.391Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:53:17.087Z","kind":"pre_warn","rule_id":"DOC-NO-QUICKREF","reason":"분리 문서에 quickref 누락 — 상단 12줄 내에 SSOT(ARCHITECTURE.json)로 가는 링크/포인터 1줄을 넣으세요 (예: \"> 📍 SSOT: [ARCHITECTURE.json](...)\")."}
+{"ts":"2026-07-27T21:53:31.455Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:53:31.456Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":202}
+{"ts":"2026-07-27T21:53:31.456Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:54:36.420Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:54:36.422Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":2819}
+{"ts":"2026-07-27T21:54:36.422Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:55:06.659Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T21:55:06.661Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":1863}
+{"ts":"2026-07-27T21:55:06.661Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T21:55:33.471Z","kind":"pre_warn","rule_id":"DOC-NO-QUICKREF","reason":"분리 문서에 quickref 누락 — 상단 12줄 내에 SSOT(ARCHITECTURE.json)로 가는 링크/포인터 1줄을 넣으세요 (예: \"> 📍 SSOT: [ARCHITECTURE.json](...)\")."}
+{"ts":"2026-07-27T21:55:46.652Z","kind":"pre_warn","rule_id":"DOC-NO-QUICKREF","reason":"분리 문서에 quickref 누락 — 상단 12줄 내에 SSOT(ARCHITECTURE.json)로 가는 링크/포인터 1줄을 넣으세요 (예: \"> 📍 SSOT: [ARCHITECTURE.json](...)\")."}
+{"ts":"2026-07-27T21:56:09.714Z","kind":"pre_warn","rule_id":"DOC-NO-QUICKREF","reason":"분리 문서에 quickref 누락 — 상단 12줄 내에 SSOT(ARCHITECTURE.json)로 가는 링크/포인터 1줄을 넣으세요 (예: \"> 📍 SSOT: [ARCHITECTURE.json](...)\")."}
+{"ts":"2026-07-27T21:56:14.179Z","kind":"pre_warn","rule_id":"DOC-NO-QUICKREF","reason":"분리 문서에 quickref 누락 — 상단 12줄 내에 SSOT(ARCHITECTURE.json)로 가는 링크/포인터 1줄을 넣으세요 (예: \"> 📍 SSOT: [ARCHITECTURE.json](...)\")."}
+{"ts":"2026-07-27T21:58:21.114Z","kind":"pre_warn","rule_id":"DOC-NO-QUICKREF","reason":"분리 문서에 quickref 누락 — 상단 12줄 내에 SSOT(ARCHITECTURE.json)로 가는 링크/포인터 1줄을 넣으세요 (예: \"> 📍 SSOT: [ARCHITECTURE.json](...)\")."}
+{"ts":"2026-07-27T21:58:30.275Z","kind":"pre_warn","rule_id":"DOC-NO-QUICKREF","reason":"분리 문서에 quickref 누락 — 상단 12줄 내에 SSOT(ARCHITECTURE.json)로 가는 링크/포인터 1줄을 넣으세요 (예: \"> 📍 SSOT: [ARCHITECTURE.json](...)\")."}
+{"ts":"2026-07-27T22:01:05.558Z","kind":"pre_warn","rule_id":"DOC-NO-QUICKREF","reason":"분리 문서에 quickref 누락 — 상단 12줄 내에 SSOT(ARCHITECTURE.json)로 가는 링크/포인터 1줄을 넣으세요 (예: \"> 📍 SSOT: [ARCHITECTURE.json](...)\")."}
