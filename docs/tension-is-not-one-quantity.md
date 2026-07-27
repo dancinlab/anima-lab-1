@@ -387,3 +387,34 @@ bench-verified, and 0.014 vs 0.15 is a claim about what this architecture *is*,
 not a threshold to tune. The measurement is here so the constant can be revisited
 against evidence: at its current value the engine's cells barely influence one
 another, and that single number accounts for the gate result.
+
+### The coupling has an interior optimum, and it reaches 83% at 5/5
+
+Raising `PSI_COUPLING` past a point makes things worse again: at 0.15 the cells
+become so independent that `NO_SYSTEM_PROMPT` fails at its *lower* bound —
+cosine mean 0.0030 and 0.0014 against a floor of 0.01. The condition wants
+neither collapse nor independence, which is the same shape this session found in
+Φ's direction and in the utterance measures.
+
+Six seeds, at `merge_threshold=0.01, merge_patience=50, initial_cells=16`:
+
+| α | per seed | mean | share at 5/5 |
+|---|---|---|---|
+| 0.06 | 4/5/5/5/5/4 | 4.7 | 67% |
+| **0.08** | **5/5/5/4/5/5** | **4.8** | **83%** |
+| 0.10 | 5/5/5/5/4/4 | 4.7 | 67% |
+| 0.12 | 5/5/4/5/5/4 | 4.7 | 67% |
+| 0.15 | 5/5/4/4/3/4 | 4.2 | 33% |
+| 0.20 | 4/5/3/4/3/3 | 3.7 | 17% |
+| *0.014 (shipped)* | *3/4/0/1* | *2.0* | *0%* |
+
+**0/5 → 4.8/5, five of six seeds clearing the whole gate**, with an interior
+optimum at 0.08 rather than at either extreme. All six negative controls remain
+at 0/5 there.
+
+**Still not landed.** `PSI_COUPLING` is a Ψ-constant `CLAUDE.md` records as
+bench-verified, and this reaches 83% rather than 100% — one seed in six still
+falls short. What the sweep establishes is narrower and firmer than a fix: the
+gate result was never about the conditions or the measurement, it was about one
+coupling constant, and that constant has a measurable optimum two orders of
+magnitude from where it sits.
