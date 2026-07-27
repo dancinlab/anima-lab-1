@@ -1044,3 +1044,32 @@ category error is real and correcting it makes the measure discriminating **for
 an engine whose output sees cell order**. For the shipped engine, whose output is
 permutation-invariant, there is nothing in that channel to separate. The two
 findings are one finding seen twice.
+
+### Landing it made things worse, and the earlier comparison was unfair
+
+Both changes were made and reverted: an order-bearing output in `BenchEngine`
+(permutation sensitivity 0.000000 → 1.92) and `SPONTANEOUS_SPEECH` reading the
+emitted trajectory. Measured across scales, 4 seeds:
+
+| cells | REAL | HEAP | SCRAMBLE | DEAD |
+|---|---|---|---|---|
+| 32 | 4.8 | 7.8 | **15.0** | 0.0 |
+| 128 | 6.0 | **12.5** | 7.8 | 0.0 |
+| 256 | 3.0 | **12.2** | **13.2** | 0.0 |
+
+**Anti-correlated again, in a new way.** Making the output order-sensitive makes
+a permutation *directly visible as an utterance* — SCRAMBLE's whole behaviour is
+permuting rows, so it now scores highest by construction.
+
+**The earlier comparison that motivated this was not like-for-like.** The
+redesign's 8.5 against SCRAMBLE's 1.8 was measured with the redesign on its own
+order-bearing output while SCRAMBLE, a `BenchEngine` subclass, still had the
+permutation-invariant one. Give both the order-bearing channel and SCRAMBLE
+wins. That is my error, not a property of the measure.
+
+Reverted. What survives is narrower than the section above claimed:
+`SPONTANEOUS_SPEECH` is measured on a quantity blind to speech, and the obvious
+correction — read the output — fails because the output channel that can see cell
+order can also see a shuffle. A measure of utterance has to separate *structured
+emission* from *reordering*, and neither the hidden-state version nor the
+output-direction version does.
