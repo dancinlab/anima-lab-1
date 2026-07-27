@@ -10,10 +10,24 @@
 > | Φ + repulsion + 3 axes on the ratios | 5/7 | 1/7 | 1/7 | 1/7 | 2/7 | 3/7 |
 > | **axes as a precondition of all seven** | **5/7** | **0/7** | **0/7** | **0/7** | **0/7** | **0/7** |
 >
-> The engine is **not** at 7/7. It fails `SPONTANEOUS_SPEECH` and `HIVEMIND`, and
-> the first is a real cost of the repulsion: consensus events drop to 1 against a
-> bar of 5, because keeping cells apart makes agreement rare. That tension
-> between differentiation and consensus is now visible instead of hidden.
+> The engine is **not** at 7/7. It fails `SPONTANEOUS_SPEECH` and `HIVEMIND`.
+>
+> **Correction.** This originally said the shortfall was "a real cost of the
+> repulsion: consensus events drop to 1 because keeping cells apart makes
+> agreement rare". Measured, that generalised from one cell count and was wrong
+> at 32 cells, where consensus is 1 at *every* repulsion strength including zero.
+> At 256 cells the effect is real — and what it exposes matters more:
+>
+> | repulsion | consensus events | median inter-faction variance |
+> |---|---|---|
+> | 0.00 | **8** | **0.0004** |
+> | 0.05 | 2 | 0.1766 |
+> | 0.15 | 1 | 0.6032 |
+>
+> At repulsion 0 the population sits at cosine 1.0000. Its factions are not
+> agreeing — they are **identical**, which is what an inter-faction variance of
+> 0.0004 means. `SPONTANEOUS_SPEECH` was counting collapse too, and its bar of 5
+> was reachable only by a population that had stopped being plural.
 >
 > **Every Φ(IIT) figure recorded before this is on the old definition and is not
 > comparable** — the old one was maximal at collapse, the new one is minimal there.
