@@ -2256,6 +2256,7 @@ def run_verify(cells: int, dim: int, hidden: int, with_controls: bool = True):
     engine_names = list(ENGINE_REGISTRY.keys())
     results = {}  # (engine_name, test_name) -> (passed, detail)
     errored = {}  # (engine_name, test_name) -> harness raised, so NOT measured
+    seed_counts = {}  # (engine_name, test_name) -> seeds cleared, of VERIFY_SEEDS
 
     for eng_name in engine_names:
         print(f"\n  {'~' * 70}")
@@ -2308,6 +2309,16 @@ def run_verify(cells: int, dim: int, hidden: int, with_controls: bool = True):
             mark = "ERR!" if errors else ("PASS" if passed else "FAIL")
             results[(eng_name, test_name)] = (passed, detail)
             errored[(eng_name, test_name)] = bool(errors)
+            # How many seeds actually cleared, kept alongside the boolean. The
+            # all-seeds rule turns a per-seed rate into one bit and the bit is
+            # all the summary showed, so a condition engines clear 80-87% of
+            # the time and corpses clear 0% of the time was indistinguishable
+            # from one nothing clears. Measured at 32 cells: engines pass 86.0%
+            # of engine-condition-seed cells, and the deployable count is 1
+            # under all-5, 5 under 4-of-5, 11 under a 3-of-5 majority -- decided
+            # almost entirely by PERSISTENCE, the only column that varies.
+            seed_counts[(eng_name, test_name)] = sum(
+                1 for _s, ok, _d in per_seed if ok)
             print(f"    [{mark}] {test_name:<22s} ({elapsed:.1f}s) -- {detail}")
 
     # ── Summary table ──
@@ -2336,7 +2347,15 @@ def run_verify(cells: int, dim: int, hidden: int, with_controls: bool = True):
             if voided[tn]:
                 row += f" | {'  VOID  ':^10s}"     # a control cleared it too
                 continue
-            mark = "  PASS  " if passed else "  FAIL  "
+            # Show the seed count, not just the bit. PASS and FAIL alone hid
+            # that the all-seeds rule is what produces most FAILs: at 32 cells
+            # the deployable count is 1 under all-5, 5 under 4-of-5 and 11
+            # under a 3-of-5 majority, and PERSISTENCE is the only column that
+            # varies. `FAIL 3/5` and `FAIL 0/5` are different findings and the
+            # table printed them identically.
+            n_ok = seed_counts.get((eng_name, tn), 0)
+            mark = f"PASS {n_ok}/{len(VERIFY_SEEDS)}" if passed \
+                else f"FAIL {n_ok}/{len(VERIFY_SEEDS)}"
             row += f" | {mark:^10s}"
             if passed:
                 eng_pass += 1
