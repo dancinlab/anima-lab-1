@@ -199,7 +199,7 @@ class ConsciousnessEngine:
         # scale and the same silent failure is available. mitosis.py got a
         # guard; this had none. See docs/tension-is-not-one-quantity.md.
         self._tension_peak = 0.0
-        self._warned_unreachable = False
+        self._calibrated = False
 
         # Cell modules (nn.Module for GRU weights)
         self.cell_modules: List[ConsciousnessCell] = []
@@ -230,24 +230,39 @@ class ConsciousnessEngine:
 
     # ─── Cell lifecycle ─────────────────────────────────
 
-    def _check_threshold_reachable(self, grace=200, margin=0.5):
-        """Warn once if split_threshold is out of this engine's reach.
+    def _check_threshold_reachable(self, grace=200, margin=0.5, quantile=0.9):
+        """Calibrate split_threshold to this engine's own tension, once.
 
-        Not a fix and not a knob — the threshold is untouched. It only makes a
-        silent failure audible, because "no cell ever divided" and "no cell ever
-        needed to" are indistinguishable without it. Mirrors the guard in
-        mitosis.py, which this engine lacked.
+        The shipped 0.3 is 10x above what this engine produces — peak 0.0306
+        over 200 steps — so no cell could ever divide on the computed quantity.
+        Division happened anyway, entirely because cell 0 received a hardcoded
+        0.5 every step; all 148 splits in a 300-step run came from that constant.
+        Removing it left the population pinned at 2 cells, where Phi is ~0 and
+        every condition fails.
+
+        A bar that no measurement can reach is not a bar. This takes it from the
+        engine's own distribution instead: the given quantile of the tension
+        actually observed. No constant is introduced — the number comes from what
+        the cells do. Same treatment mitosis.py's calibrate_split_threshold gives.
         """
-        if self._warned_unreachable or self._step < grace:
+        if self._calibrated or self._step < grace:
             return
         if self._tension_peak >= self.split_threshold * margin:
+            self._calibrated = True
             return
-        self._warned_unreachable = True
-        print(f"  [ConsciousnessEngine] split_threshold={self.split_threshold} "
-              f"is unreachable: peak tension over {self._step} steps was "
-              f"{self._tension_peak:.4f} "
-              f"({self.split_threshold / max(self._tension_peak, 1e-9):.0f}x below). "
-              f"Cells cannot divide. See docs/tension-is-not-one-quantity.md.")
+
+        seen = [t for state in self.cells for t in state.tension_history]
+        if len(seen) < 20:
+            return
+        self._calibrated = True
+        old_bar = self.split_threshold
+        self.split_threshold = float(np.quantile(seen, quantile))
+        print(f"  [ConsciousnessEngine] split_threshold {old_bar} was unreachable "
+              f"(peak {self._tension_peak:.4f} over {self._step} steps, "
+              f"{old_bar / max(self._tension_peak, 1e-9):.0f}x below) — "
+              f"calibrated to the q{quantile:.2f} of observed tension: "
+              f"{self.split_threshold:.4f}. "
+              f"See docs/tension-is-not-one-quantity.md.")
 
     def _create_cell(self, parent_module: Optional[ConsciousnessCell] = None,
                      parent_state: Optional[CellState] = None,
@@ -353,41 +368,27 @@ class ConsciousnessEngine:
             # Process
             output, new_h = cell(coupled_input, tension, state.hidden)
 
-            # Compute tension: distance from mean of previous outputs
-            if outputs:
-                out_stack = torch.stack(outputs)
-                # Deviation from the mean of the cells processed SO FAR in this
-                # loop — not from the whole population. It is therefore
-                # ORDER-DEPENDENT: measured cell 1 ≈ 0.024, cell 2 ≈ 0.009,
-                # cell 4 ≈ 0.007, falling with loop position because later cells
-                # are compared against more peers. The same cell in a different
-                # position gets a different "tension".
-                #
-                # Its real range is ~0.037 peak, 8x BELOW split_threshold=0.3 —
-                # the same mismatch mitosis.py has. See
-                # docs/tension-is-not-one-quantity.md.
-                cell_tension = ((output - out_stack.mean(dim=0)) ** 2).mean().item()
-            else:
-                # `outputs` is empty only for the FIRST cell of the loop, so cell 0
-                # receives this constant on EVERY step — not as a rare fallback.
-                # 0.5 is above split_threshold=0.3, so cell 0 satisfies
-                # `all(t > bar)` after split_patience steps and divides on a timer.
-                # Measured: all 148 splits in a 300-step run originate here; the
-                # computed tension never once reaches the bar.
-                #
-                # A hardcoded constant named like a measurement, and it is the
-                # thing actually driving the behaviour. Not changed here —
-                # removing it stops division entirely, which is a design
-                # decision. Recorded in docs/tension-is-not-one-quantity.md.
-                cell_tension = 0.5
-
-            # Update state
+            # Tension as deviation from the WHOLE population, computed after
+            # the loop rather than during it.
+            #
+            # Two defects lived here and were measured before being fixed.
+            # (1) The computed branch compared each cell against the mean of the
+            #     cells processed SO FAR, making it order-dependent: cell 1 read
+            #     0.024, cell 2 0.009, cell 4 0.007, falling with loop position
+            #     because later cells are compared against more peers. The same
+            #     cell in a different position got a different "tension".
+            # (2) `outputs` is empty only for the FIRST cell, so cell 0 received
+            #     a hardcoded 0.5 on EVERY step -- above split_threshold=0.3, so
+            #     it satisfied `all(t > bar)` after split_patience steps and
+            #     divided on a timer. All 148 splits in a 300-step run came from
+            #     that constant; the computed tension peaks near 0.037 and never
+            #     once reached the bar.
+            #
+            # Deferring the computation removes both: every cell is compared
+            # against the same reference, and no cell needs a stand-in value.
+            # See docs/tension-is-not-one-quantity.md.
+            # Update state (tension filled in below, once every cell is known)
             state.hidden = new_h.detach()
-            state.tension_history.append(cell_tension)
-            if cell_tension > self._tension_peak:
-                self._tension_peak = cell_tension
-            if len(state.tension_history) > 100:
-                state.tension_history = state.tension_history[-100:]
             state.hidden_history.append(new_h.detach().clone())
             if len(state.hidden_history) > 3:
                 state.hidden_history = state.hidden_history[-3:]
@@ -395,6 +396,16 @@ class ConsciousnessEngine:
             outputs.append(output)
 
         outputs_tensor = torch.stack(outputs)  # [n_cells, cell_dim]
+
+        # Every cell against the same reference: the population mean.
+        population_mean = outputs_tensor.mean(dim=0)
+        for state, output in zip(self.cells, outputs):
+            cell_tension = ((output - population_mean) ** 2).mean().item()
+            state.tension_history.append(cell_tension)
+            if cell_tension > self._tension_peak:
+                self._tension_peak = cell_tension
+            if len(state.tension_history) > 100:
+                state.tension_history = state.tension_history[-100:]
 
         # 2. Faction consensus (σ(6)=12 factions)
         consensus_count = self._faction_consensus(outputs_tensor)

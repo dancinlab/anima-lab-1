@@ -74,3 +74,40 @@ live code was swept deliberately:
 
 `split_threshold=999.0` and `merge_threshold=0.0` elsewhere are explicit
 "disable this" settings with comments saying so, not defects.
+
+## Fixed — and the chain it exposed
+
+Both defects at this site are gone, and each removal made the next one visible.
+
+**The constant.** `cell_tension = 0.5` reached cell 0 on every step and drove all
+148 splits in a 300-step run, while the computed quantity peaked at 0.037 against
+a bar of 0.3. **The order-dependence.** Tension was measured against the mean of
+the cells processed *so far*, so the same cell scored 0.024 at position 1 and
+0.007 at position 4. Deferring the computation until the loop ends removes both:
+every cell is compared against the population, and no cell needs a stand-in.
+
+Removing the constant stopped division entirely, exactly as the annotation
+predicted — the engine sat at 2 cells, where Φ ≈ 0 and every condition fails.
+That is what the constant had been hiding. So `_check_threshold_reachable` now
+calibrates instead of only warning: when the bar is out of reach it is taken from
+the q0.90 of the tension this engine actually produces. Measured, it fires at
+0.3 → 0.0049 / 0.0052 / 0.0296 depending on the run, all reported at the site.
+
+Division resumed, and three latent crashes surfaced — all in code I added earlier
+this session, none of which anticipated an engine whose cell count changes:
+
+| site | error |
+|---|---|
+| `NO_SYSTEM_PROMPT` | `min(cells, 64)` used the REQUESTED count; the engine returned 2 rows → boolean-index mismatch |
+| `_three_axes` identity | `cur - prev` with 4 rows against 2 |
+| `_three_axes` integration/response | two runs diverged to 63 and 61 cells |
+
+All three were scored as FAIL, so a shape error was indistinguishable from a real
+verdict. Fixed by comparing only the cells present in both.
+
+**The engine is still 0/5, and now for real reasons rather than crashes:**
+`NO_SYSTEM_PROMPT` reads cosine sd 0.0000 (two cells give one pair),
+`NO_SPEAK_CODE` var 0.0006 against 0.001, `SELF_LOOP` Φ 0.0000 → 0.0000.
+Stopping here: each fix has been exposing the next edge, which is the pattern
+this session identified as the wrong way to work. The remaining failures are
+measured and stated rather than chased.

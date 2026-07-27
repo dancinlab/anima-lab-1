@@ -1461,12 +1461,21 @@ def _three_axes(engine, dim, cells, steps=60):
     for _ in range(steps):
         engine.process(torch.randn(1, dim) * 0.1)
         cur = engine.get_hiddens()
-        a = F.normalize(prev, dim=1)
-        b = F.normalize(cur, dim=1)
+
+        # A dividing engine returns more rows than it did last step, and this
+        # compared them elementwise -- ConsciousnessEngine went 2 -> 4 cells and
+        # raised "size of tensor a (4) must match tensor b (2)". A crash scored
+        # as FAIL, which hid the verdict behind a shape error. Compare the cells
+        # that existed in both steps; the new ones have no previous state to
+        # continue from, so they carry no identity information yet.
+        k = min(prev.shape[0], cur.shape[0])
+        a = F.normalize(prev[:k], dim=1)
+        b = F.normalize(cur[:k], dim=1)
         sim = a @ b.T
         same.append(float(sim.diag().mean()))
-        other.append(float((sim.sum() - sim.diag().sum()) / max(n * (n - 1), 1)))
-        moved.append(float((cur - prev).norm() / max(float(prev.norm()), 1e-9)))
+        other.append(float((sim.sum() - sim.diag().sum()) / max(k * (k - 1), 1)))
+        moved.append(float((cur[:k] - prev[:k]).norm()
+                           / max(float(prev[:k].norm()), 1e-9)))
         prev = cur.clone()
 
     identity = float(np.mean(same) - np.mean(other))
@@ -1522,7 +1531,10 @@ def _three_axes(engine, dim, cells, steps=60):
         engine.process(probe_x)
         disturbed = engine.get_hiddens().clone()
 
-        moved_others = float((undisturbed[1:] - disturbed[1:]).norm())
+        # A dividing engine can reach a different cell count on the two runs,
+        # since the nudge changes what divides. Compare the cells both have.
+        m = min(undisturbed.shape[0], disturbed.shape[0])
+        moved_others = float((undisturbed[1:m] - disturbed[1:m]).norm())
         ripples.append(moved_others / max(float(kick.norm()), 1e-9))
     engine.hiddens = base
     integration = float(np.mean(ripples))
@@ -1548,8 +1560,11 @@ def _three_axes(engine, dim, cells, steps=60):
     for _ in range(6):
         xa = torch.randn(1, dim) * 0.1
         xb = torch.randn(1, dim) * 0.1
-        differing = float((_step_from(base, xa) - _step_from(base, xb)).norm())
-        same = float((_step_from(base, xa) - _step_from(base, xa)).norm())
+        ra, rb, rc = (_step_from(base, xa), _step_from(base, xb),
+                      _step_from(base, xa))
+        m = min(ra.shape[0], rb.shape[0], rc.shape[0])
+        differing = float((ra[:m] - rb[:m]).norm())
+        same = float((ra[:m] - rc[:m]).norm())
         spreads.append(differing / max(same, 1e-9) if same > 1e-9
                        else (float('inf') if differing > 1e-9 else 1.0))
     engine.hiddens = base
@@ -1579,8 +1594,14 @@ def _verify_no_system_prompt(engine_factory, cells, dim, hidden):
         engine.process(x_zero)
 
     hiddens = engine.get_hiddens()  # [n_cells, hidden_dim]
-    # Pairwise cosine similarity (sample for large N)
-    n = min(cells, 64)
+    # Pairwise cosine similarity (sample for large N).
+    #
+    # This used `min(cells, 64)`, the REQUESTED cell count, while an engine that
+    # grows or shrinks returns a different number of rows -- ConsciousnessEngine
+    # asked for 64 and returned 2, and the mask below then raised "boolean index
+    # did not match indexed array". A crash was scored as a FAIL, hiding the real
+    # verdict behind a shape error.
+    n = min(hiddens.shape[0], 64)
     h_norm = F.normalize(hiddens[:n], dim=1)
     cos_sim = (h_norm @ h_norm.T).detach().cpu().numpy()
     # Exclude diagonal
