@@ -794,3 +794,45 @@ What has not been tried, and is the only thing left that could: per-cell
 parameters *inside* the shared map — a distinct transform per cell rather than a
 distinct view of the input. That is a change to `BenchMind`'s structure and to
 what a "cell" is in this architecture, not a parameter of the layers around it.
+
+### The last route: per-cell parameters inside the map
+
+Each cell gets its own orthogonal rotation of the A−G output before it enters
+memory — a different transform per cell, magnitudes preserved so it cannot blow
+up like the per-cell state gain did. At 128 cells, 400 steps, 2 seeds:
+
+| configuration | cosine | consensus | norm |
+|---|---|---|---|
+| shared map, no repulsion | +1.0000 | 1.5 | 110.17 |
+| shared map + repulsion | +0.3828 | 1.0 | 120.37 |
+| **per-cell rotation, no repulsion** | **+0.5055** | 0.0 | 111.77 |
+| per-cell rotation **+ repulsion** | **+0.5055** | 0.0 | 111.77 |
+
+**Structural differentiation prevents collapse without any repulsion**, and
+adding repulsion changes the result by not one digit — an already-differentiated
+population has low overlap, and a force that scales with overlap has nothing to
+do. **The hypothesis that the repulsion was compensating in state space for
+absent per-cell structure is confirmed here**: put the structure where it
+belongs and the force becomes unnecessary.
+
+On the gate it scores the same as the repulsion patch — 5.0/7 both — passing a
+different subset (`PERSISTENCE` instead of `SELF_LOOP`). And consensus is 0.0, so
+the ninth route does not reach 7/7 either.
+
+## Where this ends
+
+| route | consensus |
+|---|---|
+| repulsion strength · form | 1.0 |
+| consensus definition · window | 1.0 |
+| faction count · removal | 1.0 |
+| per-cell weights: state · input · **inside the map** | NaN · 0.0 · **0.0** |
+
+Nine routes. The engine never produces more than one consensus event. The bar of
+5 was set against collapsed populations, which reach it by being uniform rather
+than by agreeing, and no configuration that is *not* collapsed comes near it.
+
+`SPONTANEOUS_SPEECH` as specified cannot be satisfied by an engine that stays
+plural. That is the finding, and 7/7 under the current seven conditions is not
+reachable — not for want of tuning, but because one condition asks for the thing
+the other six forbid.
