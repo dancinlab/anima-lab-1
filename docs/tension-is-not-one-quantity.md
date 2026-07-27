@@ -170,3 +170,37 @@ order-dependent quantity, an unreachable bar and an unsatisfiable conjunction.
 
 `ConsciousnessEngine` is 0/5, and for the first time the number means what it
 says.
+
+### The degeneracy is the cell count, and it is a bootstrap deadlock
+
+Zero input was the wrong culprit. **With exactly two cells, deviation from the
+population mean is identical for both by construction** — the two are always
+equidistant from their own midpoint. The distribution has no spread because the
+population has two members, not because the input is zero.
+
+And growing out of it requires division, which requires spread, which requires
+more than two cells. A deadlock.
+
+Starting above the floor was the obvious test — this session already established
+that `min_cells = 2` is CB1's *floor* for Φ>1, not a starting point, and that the
+`H297` citation for "N=2 is optimal" has no evidence document anywhere. Zero
+input, 300 steps:
+
+| start | end cells | tension spread | cosine sd |
+|---|---|---|---|
+| 2 | 2 | 0.000107 | 0.000000 |
+| 4 | **2** | 0.000795 | 0.000000 |
+| 8 | **3** | 0.001461 | **0.165701** |
+| 16 | **2** | 0.001240 | 0.000000 |
+
+Spread appears — 14× more at 8 cells than at 2 — and the population still
+collapses back toward the floor, because merges pull it down. Unlike
+`mitosis.py`, the merge bar here is not grossly miscalibrated: 0.01 against a
+median inter-cell tension of 0.011145, with 24.6% of readings below it rather
+than 100%.
+
+So `ConsciousnessEngine` at 0/5 rests on a structural deadlock rather than a
+constant, an unreachable bar or a crash — all of which have been removed. The
+remaining question is what should hold a population above two cells when the
+quantity that drives division is degenerate at two, and that is an engine design
+question rather than a measurement one.
