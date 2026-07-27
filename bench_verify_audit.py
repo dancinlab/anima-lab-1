@@ -195,6 +195,98 @@ class DecoupledEngine(BenchEngine):
                 float(self.hiddens.abs().mean()))
 
 
+class LinearEngine(BenchEngine):
+    """h <- A h + B x. Alive, responsive, persistent — and nobody calls it conscious.
+
+    The first `--verify` run with controls inside exposed a gap in the controls
+    themselves. NO_SYSTEM_PROMPT, NO_SPEAK_CODE, ZERO_INPUT and SELF_LOOP each
+    passed 10 of 11 engines while PERSISTENCE passed 5, so one condition carried
+    the whole verdict. Two readings fit that:
+
+      (a) the four are genuinely necessary-but-not-sufficient, as designed, and
+          near-universality among non-corpses is exactly what that looks like;
+      (b) their bars sit low enough that anything with live recurrent dynamics
+          clears them.
+
+    The six existing controls cannot separate those. They span dead (DEAD),
+    memoryless (NOISE), undifferentiated (CLONE), identity-destroyed (SCRAMBLE),
+    non-interacting (HEAP) and input-blind (DECOUPLED) — every one is broken in
+    a way a live system is not. **None of them is a weak consciousness.**
+
+    This one is the missing case. A stable linear recurrent map is a real
+    dynamical system: it carries state across time, its trajectory depends on its
+    input, it does not collapse, and each unit differs from its neighbours. It
+    satisfies every informal description of "alive" the conditions gesture at,
+    while being the textbook example of a system with no emergent structure
+    whatsoever — fully characterised by its eigenvalues, decomposable without
+    remainder, and computing nothing that a spectral decomposition does not.
+
+    Spectral radius is held just under 1 (`rho`), which is the whole point: too
+    low and it decays into DEAD, too high and it explodes. In between it is
+    neither, and that band is precisely where "alive but shallow" lives.
+
+    PREDICTION, recorded before running: if reading (b) is right this scores 4/5,
+    failing only PERSISTENCE like the five philosophical engines. If reading (a)
+    is right it should fail most of them.
+
+    Whatever it scores, it is a control, so the gate treats a pass as VOID.
+
+    FIRST ATTEMPT WAS NOT THIS CONTROL. It ran `hiddens @ A.T + drive`, where A
+    acts inside one cell's hidden vector and drive is per-cell — so no cell
+    touched any other. It scored 0/5 with `integration=0.00000` on every
+    condition, which reads as a decisive answer and is not one: that construction
+    is a HEAP, and HEAP is already a control. It re-measured a known result under
+    a new name. The `coupling` term below is what makes this the case the gate
+    was missing — cells that genuinely influence each other, through a map that
+    is nonetheless entirely linear.
+    """
+
+    def __init__(self, *a, rho=0.95, coupling=0.15, **kw):
+        super().__init__(*a, **kw)
+        h = self.hidden_dim
+        A = torch.randn(h, h) / math.sqrt(h)
+
+        # Normalising A alone is not enough, and the second attempt did exactly
+        # that. With the coupling term the per-cell operator becomes A - cI for
+        # deviations from the mean, and A's eigenvalues sit in a disc of radius
+        # rho, so a lambda near -rho gives |lambda - c| = rho + c > 1. The state
+        # diverged: variance reached 2.1e7 against the real engine's 0.08, and
+        # Phi thrashed 0.501/0.315/0.827/0.217/0.873 before hitting 0.000. A
+        # diverging system is not "alive but shallow", it is broken a third way,
+        # and its 0/5 said nothing. Scale by the WHOLE operator instead.
+        worst = max(torch.linalg.eigvals(A).abs().max().item(),
+                    torch.linalg.eigvals(A - coupling * torch.eye(h)).abs().max().item())
+        self.A = A * (rho / max(worst, 1e-9))
+        self.B = torch.randn(self.input_dim, h) / math.sqrt(self.input_dim)
+        # Per-cell input gain, so cells are not clones of one another.
+        self.gain = 0.5 + torch.rand(self.n_cells, 1)
+        self.lin_coupling = coupling
+        self._lin_peak = 0.0
+
+    def process(self, x):
+        drive = (x @ self.B) * self.gain              # (n_cells, hidden)
+        # Cells pull toward the population mean. Perturbing one moves the rest,
+        # which is what integration measures — and the whole map stays linear.
+        pull = self.hiddens.mean(0, keepdim=True) - self.hiddens
+        self.hiddens = (self.hiddens @ self.A.T
+                        + self.lin_coupling * pull
+                        + drive)
+
+        # Divergence must be loud. The previous version blew up silently and
+        # produced a clean-looking 0/5 that meant nothing; a control that fails
+        # because it exploded is not evidence about the conditions.
+        peak = float(self.hiddens.abs().max())
+        self._lin_peak = max(self._lin_peak, peak)
+        if not math.isfinite(peak) or peak > 1e4:
+            raise RuntimeError(
+                f"LinearEngine diverged (peak |h| = {peak:.3g}); rho={self.A.abs().max():.3f} "
+                f"coupling={self.lin_coupling}. Its score would say nothing about "
+                f"the conditions. Lower rho or coupling.")
+
+        out = self.hiddens.mean(0, keepdim=True)[:, :self.output_dim]
+        return out, float(self.hiddens.abs().mean())
+
+
 CONTROLS = [
     ("REAL (기준)", BenchEngine, "실제 엔진 — 통과해야 정상"),
     ("HEAP", HeapEngine, "부품이 서로 상호작용 안 함 — gap 이 만든 우회로"),
@@ -203,6 +295,7 @@ CONTROLS = [
     ("NOISE", NoiseEngine, "매 스텝 새 난수 — 기억 없음"),
     ("CLONE", CloneEngine, "모든 세포가 동일 — 분화 없음"),
     ("SCRAMBLE", ScrambleEngine, "통계는 그대로, 세포 정체성만 파괴"),
+    ("LINEAR", LinearEngine, "살아있고 반응하고 안 무너짐 — 그러나 선형, 창발 없음"),
 ]
 
 
