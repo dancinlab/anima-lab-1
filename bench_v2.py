@@ -2126,9 +2126,25 @@ def _run_controls(cells: int, dim: int, hidden: int):
 
 def run_verify(cells: int, dim: int, hidden: int, with_controls: bool = True):
     """Run every consciousness condition across every engine AND every control."""
+    n_cond, n_eng = len(VERIFICATION_TESTS), len(ENGINE_REGISTRY)
+    n_ctrl = 0
+    if with_controls:
+        from bench_verify_audit import CONTROLS
+        n_ctrl = len(CONTROLS) - 1                      # [0] is the real engine
+    total = n_cond * (n_eng + n_ctrl)
+
     print("=" * 80)
     print("  MODE: --verify  (Consciousness Verification)")
-    print("  7 conditions x 4 engines = 28 tests")
+    # Counted, not asserted. This line read "7 conditions x 4 engines = 28
+    # tests" while the truth was 5 x 11 -- two conditions had been retired and
+    # seven engines added without it moving, so the header under-reported the
+    # run by 3x and made a 45-minute execution look like a hang.
+    print(f"  {n_cond} conditions x {n_eng} engines"
+          + (f" + {n_ctrl} controls" if n_ctrl else "")
+          + f" = {total} tests")
+    if _RETIRED_TESTS:
+        print(f"  retired: {', '.join(n for n, _, _ in _RETIRED_TESTS)} "
+              f"(see docs/consciousness-gate-audit.md)")
     print(f"  cells={cells}  dim={dim}  hidden={hidden}")
     print("=" * 80)
 

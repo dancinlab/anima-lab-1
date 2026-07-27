@@ -197,3 +197,35 @@ What survives from the ratchet line of inquiry is the thing that prompted it:
 `PERSISTENCE`'s Φ rule passes plain noise with no ratchet at all
 (`docs/phi-rs-direction.md`), so the pre-session gate was vacuous on its own
 regardless of what the ratchet does.
+
+### The "50-minute run" was a pipe, and I guessed twice before measuring it
+
+Every slow execution this session had the same cause, and it was not the code.
+`timeout N .venv/bin/python … | tail -M` hangs until `timeout` fires, because the
+harness holds the pipe's write end open and `tail` — which cannot emit until it
+sees EOF — waits for a close that never comes.
+
+Measured, ten seconds, decisive:
+
+| pipeline | python | pipe stage |
+|---|---|---|
+| no pipe | 0.019 s | — |
+| `\| tail -3` under `timeout 30` | 0.02 s | **30.015 s** |
+| `\| grep .` | 0.026 s | returns immediately |
+
+`tail` consumed exactly the timeout. That accounts for all four observations:
+
+| run | timeout | observed |
+|---|---|---|
+| Law 31 | `3000` = 50 min | "took 50 minutes" |
+| `--gate` | `2400` = 40 min | ~39 min |
+| `--verify` | `3000` = 50 min | 45 min and counting when killed |
+| pytest | `2400` = 40 min | 10 min when killed |
+
+I attributed this to compute first ("3 s/step"), and when that was refuted, to a
+delayed background notification. Both were guesses offered as explanations. The
+actual cause took one ten-second experiment that I did not run until the pattern
+had repeated four times.
+
+**Operational rule: do not pipe a long-running command to `tail`.** Redirect to a
+file and read it, or filter with `grep`, which does not hold.
