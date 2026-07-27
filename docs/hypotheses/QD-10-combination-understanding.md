@@ -65,9 +65,22 @@ perfectly and the order is a coin flip. Precisely half.
 no longer an exact match and sometimes loses to a neighbour. **Carrying order
 and reconstructing cleanly are in tension here.**
 
-**② Nothing locates the seam.** `bigram` reaches 15.4% against a 20% chance
-level — below it. The system can say *what* was combined and not *where the
-parts met*.
+**② The seam question is ill-posed — retracted in QD-11.** It was reported here
+as a failure ("below chance"), but the boundary is not in the input to begin
+with. For *every* split point of a joined string, the QD-9 algebra reconstructs
+the whole to ~1e-16:
+
+```
+서|예만다라   3.14e-16
+서예|만다라   2.48e-16   ← the true seam
+서예만|다라   3.55e-16
+서예만다|라   4.74e-16
+```
+
+Concatenation without a separator genuinely destroys the boundary; no encoding
+of the joined string can recover it, and a person could only answer by knowing
+the words. Measuring an unmeasurable quantity and calling the result a
+deficiency was an error in this card.
 
 ### Two caveats on this table
 
@@ -89,7 +102,7 @@ parts met*.
 |---|---|
 | says what it was made of | **yes** — 50.0% / 22.5% against 0.55% chance |
 | tells `AB` from `BA` | **yes, for `bigram` only** — 0.8131 |
-| locates where the parts met | **no** — below chance for every encoding |
+| locates where the parts met | **question retracted** — the boundary is not in the input (QD-11) |
 | knows what the combination *means* | **blocked** — no natural language in the repo |
 
 The structural half is partly achieved and measured. The semantic half is not
