@@ -57,7 +57,13 @@ class ConsciousMind(nn.Module):
         g = self.engine_g(combined)
         # Output = A - G (H404 simplification)
         output = a - g
-        tension = (output ** 2).mean(dim=-1, keepdim=True)
+            # NOTE: this is the cell's output MAGNITUDE. consciousness_engine.py:330
+        # computes a differently-scaled quantity under the same name — deviation
+        # from the population mean — and both engines are handed split_threshold
+        # = 0.3. Typical peaks are 0.037 here and 0.500 there, so the same
+        # constant is right in one and 8x too high in the other. See
+        # docs/tension-is-not-one-quantity.md before copying a bar between them.
+    tension = (output ** 2).mean(dim=-1, keepdim=True)
         curiosity = abs(tension.mean().item() - self.prev_tension)
         self.prev_tension = tension.mean().item()
         mem_input = torch.cat([output.detach(), tension.detach()], dim=-1)

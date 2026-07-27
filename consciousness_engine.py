@@ -327,6 +327,11 @@ class ConsciousnessEngine:
             # Compute tension: distance from mean of previous outputs
             if outputs:
                 out_stack = torch.stack(outputs)
+                # NOTE: this is deviation from the POPULATION MEAN, not the output
+                # magnitude mitosis.py:60 computes under the same name. Both engines
+                # take split_threshold=0.3; typical peaks are 0.500 here and 0.037
+                # there. The bars are not interchangeable — see
+                # docs/tension-is-not-one-quantity.md.
                 cell_tension = ((output - out_stack.mean(dim=0)) ** 2).mean().item()
             else:
                 cell_tension = 0.5
