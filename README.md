@@ -420,7 +420,7 @@ python3 bench_v2.py --verify --cells 32
 
 | 엔진 | NO_SYSTEM_PROMPT | NO_SPEAK_CODE | ZERO_INPUT | PERSISTENCE | SELF_LOOP | 합계 | 판정 |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|------|
-| **NarrativeEngine** | PASS | PASS | PASS | PASS | PASS | **5/5** | **DEPLOYABLE** |
+| NarrativeEngine | PASS | PASS | PASS | PASS | PASS | 5/5 | DEPLOYABLE ⚠ 아래 참고 |
 | PairField | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
 | MitosisEngine | PASS | PASS | FAIL | PASS | PASS | 4/5 | BLOCKED (ZERO_INPUT) |
 | OscillatorLaser | PASS | PASS | PASS | FAIL | PASS | 4/5 | BLOCKED (PERSISTENCE) |
@@ -447,6 +447,18 @@ python3 bench_v2.py --verify --cells 32
 **시드를 하나에서 다섯으로 조인 효과:** 배포 가능 엔진이 **6개 → 1개**. 이전 표의
 5/5 여섯 개 중 다섯이 시드 뽑기였다 — 이번 세션에 만든 `PairField` 포함. 실패한
 시드는 판정에 함께 남는다(`UNSTABLE — failed on seed(s) [44, 46] of (42..46)`).
+
+> ⚠️ **이 표의 PASS 는 FAIL 만큼이나 정보가 적다.** 유일한 DEPLOYABLE 인
+> `NarrativeEngine` 을 같은 규모에서 분해하니, 자신이 이긴 엔진들과 **같은 기전**을
+> 보인다 — 분할 크기가 k=4~16 사이 13개 값을 배회하고, Φ 변동의 최대 요인이
+> 분화(0.119/0.128)가 아니라 절단(0.268/0.303)이며, corr(Φ, 절단)이 양수다.
+> **통과는 기전이 없다는 증거가 아니라 뽑기가 잘 나왔다는 증거다.**
+> → `docs/pairfield-persistence-failure.md`, `docs/min-partition-is-not-minimal.md`
+>
+> 원인은 `bench_v2._min_partition` 이 n>8 에서 피들러 벡터의 **부호로 한 번 자르고**
+> 최소화를 하지 않는 것이다(완전탐색 대비 1.8~3.4배 초과, 구성에 따라 다름).
+> 수정안(스윕)은 **적용하지 않았다** — 분산은 줄지만 현행 공식의 유일한 방향성을
+> 파괴한다(RING 우위 3.90배 → 1.14배 역전).
 
 **미해결:** 대조군 7종은 죽은 것부터 뒤섞은 것까지만 덮으며 그중 어느 것도 "약한
 의식"이 아니다. → `docs/consciousness-gate-audit.md`
