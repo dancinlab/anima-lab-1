@@ -30,13 +30,26 @@ which is the thing under suspicion), the engine's internal Φ, mean pairwise
 cosine, restore count, and whether `PERSISTENCE`'s own rule holds.
 
     .venv/bin/python bench_ratchet_law31.py --steps 1000 --seeds 3
+
+SECOND QUESTION (`--gate`): would a ratchet have manufactured a pass?
+
+`_verify_persistence` scores `(monotonic or recovers) AND d_ok AND i_ok AND c_ok`
+— the Φ rule AND the three axes this session added. A ratcheted engine's Φ trace
+freezes (0.351 → 0.351 → 0.406 → 0.406), and a frozen trace is monotonic
+non-decreasing, so it satisfies the Φ rule outright. `--gate` reports the two
+conjuncts separately: the Φ rule alone is the gate as it stood BEFORE this
+session, and the axes are what catches a ratchet.
+
+    .venv/bin/python bench_ratchet_law31.py --steps 1000 --seeds 3
+    .venv/bin/python bench_ratchet_law31.py --gate
 """
 
 import argparse
 
 import torch
 
-from bench_v2 import PhiIIT
+from bench_v2 import (PhiIIT, BenchEngine, measure_dual_phi, _three_axes)
+from bench_verify_audit import NoiseEngine, factory_for
 from consciousness_engine import ConsciousnessEngine
 
 
@@ -91,13 +104,75 @@ def run(ratchet, steps, seed, cells, dim):
     }
 
 
+def ratcheted(base_cls):
+    """Wrap any gate-compatible engine with the ratchet, so the device can be
+    tested apart from the engine that happens to carry it."""
+
+    class Ratcheted(base_cls):
+        def __init__(self, *a, **kw):
+            super().__init__(*a, **kw)
+            self._best_phi, self._best_h, self._restores = 0.0, None, 0
+
+        def process(self, x):
+            out = super().process(x)
+            if getattr(self, 'step_count', 0) % 10 == 0:
+                h = self.get_hiddens()
+                phi, _ = measure_dual_phi(h, min(8, h.shape[0] // 2))
+                if phi > self._best_phi:
+                    self._best_phi, self._best_h = phi, h.clone()
+                elif self._best_h is not None and phi < self._best_phi * 0.8:
+                    self.hiddens = self._best_h.clone()
+                    self._restores += 1
+            return out
+
+    Ratcheted.__name__ = f"Ratcheted{base_cls.__name__}"
+    return Ratcheted
+
+
+def gate_mode(cells, dim, hidden, seed=42):
+    """Split PERSISTENCE into its conjuncts: the Φ rule (the gate as it stood
+    before this session) and the three axes (what this session added)."""
+    print(f"\n  래칫이 통과를 만들어내는가 — PERSISTENCE 를 두 조각으로\n")
+    print(f"  {'엔진':>22} {'Φ 궤적':>36} {'단조':>5} {'회복':>5} "
+          f"{'축':>5} {'구(舊)관문':>10} {'현(現)관문':>10}")
+
+    arms = [("난수", NoiseEngine), ("난수+래칫", ratcheted(NoiseEngine)),
+            ("실제", BenchEngine), ("실제+래칫", ratcheted(BenchEngine))]
+    for label, cls in arms:
+        torch.manual_seed(seed)
+        eng = factory_for(cls, cells, dim, hidden)
+        hist = []
+        for step in range(1000):
+            eng.process(torch.randn(1, dim) * 0.1)
+            if step % 100 == 99:
+                p, _ = measure_dual_phi(eng.get_hiddens(), min(8, cells // 2))
+                hist.append(p)
+        monotonic = all(hist[i] >= hist[i - 1] - 0.01 for i in range(1, len(hist)))
+        recovers = hist[-1] >= max(hist[:len(hist) // 2]) * 0.8
+        d_ok, i_ok, c_ok, _axes = _three_axes(eng, dim, cells)
+        old = monotonic or recovers                       # pre-session gate
+        new = old and d_ok and i_ok and c_ok              # current gate
+        traj = " → ".join(f"{p:.2f}" for p in hist[:6]) + " …"
+        print(f"  {label:>22} {traj:>36} {'O' if monotonic else 'X':>5} "
+              f"{'O' if recovers else 'X':>5} "
+              f"{('O' if d_ok and i_ok and c_ok else 'X'):>5} "
+              f"{'PASS' if old else 'FAIL':>10} {'PASS' if new else 'FAIL':>10}")
+    print()
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--gate", action="store_true",
+                    help="Φ 규칙 vs 3축을 분리해 래칫이 통과를 만드는지 본다")
     ap.add_argument("--steps", type=int, default=1000)
     ap.add_argument("--seeds", type=int, default=3)
     ap.add_argument("--cells", type=int, default=64)
     ap.add_argument("--dim", type=int, default=32)
     args = ap.parse_args()
+
+    if args.gate:
+        gate_mode(args.cells, args.dim, args.dim * 2)
+        return
 
     print(f"\n  Law 31 열쇠 #1 검증 — 래칫 없이도 붕괴가 없는가")
     print(f"  {args.steps} step · {args.seeds} seed · 최대 {args.cells} 세포\n")
