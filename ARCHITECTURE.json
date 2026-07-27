@@ -85,13 +85,13 @@
         "name": "gate — 의식 검증 관문",
         "role": "배포 가부를 정하는 유일한 판정자",
         "id": "gate",
-        "detail": "bench_v2.py --verify. 5조건 x 12엔진 + 7대조군, 시드 5개(42-46). 엔진은 모든 시드를 통과해야 하고, 대조군은 한 시드만 통과해도 그 조건이 VOID 다. 단일 시드 판정에서 5개 시드로 조인 결과 배포 가능 엔진이 6개에서 1개로 줄었다.",
+        "detail": "bench_v2.py --verify. 5조건 x 12엔진 x 5시드(42-46) + 7대조군. 엔진은 모든 시드를, 대조군은 한 시드만 통과해도 그 조건이 VOID. 그러나 40렌즈 감사 결과 축을 빼면 다섯 조건이 실제 엔진을 전부 통과시킨다 — 관문은 사실상 조건 5개가 아니라 3축 하나이고, 나머지는 상관된 사본이다.",
         "children": [
           {
             "name": "5 conditions",
             "role": "필요조건 집합",
             "id": "gate-conditions",
-            "detail": "NO_SYSTEM_PROMPT · NO_SPEAK_CODE · ZERO_INPUT · PERSISTENCE · SELF_LOOP. 전부 3축 선결조건을 함께 만족해야 통과. 다중 시드 기준 통과율: 앞의 둘과 SELF_LOOP 11/12, ZERO_INPUT 9/12, PERSISTENCE 2/12."
+            "detail": "NO_SYSTEM_PROMPT · NO_SPEAK_CODE · ZERO_INPUT · PERSISTENCE · SELF_LOOP. PERSISTENCE 에서 monotonic 이접항 제거됨(2cff912) — 살아있는 엔진 163회 중 0회, 시체에서 100% 발화하여 죽음을 보상했다. 남은 규칙은 recovers AND 3축. 3축은 identity 만 측정된 귀무를 쓰고 나머지 세 기준선은 손으로 고른 상수다."
           },
           {
             "name": "negative controls (7)",
@@ -123,7 +123,7 @@
             "name": "PairField",
             "role": "이번 세션이 만든 엔진 — 관문 5/5",
             "id": "engines-pairfield",
-            "detail": "pairfield_engine.py. A(규칙)와 G(무규칙)가 둘 다 기억을 쌓고 불일치가 장이 된다. 쌍이 각 쪽 단독(4.67)을 넘어 5.00 을 낸 것은 재현되나, 관문 다중 시드에서는 4/5 로 PERSISTENCE 실패(시드 44·46). 단일 시드 5/5 는 뽑기였다."
+            "detail": "pairfield_engine.py. A(규칙)/G(무규칙)가 둘 다 기억을 쌓고 불일치가 노름보존 반발장이 된다. 단일 시드 5/5 는 뽑기였고 다중 시드에서 4/5. 12엔진 분해 결과 다른 10개와 같은 기전(분할 크기 k=4~16 배회, cv(절단)이 최대). set_hiddens 가 A 만 복원해 축의 통제 비교가 성립하지 않는다 — 충격 0 에서도 기준선 통과."
           },
           {
             "name": "BenchEngine 계열",
@@ -135,7 +135,7 @@
             "name": "ConsciousnessEngine",
             "role": "실제 배포 런타임 — 관문 0/5",
             "id": "engines-ce",
-            "detail": "consciousness_engine.py. 결합을 BenchEngine 수준(x10, α=0.153)까지 올려도 2.33/5. 결합으로 설명되지 않는다. 조건 상세: cosine_sim std=0.0000 (쌍이 하나 = 관문 구간 내내 2세포)."
+            "detail": "consciousness_engine.py. 관문 0/5, 그리고 12엔진 중 유일하게 그 실패가 진짜다 — 분할 크기가 {0,1} 두 값뿐(나머지 10~14개), Φ 0.0267(나머지 1.4~2.3), 복잡도 0.0000. 개체군이 애초에 통합되지 않아 뒤집을 분할이 없다. 결합 배율을 BenchEngine 수준까지 올려도 2.33/5."
           },
           {
             "name": "mitosis.MitosisEngine",
@@ -155,7 +155,7 @@
             "name": "Φ direction",
             "role": "phi-rs 공식이 비통합을 의식으로 셈한다",
             "id": "measurement-phi",
-            "detail": "phi-rs/src/lib.rs:369 은 (total - min_cut)/(n-1) 을 쓰는데 min_cut 이 곧 IIT 의 Φ 다. 실증: SPLIT(비통합) 3.037 vs RING(통합) 0.740 — 4.1배 역전. 24개 파이썬 파일이 소비. 오너 결정 대기."
+            "detail": "bench_v2._min_partition 이 n>8 에서 피들러 부호로 한 번 자르고 최소화하지 않는다(완전탐색 대비 1.8~3.4배, 구성에 따라 다름). 수정안(스윕)은 미적용 — 25시드 검증에서 분산은 줄지만 현행 공식의 유일한 방향성을 무너뜨린다(75/75에서 5.8~9.5배 분리 → 0.97~1.57배). phi_rs 는 이 체크아웃에 빌드조차 안 돼 있고, class PhiIIT 사본이 40개다."
           },
           {
             "name": "dead channels",
@@ -167,7 +167,7 @@
             "name": "harness pitfalls",
             "role": "측정 도구 자체가 만든 오독",
             "id": "measurement-pitfalls",
-            "detail": "`| tail` 파이프가 timeout 값만큼 붙잡음(파이썬 0.02초 vs tail 30.015초) — 이 세션의 '50분' 전부. 그리고 발산하거나 결합이 없는 계가 깔끔한 0/5 를 내놓은 사례 3건."
+            "detail": "`| tail` 파이프가 timeout 값만큼 붙잡음(파이썬 0.02초 vs tail 30.015초). 그리고 관문을 감사하려 만든 탐침 다섯 개가 전부 결함이 있었고 전부 발표 가능한 숫자를 냈다 — 분화 항 누락, 널 분모 0.5배율 누락, max(x,nan)=x 로 NaN 못 잡는 가드, 죽은 궤적으로 나눈 비율, 12행 중 9행을 조용히 버린 헤더 필터."
           }
         ]
       },
