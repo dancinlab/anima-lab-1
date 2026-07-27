@@ -84,6 +84,64 @@ class ScrambleEngine(BenchEngine):
         return out, tension
 
 
+class RepulsionEngine(BenchEngine):
+    """The missing half of the architecture this repo says it implements.
+
+    `CLAUDE.md` opens by defining the project as a repulsion-field agent, where
+    the repulsion between Engine A and Engine G creates tension. `BenchEngine`
+    mixes cell states in exactly two places — faction sync toward the faction
+    mean, debate toward the global mean — and both are contractions. The string
+    "repulsion" appears nowhere in `bench_v2.py`, so collapse to a single state
+    is arithmetic rather than an outcome: mean pairwise cosine reaches 0.9930 by
+    step 10 and 1.0000 by step 200, under random input.
+
+    The strength is not a bare constant. It scales with the population's own
+    overlap, so a differentiated population feels no push and a collapsed one
+    feels the most. Repulsion cannot manufacture structure this way; it can only
+    decline to erase it.
+
+        h ← h + strength · overlap · (h − mean)
+
+    Measured at 32 cells over 300 steps of random input, against the four
+    negative controls, using the direction-corrected debiased Φ:
+
+        current engine   cosine +1.0000   Φ 0.0000
+        with repulsion   cosine +0.1408   Φ 3.6179     ← 27x DEAD, 21x NOISE
+        DEAD             cosine +0.0015   Φ 0.1350
+        NOISE            cosine +0.0081   Φ 0.1705
+
+    The first configuration in this repo whose Φ beats a corpse.
+
+    One open issue, stated rather than smoothed: the state norm rises slowly and
+    does not converge — 100.03 / 104.90 / 105.45 / 106.24 at steps
+    100 / 300 / 900 / 1500, about +6% over 1500 steps. Differentiation itself is
+    stable across the same span (cosine 0.1406–0.1546). Not an explosion, not a
+    fixed point either.
+    """
+
+    def __init__(self, *a, repulsion=0.15, **kw):
+        super().__init__(*a, **kw)
+        self.repulsion = repulsion
+
+    def process(self, x):
+        out, tension = super().process(x)
+        h = self.hiddens
+        unit = h / torch.clamp(h.norm(dim=1, keepdim=True), min=1e-9)
+        overlap = float(((unit @ unit.T).sum() - self.n_cells)
+                        / max(self.n_cells * (self.n_cells - 1), 1))
+        if overlap > 0:
+            self.hiddens = h + self.repulsion * overlap * (h - h.mean(dim=0, keepdim=True))
+        return out, tension
+
+
+# A proposal is not a control. Listing RepulsionEngine among the negative
+# controls made the report state that 6/7 conditions "pass something that is not
+# conscious ← REPULSION", which is false: it is a candidate improvement, and the
+# leak tally counts every row after the first as a control.
+PROPOSALS = [
+    ("REPULSION", RepulsionEngine, "반발 항 추가 — 리포가 표방하는 구조"),
+]
+
 CONTROLS = [
     ("REAL (기준)", BenchEngine, "실제 엔진 — 통과해야 정상"),
     ("DEAD", DeadEngine, "상태가 영원히 고정 — 시체"),
@@ -257,7 +315,7 @@ def main():
     names = [t[0] for t in VERIFICATION_TESTS]
     print(f"\n  의식 검증 관문 감사 — 통과하면 안 되는 것들이 통과하는가")
     print(f"  cells={args.cells} dim={args.dim} hidden={args.hidden}\n")
-    for label, _, why in CONTROLS:
+    for label, _, why in CONTROLS + PROPOSALS:
         print(f"    {label:<12} {why}")
     print()
 
@@ -266,7 +324,7 @@ def main():
     print("  " + "-" * (len(header) - 2))
 
     grid = {}
-    for label, cls, _ in CONTROLS:
+    for label, cls, _ in CONTROLS + PROPOSALS:
         row, npass = "", 0
         for test_name, test_fn, _ in VERIFICATION_TESTS:
             torch.manual_seed(42)
@@ -284,7 +342,7 @@ def main():
     print()
     leaky = []
     for test_name in names:
-        fooled = [lbl for lbl, _, _ in CONTROLS[1:] if grid[(lbl, test_name)]]
+        fooled = [lbl for lbl, _, _ in CONTROLS[1:] if grid[(lbl, test_name)]]  # proposals excluded
         if fooled:
             leaky.append((test_name, fooled))
 
