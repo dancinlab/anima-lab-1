@@ -290,3 +290,30 @@ What this does **not** show is that the engine is fixed. Three of the six defect
 found in this stretch were in the measuring code, and the movement from 0 to 1.5
 came from removing those plus one parameter change — not from anything the engine
 does differently.
+
+### `ZERO_INPUT` fails on change, and that is the engine — not the axis
+
+At `merge_threshold=0.01, merge_patience=50, initial_cells=8`, `ZERO_INPUT`
+reads Φ 0.0039 → 0.0382 (**9.93×** against a 0.5× bar) with integration 0.116,
+response 3.58 and identity +0.9718 above a +0.1267 floor — every part passing
+except **change = 0.00003** against 0.001.
+
+My first reading was that I had created a contradiction: the axes now use the
+condition's own drive, so `ZERO_INPUT` was being asked to move while having no
+input to move it. Measured, that reading is wrong:
+
+| engine | change under zero input | under random input |
+|---|---|---|
+| ConsciousnessEngine | **0.00003** | 0.27883 |
+| MitosisEngine | **0.00936** | 0.05661 |
+| DEAD | 0.00000 | 0.00000 |
+
+`MitosisEngine` clears the bar with no input at all, and DEAD reads exactly zero.
+**The axis separates under zero drive**, so requiring change there is not a
+contradiction — it is the condition `ZERO_INPUT` already claims to test
+("consciousness without external input"), made explicit.
+
+What the number says is about `ConsciousnessEngine`: with nothing arriving, it is
+300× less active than the engine that passes, and only 3× above a corpse. That is
+the same fact its `NO_SYSTEM_PROMPT` cosine sd reported, arrived at from a
+different direction.
