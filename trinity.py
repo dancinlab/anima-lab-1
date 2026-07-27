@@ -1059,6 +1059,19 @@ class EmpathyEthics(EEngine):
         else:
             self.phi_preservation = 1.0
 
+        # WARNING: this gate cannot refuse. `phi_preservation` takes exactly two
+        # values above — 0.5 (warning) and 1.0 (ok) — and both exceed 0.3, so
+        # `allowed` is True in every situation. Verified including total Φ
+        # collapse (10 → 0) with pain at maximum: still True.
+        #
+        # Two more dead paths in the same class: `empathy_threshold`, taken by
+        # __init__, is never read anywhere; and no caller reads `allowed` — the
+        # Hexad wiring at trinity.py:1401 pulls empathy / reciprocity /
+        # phi_preservation out of this dict and drops the verdict.
+        #
+        # So the E module of the Hexad is structurally incapable of refusing,
+        # and nothing asks it. Not changed: deciding what should block is a
+        # design decision, not an audit's. See docs/fake-measurement-audit.md.
         return {
             'allowed': self.phi_preservation > 0.3,
             'empathy': self.empathy,
