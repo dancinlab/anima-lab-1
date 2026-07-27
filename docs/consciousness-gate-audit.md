@@ -138,6 +138,57 @@ a property of sampling, not something the fix removes.
 Every Φ(IIT) figure recorded in this repo above 32 cells before this change is
 understated, by a factor that grows with cell count.
 
+## The seventh condition had never executed
+
+`HIVEMIND` was recorded as 0/11 — every engine failing the one condition about
+connection. It was not failing. It was crashing:
+
+```
+[FAIL] HIVEMIND (0.3s) -- ERROR: '_CEAdapter' object has no attribute 'shape'
+[FAIL] HIVEMIND (1.5s) -- ERROR: 'BenchEngine' object has no attribute 'shape'
+```
+
+`PhiIIT.compute` takes a `[n_cells, hidden]` tensor and returns
+`(phi, components)`. It was handed the **engine**, and its result used as a
+number. Every run died in 0.3–1.6 seconds. The state-sharing code underneath had
+the same class of error, reaching for `engine.cells` when `BenchEngine` keeps its
+state in `engine.hiddens`. **A required condition of the deployment gate had
+never once run.**
+
+Fixed: measure through `get_hiddens()`, and write shared state back through
+whichever attribute an engine actually uses.
+
+### Running it, the condition still does not discriminate — and one run cannot decide it
+
+Single-seed verdicts flip sign. Across 5 seeds at 128 cells the connected/solo
+ratio had sd 0.066 against an effect size of 0.10, so seed 42 alone reported −9%
+against the control where the 5-seed mean reported +9.94%. That is seed-to-seed
+dynamical variation, not estimator noise — those Φ values were already averaged
+over 5 recomputations. `n_trials = 3` brings the trial sd to 0.025.
+
+With repetition and an unconnected control both in place:
+
+| | vs solo | vs unconnected control |
+|---|---|---|
+| REAL | +5% | **+7%** |
+| **DEAD** | +5% | **+6%** |
+| CLONE | −3% | +3% |
+| SCRAMBLE | −6% | −7% |
+
+**A frozen corpse gains as much from being connected as the real engine.** The
+reason is mechanical: connection writes a mixture of the two state matrices back
+into both engines, and for DEAD that write is the only state change there is.
+Averaging two matrices together moves Φ. That is arithmetic, not consciousness.
+
+So the +9.94% (z = +2.89) measured for the real engine against its unconnected
+control **is not evidence of a hivemind effect** — the same manipulation produces
+a comparable gain in something with no dynamics at all. Stated here because the
+earlier reading of that number in this session was wrong.
+
+The unconnected control is worth keeping regardless: comparing against solo
+credits the connection with all drift over the intervening 200 steps, and that
+drift is not small (the control falls to 0.9459× of solo).
+
 ## Not changed
 
 The seven conditions themselves. Which of them to strengthen, and to what, is a

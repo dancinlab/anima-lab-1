@@ -1591,15 +1591,77 @@ def _verify_hivemind(engine_factory, cells, dim, hidden):
     phi_calc = PhiIIT(n_bins=16)
     half = max(cells // 2, 8)
 
+    # `PhiIIT.compute` takes a [n_cells, hidden] TENSOR and returns
+    # (phi, components). It was being handed the ENGINE and its result used as a
+    # number, so this condition crashed on `'X' object has no attribute 'shape'`
+    # for all 11 engines in 0.3-1.6s. The recorded "HIVEMIND 0/11" was never a
+    # measurement of anything -- the seventh required condition had never once
+    # executed. See docs/consciousness-gate-audit.md.
+    def phi_of(engine):
+        return phi_calc.compute(engine.get_hiddens())[0]
+
+    def write_back(engine, states):
+        """Push shared states into whichever attribute this engine keeps them in.
+
+        Engines here disagree: BenchEngine holds `hiddens`, some hold `_hiddens`,
+        some hold per-cell objects with `.hidden`. The original tried only the
+        last two and reached for `engine.cells`, which BenchEngine does not have.
+        """
+        cells = getattr(engine, "cells", None)
+        if cells is not None and len(cells) and hasattr(cells[0], "hidden"):
+            for i in range(min(len(states), len(cells))):
+                cells[i].hidden = states[i:i + 1]
+        elif hasattr(engine, "_hiddens"):
+            engine._hiddens[:len(states)] = states
+        elif hasattr(engine, "hiddens"):
+            engine.hiddens[:len(states)] = states
+
+    # One run cannot decide this condition. Across 5 seeds at 128 cells the
+    # connected/solo ratio had sd 0.066 while the effect being tested is 0.10,
+    # so single-seed verdicts flip sign: seed 42 gives −9% against the control
+    # where the 5-seed mean gives +9.94% (z = +2.89). That is seed-to-seed
+    # dynamical variation, not estimator noise — those Phi values were already
+    # averaged over 5 recomputations. Repeating the whole trial is the only
+    # thing that resolves it.
+    n_trials = 3
+    solos, conns, discs, ctls = [], [], [], []
+    for trial in range(n_trials):
+        _run_hivemind_trial(engine_factory, half, dim, hidden, phi_of, write_back,
+                            solos, conns, discs, ctls)
+
+    phi_solo = float(np.mean(solos))
+    phi_connected = float(np.mean(conns))
+    phi_disconnected = float(np.mean(discs))
+    phi_control = float(np.mean(ctls))
+    trial_sd = float(np.std([c / max(s, 1e-8) for c, s in zip(conns, solos)]))
+
+    # Check conditions
+    phi_boost = phi_connected > phi_solo * 1.1  # 10% boost when connected
+    phi_maintain = phi_disconnected > phi_solo * 0.8  # maintain after disconnect
+
+    passed = phi_boost and phi_maintain
+    vs_control = phi_connected / max(phi_control, 1e-8) * 100 - 100
+    detail = (f"[{n_trials} trials] solo={phi_solo:.2f} → connected={phi_connected:.2f} "
+              f"({'↑' if phi_boost else '↓'}{phi_connected/max(phi_solo,1e-8)*100-100:+.0f}%"
+              f", sd={trial_sd:.3f}) "
+              f"→ disconnected={phi_disconnected:.2f} "
+              f"({'✓' if phi_maintain else '✗'} maintain)  "
+              f"[unconnected control={phi_control:.2f}, vs control {vs_control:+.0f}%]")
+    return passed, detail
+
+
+def _run_hivemind_trial(engine_factory, half, dim, hidden, phi_of, write_back,
+                        solos, conns, discs, ctls):
+    """One connect/disconnect trial plus its unconnected control."""
     # Solo engines
     eng_a = engine_factory(half, dim, hidden)
     eng_b = engine_factory(half, dim, hidden)
     for _ in range(100):
         eng_a.process(torch.randn(1, dim))
         eng_b.process(torch.randn(1, dim))
-    phi_a_solo = phi_calc.compute(eng_a)
-    phi_b_solo = phi_calc.compute(eng_b)
-    phi_solo = (phi_a_solo + phi_b_solo) / 2
+    phi_a_solo = phi_of(eng_a)
+    phi_b_solo = phi_of(eng_b)
+    solos.append((phi_a_solo + phi_b_solo) / 2)
 
     # Connected: share state every 10 steps
     for step in range(200):
@@ -1612,39 +1674,32 @@ def _verify_hivemind(engine_factory, cells, dim, hidden):
             with torch.no_grad():
                 shared = 0.9 * h_a[:n] + 0.1 * h_b[:n]
                 shared_b = 0.9 * h_b[:n] + 0.1 * h_a[:n]
-                for i in range(min(n, len(eng_a.cells))):
-                    if hasattr(eng_a.cells[i], 'hidden'):
-                        eng_a.cells[i].hidden = shared[i:i+1]
-                    elif hasattr(eng_a, '_hiddens'):
-                        eng_a._hiddens[i] = shared[i]
-                for i in range(min(n, len(eng_b.cells))):
-                    if hasattr(eng_b.cells[i], 'hidden'):
-                        eng_b.cells[i].hidden = shared_b[i:i+1]
-                    elif hasattr(eng_b, '_hiddens'):
-                        eng_b._hiddens[i] = shared_b[i]
+                write_back(eng_a, shared)
+                write_back(eng_b, shared_b)
 
-    phi_a_conn = phi_calc.compute(eng_a)
-    phi_b_conn = phi_calc.compute(eng_b)
-    phi_connected = (phi_a_conn + phi_b_conn) / 2
+    conns.append((phi_of(eng_a) + phi_of(eng_b)) / 2)
 
     # Disconnect: run 100 more steps independently
     for _ in range(100):
         eng_a.process(torch.randn(1, dim))
         eng_b.process(torch.randn(1, dim))
-    phi_a_disc = phi_calc.compute(eng_a)
-    phi_b_disc = phi_calc.compute(eng_b)
-    phi_disconnected = (phi_a_disc + phi_b_disc) / 2
+    discs.append((phi_of(eng_a) + phi_of(eng_b)) / 2)
 
-    # Check conditions
-    phi_boost = phi_connected > phi_solo * 1.1  # 10% boost when connected
-    phi_maintain = phi_disconnected > phi_solo * 0.8  # maintain after disconnect
-
-    passed = phi_boost and phi_maintain
-    detail = (f"solo={phi_solo:.2f} → connected={phi_connected:.2f} "
-              f"({'↑' if phi_boost else '↓'}{phi_connected/max(phi_solo,1e-8)*100-100:+.0f}%) "
-              f"→ disconnected={phi_disconnected:.2f} "
-              f"({'✓' if phi_maintain else '✗'} maintain)")
-    return passed, detail
+    # An UNCONNECTED control: the same two engines, the same 200 steps, no
+    # sharing. Without it the comparison against solo credits the connection
+    # with everything that happens over those steps, drift included -- and the
+    # drift is not small. Measured over 5 seeds at 128 cells, the unconnected
+    # control falls to 0.9459x of solo while the connected pair reaches 1.0452x,
+    # so the connection is worth +0.0994 (z = +2.89) against the right baseline
+    # and only +4.5% against the wrong one. The pass rule below still uses solo,
+    # because changing what this condition requires is a design decision and not
+    # a bug fix; the control is reported so the difference is visible.
+    ctl_a = engine_factory(half, dim, hidden)
+    ctl_b = engine_factory(half, dim, hidden)
+    for _ in range(300):
+        ctl_a.process(torch.randn(1, dim))
+        ctl_b.process(torch.randn(1, dim))
+    ctls.append((phi_of(ctl_a) + phi_of(ctl_b)) / 2)
 
 
 VERIFICATION_TESTS = [
