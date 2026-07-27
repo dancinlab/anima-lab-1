@@ -93,6 +93,18 @@ def simulate_meta_ca(chars, steps=5000, seed=42):
         rule_ces = []
         for r in rules:
             # 규칙별 CE: 데이터 특성과 규칙의 상호작용
+            # NOTE: the `abs(g - 0.5) * 0.5` term does not depend on r, so it is
+            # added identically to all eight candidates and cannot change the
+            # argmax below. Verified by holding g at 0.001 / 0.25 / 0.5 / 0.75 /
+            # 0.999 with the RNG stream matched: the p trajectory differs by
+            # exactly 0.00e+00 in every case. g is computed, updated and returned
+            # as `gate`, and influences nothing — a second dead path in this same
+            # function, alongside the discarded `best_rule` QD-1 found.
+            #
+            # So "should g converge to 1/2?" is not yet a question: nothing
+            # depends on the answer. Giving the gate a real role — an r-dependent
+            # term, if modulating rule selection was the intent — is a design
+            # decision and is not taken here. See docs/hypotheses/QD-1.
             ce = abs(p - 0.5) * (1 + 0.1 * r) + abs(g - 0.5) * 0.5
             ce += rng.gauss(0, 0.01)  # noise
             rule_ces.append(ce)

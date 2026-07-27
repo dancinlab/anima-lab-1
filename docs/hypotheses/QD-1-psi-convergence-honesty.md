@@ -171,8 +171,21 @@ revised Phase 3 in that spec.
   5000 steps and then unused by that block. The `░▒▓█` heatmap is a rendering
   of a hash, not of a dynamic.
 - **The gate `g` has no mechanism at all.** No rule selects it toward 1/2.
-  With the pull removed, mean `|g − 0.5|` goes 0.055 → 0.280. Left honest
-  rather than pulled; `g`'s convergence is now an open question, not a result.
+  With the pull removed, mean `|g − 0.5|` goes 0.055 → 0.280.
+
+  > **Resolved later: `g` is not merely unregulated, it is inert.** Its only
+  > entry into the dynamics is `abs(g − 0.5) * 0.5` inside the per-rule
+  > cross-entropy, and that term does not depend on `r` — it is added
+  > identically to all eight candidates, so it cannot move the `argmax`.
+  > Verified by holding `g` at 0.001 / 0.25 / 0.5 / 0.75 / 0.999 with the RNG
+  > stream matched: the `p` trajectory differs by **exactly 0.00e+00** in every
+  > case. `g` is computed, updated and reported as `gate` while influencing
+  > nothing — the same shape of defect as the discarded `best_rule` above, in
+  > the same function.
+  >
+  > So "should `g` converge?" is not yet a question — nothing depends on the
+  > answer. Giving the gate a real role (an r-dependent term, if modulating
+  > rule selection was the intent) is a design decision and is not taken.
 
 ## Landed
 
