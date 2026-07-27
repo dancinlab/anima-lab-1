@@ -10,6 +10,18 @@
   H312: Mitosis prevents catastrophic forgetting (43% -> 99% retention)
   RC-9:  +52.76% improvement with auto-mitosis
   H297:  N=2 is optimal starting point
+         ⚠ UNSUPPORTED — cited here, at :122, :130 and in consciousness_engine.py
+         :160, with no hypothesis document anywhere in the repo. The nearest
+         thing with evidence is CB1 (consciousness-threshold-criteria.md:868,
+         consciousness-theory.md:47): "minimum 2 DIFFERENTIATED cells required
+         for Φ>1" — a floor below which consciousness cannot exist, not a claim
+         that 2 is a good place to operate. The two are separable and were being
+         read as one. Measured consequence in
+         docs/rank-tension-negative-result.md: every population statistic is
+         degenerate at n=2 (a rank is {0,1}, a z-score ±1, a percentile 0 or
+         100), so any reference-based tension has no basis on the first decision
+         the engine makes. Keep 2 as `min_cells`; `initial_cells` is a separate
+         choice that this citation does not settle.
   Inter-cell tension AUROC 0.805 for anomaly detection
 """
 

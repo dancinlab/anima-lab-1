@@ -90,10 +90,11 @@ class RankTensionEngine(MitosisEngine):
         return result
 
 
-def run(cls, bar, seed, steps, scale=1.0, rotate=True, max_cells=MAX_CELLS):
+def run(cls, bar, seed, steps, scale=1.0, rotate=True, max_cells=MAX_CELLS,
+        initial_cells=2):
     torch.manual_seed(seed)
     eng = cls(input_dim=DIM, hidden_dim=HIDDEN, output_dim=DIM,
-              initial_cells=2, max_cells=max_cells, noise_scale=0.05,
+              initial_cells=initial_cells, max_cells=max_cells, noise_scale=0.05,
               split_threshold=bar)
     xs = [torch.randn(1, DIM) * scale for _ in range(8)]
     counts = []
