@@ -84,3 +84,76 @@ A caveat on Layer 1: `서예` and `빅뱅` produce **identical** repetition
 distance sequences (0.356 → 0.650 → 0.807 → 0.925), because both are
 two-syllable and the two moving features track only length and repeat-rate.
 The repetition signature does not depend on what is being repeated.
+
+---
+
+## Pushed further — owner question: does the hash ever develop commonality?
+
+No. Measured over 8 word pairs × repetitions 1–200 = **1600 samples**:
+
+| | value |
+|---|---|
+| hash A↔B distance | 1.1318 ± 0.0061 (se) |
+| null — simulated mean distance between independent uniform vectors | 1.1281 |
+| | **z = +0.60 — indistinguishable from noise** |
+
+Repetition never makes two hashed words any more alike than two random
+vectors. The hash has no "again" at any depth.
+
+### A correction inside this measurement
+
+A first pass used `sqrt(8/6) = 1.155` as the null and, on 11 samples, reported
+`z = −2.12` with a "DIFFERS from the null — investigate" line. Both parts were
+wrong. `sqrt(8/6)` is the root-**mean-square** distance, which overstates the
+mean (Jensen), so ordinary hash noise looked like commonality; and 11 samples
+have no power to call a 2σ deviation. Simulating the correct null and raising
+the sample count to 1600 gives `z = +0.60`. The bench now simulates the null
+instead of using the closed-form RMS.
+
+## Owner intuition — "qualia_sense feels like it will memorise"
+
+Correct, and worth stating precisely: **it saturates on the amount axis while
+keeping the identity axis intact.**
+
+Distance between `w×N` and `w×(N+1)` — can it still tell one more repeat?
+
+| N | 서예 | 검은사각형 |
+|---|---|---|
+| 1 | 0.3560 | 0.5433 |
+| 8 | 0.0157 | 0.0146 |
+| 20 | 0.0025 | 0.0024 |
+| 100 | 0.0001 | 0.0001 |
+| 199 | **0.0000** | **0.0000** |
+
+Distance between two *different* words at the same N freezes to a constant and
+never moves again:
+
+| pair | frozen from N | frozen value | sd over N ≥ 50 |
+|---|---|---|---|
+| 서예↔만다라 | 68 | 0.4470 | 1.0e-09 |
+| 만다라↔검은사각형 | 51 | 0.9933 | 2.9e-10 |
+| 서예↔빅뱅 | 2 | 1.0874 | 2.2e-16 |
+| 단맛↔쓴맛 | 2 | 0.4692 | 0.0 |
+| 빨강↔파랑 | 2 | 0.6030 | 2.2e-16 |
+
+(The pairs that freeze at N=2 are equal-length words: their two moving features
+move in lockstep, so the distance between them is constant from the start.)
+
+**What survives the freeze.** At N=100, 서예 and 만다라 still differ in five of
+eight measurements — `jamo_density` 0.667 vs 0.778, `final_ratio` 0.000 vs
+0.333, `vowel_position` 0.275 vs 0.000, `codepoint_spread` 0.158 vs 0.184, and
+`bigram_repeat` beyond the third decimal. So it is not amnesia. It remembers
+**what** forever and stops counting **how many** past roughly N = 8–13.
+
+## The saturation point is my own hardcode
+
+`qualia_sense.sense()` computes `length = min(n / 16.0, 1.0)`. That **16 is a
+magic number I wrote in Phase 0**, and it is what sets the ceiling: past 16
+characters `length` cannot move, leaving only `bigram_repeat`, which itself
+asymptotes to 1.
+
+By this session's own standard — CLAUDE.md #1, and the same class of defect
+QD-1 was opened to remove — that is a hardcoded constant deciding a behavioural
+boundary. It is flagged here rather than quietly changed, because "how much
+repetition is still the same experience" is a real design question and picking
+a new constant would only move the magic number.

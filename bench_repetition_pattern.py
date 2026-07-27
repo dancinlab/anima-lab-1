@@ -151,6 +151,70 @@ def engine_reading():
             print(f"    {a:>10} vs {b:<12} cos {cos(states[a], states[b]):.4f}")
 
 
+DEEP_N = (1, 2, 3, 5, 8, 13, 20, 30, 50, 100, 200)
+PAIR = ("서예", "만다라")
+
+
+def saturation_probe():
+    """Push repetition far. Does either path keep meaning anything?
+
+    Two failure modes to tell apart:
+      · the hash never converges — every N is fresh noise, so repetition can
+        never be recognised as repetition;
+      · qualia_sense may CONVERGE — `length` is min(n/16, 1) and saturates at
+        16 characters, `bigram_repeat` asymptotes to 1, so past some N the
+        pattern may freeze and stop distinguishing 20 repeats from 200.
+
+    The null is the MEAN distance between two independent uniform [0,1]^8
+    vectors, estimated by simulation. sqrt(8/6) = 1.155 is the root-MEAN-SQUARE
+    distance and overstates the mean (Jensen), so using it would make ordinary
+    hash noise look like commonality.
+    """
+    rng = np.random.default_rng(0)
+    null = float(np.mean(np.linalg.norm(
+        rng.random((200000, 8)) - rng.random((200000, 8)), axis=1)))
+    a, b = PAIR
+    print("\n  ── pushing repetition far · " + " vs ".join(PAIR) + " " + "─" * 22)
+    print(f"  null = simulated mean distance between independent random "
+          f"vectors: {null:.3f}\n")
+    print(f"  {'N':>5} {'content 무늬 (서예×N)':<12} {'A↔B content':>12} {'A↔B hash':>10} "
+          f"{'ΔN content':>11} {'ΔN hash':>9}")
+
+    prev_c = prev_h = None
+    rows = []
+    for n in DEEP_N:
+        ca, cb = sense(repeats(a, n)), sense(repeats(b, n))
+        ha, hb = hash_sense(repeats(a, n)), hash_sense(repeats(b, n))
+        d_c, d_h = feature_distance(ca, cb), feature_distance(ha, hb)
+        step_c = feature_distance(prev_c, ca) if prev_c is not None else float("nan")
+        step_h = feature_distance(prev_h, ha) if prev_h is not None else float("nan")
+        prev_c, prev_h = ca, ha
+        rows.append((n, d_c, d_h, step_c, step_h))
+        sc = "  —  " if math.isnan(step_c) else f"{step_c:>11.4f}"
+        sh = "  —  " if math.isnan(step_h) else f"{step_h:>9.4f}"
+        print(f"  {n:>5} {bar(ca.vector()):<12} {d_c:>12.4f} {d_h:>10.4f} {sc} {sh}")
+
+    tail = [r for r in rows if r[0] >= 20]
+    c_steps = [r[3] for r in tail]
+    h_steps = [r[4] for r in tail]
+    h_dists = [r[2] for r in rows]
+    print(f"\n  N ≥ 20 — content step size: {np.mean(c_steps):.5f}  "
+          f"(frozen if ≈ 0)")
+    print(f"  N ≥ 20 — hash step size:    {np.mean(h_steps):.5f}  "
+          f"(never settles)")
+    se = float(np.std(h_dists, ddof=1) / math.sqrt(len(h_dists)))
+    z = (np.mean(h_dists) - null) / se if se > 0 else float("nan")
+    print(f"  hash A↔B distance across all N: mean {np.mean(h_dists):.3f} "
+          f"± {se:.3f} (se)  ·  null {null:.3f}  →  z = {z:+.2f}")
+    print(f"  {'no commonality — indistinguishable from noise' if abs(z) < 2 else 'DIFFERS from the null — investigate'}")
+
+    frozen_at = None
+    for n, _, _, step_c, _ in rows:
+        if not math.isnan(step_c) and step_c < 0.01 and frozen_at is None:
+            frozen_at = n
+    print(f"  content pattern first freezes (step < 0.01) at N = {frozen_at}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-engine", action="store_true")
@@ -164,6 +228,8 @@ def main():
     show_features("서예")
     mono = monotonicity()
     held = cross_check()
+
+    saturation_probe()
 
     if not args.no_engine:
         engine_reading()
