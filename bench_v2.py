@@ -21,6 +21,8 @@ Usage:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import random
+
 import numpy as np
 import time
 import math
@@ -90,17 +92,39 @@ class PhiIIT:
 
         hiddens = [hiddens_tensor[i].detach().cpu().numpy() for i in range(n)]
 
+        # Determinism, for BOTH branches. The debias shuffles below draw from a
+        # persistent rng, so even the exhaustive path (n <= 32) returned a
+        # different Phi on every call to the same tensor. Seeding from the input
+        # makes `compute` a function of its argument, which every ratio threshold
+        # in the gate silently assumed.
+        seed = int(abs(hash((n, round(float(hiddens_tensor.sum()), 6),
+                             round(float(hiddens_tensor.std()), 6))))
+                   % (2 ** 31))
+        self._rng = np.random.default_rng(seed)
+
         # Pairwise MI — sample for large N
         all_pairs = n * (n - 1) // 2
         if n <= 32:
             pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
         else:
-            # Sample to keep O(N) — ~8 neighbors per cell
-            import random
+            # Sample to keep O(N) — ~8 neighbors per cell.
+            #
+            # This used the unseeded global `random`, and the debias shuffles
+            # below advance a persistent rng, so `compute` was NOT a function of
+            # its argument: six sequential calls on one fixed 32x64 tensor gave
+            # Phi = 0.121 / 0.167 / 0.210 / 0.227 / 0.230 / 0.254, a 2.1x spread,
+            # and torch.manual_seed reset neither. Every ratio threshold in the
+            # gate (0.5x for ZERO_INPUT, 0.8x for SELF_LOOP, 1.1x for HIVEMIND)
+            # sits inside that spread, so verdicts were partly draws.
+            #
+            # Both sources are now derived from the input itself, so identical
+            # states give identical Phi while different states still get
+            # independent-looking samples.
+            rng = random.Random(seed)
             pairs = set()
             for i in range(n):
                 for _ in range(min(8, n - 1)):
-                    j = random.randint(0, n - 1)
+                    j = rng.randint(0, n - 1)
                     if i != j:
                         pairs.add((min(i, j), max(i, j)))
             pairs = list(pairs)

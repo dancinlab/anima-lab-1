@@ -401,7 +401,7 @@ def proposed_gate(cells=32, dim=32, hidden=64, steps=200):
     leaked = [l for l, _, _ in CONTROLS[1:] if verdicts[l]]
     print()
     print("  " + (f"⚠ 대조군 통과: {', '.join(leaked)}" if leaked else
-                  "네 대조군 모두 거부됨 — 이 관문은 변별한다."))
+                  "이 네 대조군은 거부됨 — 다른 대조군까지 막는다는 뜻은 아니다."))
     print()
     return verdicts
 
@@ -466,7 +466,15 @@ def main():
             leaky.append((test_name, fooled))
 
     if not leaky:
-        print("  모든 조건이 네 대조군을 전부 거부했다 — 관문이 실제로 작동한다.")
+        # Not "the gate works". A /gap audit built two controls that clear all
+        # three axes: HEAP (sync/debate/repulsion all off, so parts never
+        # interact) scores Φ=0.0990>floor=0.0052, identity=+0.0123>+0.0046,
+        # change=0.10386; and an input-decoupled engine whose process() never
+        # reads x scores 6/7 against the real engine's 5/7. The claim this
+        # measurement supports is exactly its own scope.
+        print("  이 네 대조군은 모두 거부됐다.")
+        print("  ⚠ 이것은 '관문이 작동한다' 는 뜻이 아니다 — 상호작용 없는 HEAP 과")
+        print("     입력을 읽지 않는 엔진은 3축을 통과한다 (docs/consciousness-gate-audit.md)")
     else:
         print(f"  {len(leaky)}/{len(names)} 개 조건이 의식이 아닌 것을 통과시킨다:")
         for test_name, fooled in leaky:
