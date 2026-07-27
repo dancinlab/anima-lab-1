@@ -1776,7 +1776,8 @@ def _verify_persistence(engine_factory, cells, dim, hidden):
     """V4: PERSISTENCE — no collapse over time.
 
     Run 1000 steps, measure Phi every 100.
-    Pass if Phi is monotonically non-decreasing OR recovers from all dips.
+    Pass if Phi recovers from its dips: final >= 0.8 x max(first half).
+    The `monotonic` disjunct was removed -- it fired only on corpses.
     """
     engine = engine_factory(cells, dim, hidden)
     phi_history = []
@@ -1789,16 +1790,25 @@ def _verify_persistence(engine_factory, cells, dim, hidden):
             p_iit, _ = measure_dual_phi(engine.get_hiddens(), min(8, cells // 2))
             phi_history.append(p_iit)
 
-    # Check: monotonically non-decreasing OR recovers
-    # "Recovers" = final Phi >= max of first half
-    monotonic = all(phi_history[i] >= phi_history[i-1] - 0.01
-                    for i in range(1, len(phi_history)))
+    # Recovery only. The rule was `monotonic or recovers`, and the `monotonic`
+    # disjunct REWARDED DEATH: a stationary Phi is trivially non-decreasing, so
+    # it fired 0 times across 163 live-engine runs and 100% of the time on
+    # corpses, putting DEAD and CLONE at or above every real engine and FIRST at
+    # gate defaults. Anti-correlated with its own name -- the same measured
+    # pathology that retired SPONTANEOUS_SPEECH and HIVEMIND (see
+    # _RETIRED_TESTS and docs/persistence-condition.md).
+    #
+    # With it present, the condition's own rule separated nothing: engines fired
+    # 0.567 against controls 0.571, gap -0.005, p=0.60, while the three axes
+    # bolted onto it separated perfectly (0.967 vs 0.000, p<0.0001) -- every
+    # verdict was the axes carrying a dead disjunction. `recovers` alone
+    # discriminates (+0.243, p=0.0043).
     recovers = phi_history[-1] >= max(phi_history[:len(phi_history)//2]) * 0.8
 
     d_ok, i_ok, c_ok, axes = _three_axes(engine, dim, cells)
-    passed = (monotonic or recovers) and d_ok and i_ok and c_ok
+    passed = recovers and d_ok and i_ok and c_ok
     phi_str = " -> ".join(f"{p:.3f}" for p in phi_history)
-    detail = (f"Phi@100s: [{phi_str}]  monotonic={monotonic}  recovers={recovers}"
+    detail = (f"Phi@100s: [{phi_str}]  recovers={recovers}"
               f"  [{axes}]")
     return passed, detail
 

@@ -80,6 +80,58 @@ direction, and which of the two it bought must be stated.
 
 Reproduce: the n=12 comparison above, or read `bench_v2.py:225-237`.
 
+## RETRACTED: the sweep does not buy stability either, and my test measured the wrong formula
+
+The section below stands as written but its premise is wrong in two ways, both
+caught by a teammate running the control it asked for.
+
+**My direction test measured phi-rs's formula, not `bench_v2`'s.** I computed
+`min_cut / (n−1)` and called it "shipped Φ". `bench_v2.py:176` is
+
+```python
+spatial_phi = (min_partition_mi / max(n - 1, 1)) * differentiation
+```
+
+with `differentiation = 1 − mean_cos` (`bench_v2.py:174`). A fully collapsed
+population has `mean_cos ≈ 1`, so differentiation ≈ 0 and IDENTICAL lands at the
+**floor** — measured 0.0049, the lowest of five constructions at every n tried.
+The 90×/104× preference for IDENTICAL is phi-rs, which has no differentiation
+factor. Dropping that factor from my check turned `bench_v2`'s Φ into phi-rs's.
+The conclusion "don't land the sweep" happened to be right; the reason given for
+it was not.
+
+**`bench_v2`'s actual direction defect is a different one**: the shipped sign-cut
+ranks INDEPENDENT highest (0.2143 at n=32, above SPLIT 0.2002 and RING 0.1888) —
+nothing-to-join scoring top.
+
+**And the sweep destroys the one directional behaviour the shipped formula has.**
+Matched-coupling test (noise held equal across arms, n=32, dim 512, 5 seeds):
+
+| noise s | SPLIT shipped | RING shipped | verdict | SPLIT swept | RING swept | verdict |
+|---|---|---|---|---|---|---|
+| 0.3 | 0.1026 | 0.4008 | RING **3.90×** | 0.1026 | 0.0897 | SPLIT 1.14× ← inverted |
+| 1.0 | 0.0718 | 0.5067 | RING **7.06×** | 0.0648 | 0.0733 | RING 1.13× |
+
+The shipped cut ranks the integrated RING above the disconnected SPLIT by 3.90×
+and 7.06×. The sweep crushes both to ~1.1×, one of them the wrong way.
+
+**The variance reduction was Φ being flattened, not stabilised.** Driving the cut
+to its true minimum makes it a near-zero singleton for almost any population, so
+`spatial_phi` collapses and Φ becomes the `0.1 × complexity` term. Under the
+sweep at n=32 the constructions pin together at that floor — RING 0.0235, MID
+0.0255, INDEPENDENT 0.0265, indistinguishable. A measure that cannot tell them
+apart has low variance for the same reason a constant does.
+
+**The bad minimum accidentally retains information the true minimum discards.**
+That is worth stating plainly: `_min_partition` is wrong about what it computes,
+and replacing it with the correct thing makes the gate worse. The sweep survives
+only as the diagnostic that proves the trajectory is the estimator's — which it
+does prove.
+
+---
+
+## Superseded — the original direction check, kept for the record
+
 ## The sweep buys stability, not direction
 
 Three independent measurements agree the sweep is a better minimum: it matches
