@@ -201,3 +201,72 @@ both changes to what tension *means*.
 
 That one is recorded, not taken. Everything above it was a defect with a
 mechanical cause and has been fixed.
+
+---
+
+# a / b — the experiment
+
+Both candidates for the missing negative feedback, measured against the control.
+Neither is landed in `mitosis.py`; both are subclasses in
+`bench_population_feedback.py`, as in QD-6.
+
+**A — load relief.** Division physically splits the response: parent and child
+weights are each scaled by 1/√2, so their combined output matches the pre-split
+parent and each one's tension halves. The state changes, the criterion does not.
+
+**B — normalised trigger.** Tension is untouched; the bar scales with the
+population, `bar · (n_cells / min_cells)^k`. A bigger population has to work
+harder to justify growing. The criterion changes, the state does not.
+
+Working means a **band**: a range of calibration quantiles landing strictly
+between the 2 floor and the 32 ceiling, and holding there. 3 seeds × 400 steps.
+
+| arm | 0.5 | 0.6 | 0.7 | 0.75 | 0.8 | 0.85 | 0.9 | 0.95 | band |
+|---|---|---|---|---|---|---|---|---|---|
+| control | 32.0 | 32.0 | 31.9 | 31.9 | 22.0 | 13.3 | 2.0 | 2.0 | 2/8 |
+| **A load relief** | 2.0 | 2.0 | 2.0 | 2.0 | 2.0 | 2.0 | 2.0 | 2.0 | **0/8** |
+| B, k=1.0 | 4.0 | 4.0 | 3.7 | 3.3 | 2.3 | 2.3 | 2.0 | 2.0 | 4/8 |
+| B, k=0.5 | 5.7 | 4.7 | 4.7 | 4.3 | 3.0 | 2.3 | 2.0 | 2.0 | 5/8 |
+| **B, k=0.25** | **25.3** | **15.0** | **12.7** | **11.0** | **3.3** | 2.7 | 2.0 | 2.0 | **6/8** |
+
+Every interior figure is stable — cell-count sd over the last 100 steps is 0.00
+in all of them.
+
+## A fails, and the reason is instructive
+
+Halving both cells' weights drops their tension immediately below any bar that
+had just been exceeded, so division stops after one or two events and the
+population never leaves the floor — 2.0 cells at every setting. **The relief is
+applied at full strength to the very cells that had earned the split**, which
+removes the condition before it can do anything. It is a correct idea about
+load and a wrong magnitude, and the magnitude is not obviously tunable: anything
+less than 1/√2 is a fresh constant with no principle behind it.
+
+## B works — and its exponent is a new knob
+
+The mechanism does what was missing: growth raises the bar for further growth,
+so the population settles instead of running to the ceiling. The band widens
+from the control's 2/8 to 6/8, and the interior populations are usable rather
+than nominal.
+
+**But k is a guessed constant, and the sweep is why that matters.** k = 1.0 is
+the only value with a stated reading — each cell must justify its share of a
+linear load — and it holds the population at 3–4 cells. The values that give
+larger, more useful populations, 0.5 and 0.25, have no principle behind them;
+0.25 is simply what scored best on this metric, on this stimulus set, at this
+`max_cells`. Landing it as a default would be exactly the kind of number this
+whole audit has been removing.
+
+## Not landed
+
+`mitosis.py` is unchanged. B is the mechanism that answers the gap and the
+measurements are here; choosing k — or deciding that k = 1.0's small
+populations are the honest price of having a principle — is the owner's call,
+with the sweep in hand rather than in the abstract.
+
+## Correction
+
+An earlier section here called the post-661a083 control "a cliff, no band".
+That was measured before the child-inflation fix. With it, the control is
+already a slope (32 → 22.0 → 13.3 → 2.0) and 2 of 8 settings land interior.
+The saturation is real; "cliff" was stale and is corrected above.
