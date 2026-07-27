@@ -29,7 +29,7 @@ Both violate CLAUDE.md #1 (no hardcoding) and #2 (no manipulation).
 |---|---|---|
 | `data_characteristics()` | `h = sha256(name)` → 8 features | The per-stimulus pattern is a hash of the *word*, not perception of the artwork. `서예` vs `만다라` differ because their strings differ. |
 | `simulate_meta_ca()` | `dp = 0.001 * (0.5 - p)` | Convergence to Ψ=1/2 is an explicit pull term. "All experiences converge" is imposed, not emergent. |
-| `TensionSense.process()` (trinity.py) | `ord(c) / 256.0` | Same class of defect on the live S-engine path. |
+| ~~`TensionSense.process()` (trinity.py)~~ | ~~`ord(c) / 256.0`~~ | **Fixed.** Replaced with `qualia_sense.text_vector` — boundary-padded bigram pooling, the encoder QD-8/QD-9 measured as the best of four. |
 
 ## Already implemented — do not rebuild
 

@@ -987,9 +987,10 @@ class TensionSense(SEngine):
             if len(x) < self.dim:
                 x = F.pad(x, (0, self.dim - len(x)))
         elif isinstance(raw_input, str):
-            x = torch.tensor([ord(c) / 256.0 for c in raw_input[:self.dim]], dtype=torch.float32)
-            if len(x) < self.dim:
-                x = F.pad(x, (0, self.dim - len(x)))
+            # Bigram pooling, not ord(c)/256 — see qualia_sense.text_vector for
+            # the three defects that replaces and the measurements behind it.
+            from qualia_sense import text_vector
+            x = torch.tensor(text_vector(raw_input, self.dim), dtype=torch.float32)
         else:
             x = torch.randn(self.dim) * 0.1
 

@@ -192,6 +192,55 @@ def hash_sense(name: str) -> Qualia:
     return Qualia(name=name, **dict(zip(FEATURE_NAMES, vals)))
 
 
+def text_vector(text: str, dim: int) -> List[float]:
+    """Text → a fixed-width vector by pooling boundary-padded character bigrams.
+
+    Replaces the `ord(c) / 256.0` encoding, which had three defects: it
+    TRUNCATED at `dim` characters so nothing past that existed, it locked
+    character i to slot i so shifting the text by one changed every component,
+    and codepoint proximity carries no similarity — `가` and `각` are adjacent
+    numbers and unrelated words.
+
+    Pooling fixes all three. Each bigram contributes a fixed pseudorandom
+    direction, so length is unbounded, shared substrings produce shared
+    directions, and the boundary padding makes `AB` differ from `BA`.
+
+    Measured against the alternatives on stem-kin distance over unrelated
+    distance (below 1 means the encoding has structure) and on whether it can
+    tell `AB` from `BA`:
+
+        whole-string sha256   1.07   order 1.42 (noise — repetition non-monotone)
+        qualia_sense features 0.66   order 0.0000 (structurally order-blind)
+        bigram pooling        0.47   order 0.8231
+
+    See docs/hypotheses/QD-8, QD-9.
+    """
+    padded = "^" + text + "$"
+    tokens = [padded[i:i + 2] for i in range(len(padded) - 1)] or [padded]
+
+    acc = [0.0] * dim
+    for tok in tokens:
+        # sha256 gives 32 bytes; salt with a chunk index to reach any width.
+        raw = bytearray()
+        chunk = 0
+        while len(raw) < dim:
+            raw.extend(hashlib.sha256(f"{chunk}:{tok}".encode()).digest())
+            chunk += 1
+        norm_sq = 0.0
+        vec = []
+        for b in raw[:dim]:
+            v = b / 255.0 - 0.5
+            vec.append(v)
+            norm_sq += v * v
+        n = math.sqrt(norm_sq)
+        if n > 1e-12:
+            for i, v in enumerate(vec):
+                acc[i] += v / n
+
+    total = math.sqrt(sum(v * v for v in acc))
+    return [v / total for v in acc] if total > 1e-12 else acc
+
+
 def feature_distance(a: Qualia, b: Qualia) -> float:
     """Euclidean distance between two feature vectors."""
     return math.sqrt(sum((x - y) ** 2 for x, y in zip(a.vector(), b.vector())))
