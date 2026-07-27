@@ -1316,3 +1316,61 @@ inputs separate the trajectory and a fixed drive cannot express that.
 
 `ConsciousnessEngine` remains 0/5, now failing on integration (0.00014 against
 0.001) for two conditions and on the conditions' own numbers for the rest.
+
+## First run of the gate with its controls inside it
+
+`bench_v2.py --verify --cells 32`, 5 conditions × 11 engines + 6 controls = 85
+tests. Header now counted rather than asserted; it had claimed "7 conditions x 4
+engines = 28 tests" while two conditions were retired and seven engines added.
+
+**Zero conditions voided.** All six controls — DEAD, NOISE, CLONE, SCRAMBLE,
+HEAP, DECOUPLED — failed all five conditions, so every condition was scoreable
+and the engine column below means something. `pytest tests/test_gate_controls.py`
+agrees independently: 31 passed in 35 s.
+
+```
+  engine                NO_SYS  NO_SPEAK  ZERO_IN  PERSIST  SELF_LOOP  total
+  ConsciousnessEngine    FAIL     FAIL      FAIL     FAIL      FAIL     0/5
+  MitosisEngine          PASS     PASS      PASS     PASS      PASS     5/5
+  OscillatorLaser        PASS     PASS      PASS     PASS      PASS     5/5
+  QuantumEngine          PASS     PASS      PASS     PASS      PASS     5/5
+  DesireEngine           PASS     PASS      PASS     PASS      PASS     5/5
+  NarrativeEngine        PASS     PASS      PASS     PASS      PASS     5/5
+  Trinity                PASS     PASS      PASS     FAIL      PASS     4/5
+  AlterityEngine         PASS     PASS      PASS     FAIL      PASS     4/5
+  FinitudeEngine         PASS     PASS      PASS     FAIL      PASS     4/5
+  QuestioningEngine      PASS     PASS      PASS     FAIL      PASS     4/5
+  SeinEngine             PASS     PASS      PASS     FAIL      PASS     4/5
+
+  per condition:  NO_SYS 10/11 · NO_SPEAK 10/11 · ZERO_IN 10/11
+                  SELF_LOOP 10/11 · PERSISTENCE 5/11
+```
+
+### One condition does all the discriminating
+
+Four of the five pass 10 of 11 engines. They reject every corpse — that is
+established and enforced — but among engines that are not corpses they separate
+almost nothing. **`PERSISTENCE` is the only condition that distinguishes live
+engines from each other** (5/11), and six engines fail on it alone.
+
+That is worth stating plainly rather than filing as a good result. A gate whose
+verdict is carried by one condition is a one-condition gate with four
+corroborating checks attached. The four are not useless — they are what the six
+controls die on — but "MitosisEngine 5/5 vs Trinity 4/5" is entirely a statement
+about persistence.
+
+Open question, not resolved here: whether the other four are near-universal
+because they are genuinely necessary-but-not-sufficient (the intended design), or
+because their bars sit low enough that anything with live recurrent dynamics
+clears them. Distinguishing those needs a control that is alive but shallow —
+something between `NOISE` and a real engine — which the current six do not
+include. The six span dead-to-scrambled; none of them is a *weak* consciousness.
+
+### The deployed engine is blocked on everything
+
+`ConsciousnessEngine` — the runtime CLAUDE.md deploys — scores 0/5. Already
+traced: a 73× coupling gap (`PSI_COUPLING = 0.014 × |c| = 0.002` against
+`BenchEngine`'s 0.15), with an interior optimum at α = 0.08 giving mean 4.8/5 and
+83% of seeds at 5/5, all six controls still rejected. Not landed —
+`PSI_COUPLING` is a bench-verified Ψ-constant and changing it is an owner
+decision, on the board.
