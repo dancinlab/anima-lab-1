@@ -341,6 +341,69 @@ interior, which is where integrated information requires it.
 .venv/bin/python bench_verify_audit.py --phi-candidate --cells 32 --hidden 128
 ```
 
+## The floor was built, measured, and it does not rescue the gate — because the engine collapses
+
+The remaining decision was named as "the conditions need an absolute floor". A
+floor as a constant would be the exact defect this session spent its length
+finding, so it was built as a measurement instead: **Φ must exceed the Φ of the
+same population collapsed to a single state.** No constant, self-calibrating, and
+it is CB1's requirement stated operationally.
+
+At 32 cells after 300 steps of random input, with the corrected Φ:
+
+| | Φ | collapsed reference | above floor |
+|---|---|---|---|
+| **REAL** | **0.0000** | 0.0000 | — |
+| DEAD | 0.1963 | 0.0000 | passes |
+| NOISE | 0.1929 | 0.0000 | passes |
+| CLONE | 0.0000 | 0.0000 | — |
+| SCRAMBLE | 0.0000 | 0.0000 | — |
+
+The floor works. What it reveals is that **the real engine's Φ is zero**, and a
+corpse and a noise generator both have more of it. DEAD holds its initial random
+states, which are differentiated; the real engine does not.
+
+### The engine collapses under any input, not just zero input
+
+| step | 0 | 5 | 10 | 25 | 50 | 100 | 200 | 300 |
+|---|---|---|---|---|---|---|---|---|
+| mean pairwise cosine | +0.7652 | +0.9492 | +0.9930 | +0.9984 | +0.9993 | +0.9999 | **+1.0000** | **+1.0000** |
+
+Random input, 32 cells. It is 99.3% collapsed by step 10 and complete by step 200.
+
+The cause is in the code and there is nothing subtle about it. `BenchEngine`
+mixes cell states in exactly two places:
+
+```python
+self.hiddens[s:e] = (1 - sync) * self.hiddens[s:e] + sync * faction_mean
+self.hiddens[s:s+dc] = (1 - debate) * self.hiddens[s:s+dc] + debate * global_opinion
+```
+
+Both are contractions toward a mean. **The string "repulsion" does not appear
+anywhere in `bench_v2.py`.** Nothing pushes cells apart, so collapse is
+structurally guaranteed — not a tuning outcome, an arithmetic one.
+
+`CLAUDE.md` opens with: *"PureField repulsion-field-based consciousness agent.
+The repulsion between Engine A (forward) and Engine G (reverse) creates tension."*
+The canonical benchmark engine has no repulsion in it.
+
+## The chain, closed
+
+```
+engine has only attraction  →  cells collapse to one state (cosine 1.0000)
+                            →  shipped Φ is MAXIMAL at collapse (Φ ≈ cells)
+                            →  gate conditions are ratios on that Φ
+                            →  a collapsed system passes them
+                            →  the gate certifies the failure mode as success
+```
+
+Every link is measured. This is why five of seven conditions pass a corpse, why
+`Φ ≈ cells` was the headline, and why fixing the measurement alone cannot help:
+correct the Φ and the real engine scores zero, because it has collapsed.
+
+**The barrier to completion is not the gate and not Φ. It is that the engines
+have no term that keeps cells apart.**
+
 ## Not changed
 
 The seven conditions themselves. Which of them to strengthen, and to what, is a
