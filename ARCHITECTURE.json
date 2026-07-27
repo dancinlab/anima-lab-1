@@ -62,8 +62,8 @@
       {
         "id": "THRESHOLD_INSIDE_ITS_OWN_NOISE",
         "state": "pos-conv",
-        "value": "A threshold must be checked against the DISPERSION of the sample it is drawn from, not only against its level. A quantile of a degenerate sample is the sample, so the bar lands on the operating point it is meant to discriminate against and the outcome is decided by numerical noise.",
-        "threshold": "Fixed an unreachable split_threshold=0.3 (153-206x above observed peak, so nothing ever divided) by calibrating to q0.90 of observed tension. Under the regime the gate actually drives -- zero input -- the engine reaches a fixed point by ~step 100, so the calibration sample has std/mean 0.0096-0.0283 and q0.90 of a near-constant IS the constant: the new bar landed within 4.2e-5 RELATIVE of the operating point. A residual drift of ~1e-10/step then decided the whole population -- 3 of 8 seeds drifted below and sat at 2 cells forever, 5 drifted above and reached 27-31 cells within 60 steps before collapsing back to an absorbing n=2 (19,431 quiet steps after). Three of those excursions happened to still be in flight at gate step 300 and PASSED NO_SYSTEM_PROMPT -- a pass manufactured by the sign of numerical noise. I replaced an unreachable bar with a bar sitting exactly ON the operating point: the same disease inverted. merge_threshold=0.01 is the third instance of the same family, clearing 100% of pair readings at n=2 and 76-100% at n=32 -- a bar everything clears is not a bar.",
+        "value": "A threshold must be checked against the DISPERSION of the sample it is drawn from, not only against its level. And when the threshold is a RATIO of two measurements, the dispersion that matters is the estimator's spread ACROSS DIFFERENT STATES -- making a measurement reproducible on one fixed state does not make two of its readings comparable.",
+        "threshold": "Fixed an unreachable split_threshold=0.3 (153-206x above observed peak) by calibrating to q0.90 of observed tension, then discovered the calibration sample is degenerate under the regime the gate drives (std/mean 0.0096-0.0283), so q0.90 of a near-constant IS the constant and the new bar landed within 4.2e-5 RELATIVE of the operating point; a residual drift of ~1e-10/step then decided the whole population, and three seeds whose excursions were still in flight at gate step 300 PASSED NO_SYSTEM_PROMPT on the sign of numerical noise. merge_threshold=0.01 is the same family, clearing 100% of pair readings at n=2. FOURTH INSTANCE, and it decides three of the five gate conditions: PhiIIT derives its rng seed from int(abs(hash((n, round(sum,6), round(std,6))))), which makes Phi reproducible on an IDENTICAL tensor but a STEP FUNCTION of its argument -- crossing a 6th-decimal rounding boundary re-draws every debias shuffle at once, and the size of the resulting jump is unrelated to the size of the change. Measured, 3 tensors x 10 draws per cell: at n=32 a 1e-6 perturbation flips the seed 30/30 and moves Phi by up to 72.0%; at n=256 the same perturbation flips 30/30 and moves it by up to 1054.7%, and 1e-3 by 1188.6%. Only 1e-9 leaves the seed alone (0/30). Against that, ZERO_INPUT tests phi_end > phi_start*0.5, PERSISTENCE tests phi_history[-1] >= max(first half)*0.8, and SELF_LOOP tests end >= start*0.8 -- all three compare Phi at two DIFFERENT states, which always differ by far more than 1e-6, so each is a ratio of two independent draws of an estimator that moves 10x. The in-code comment says the seeding fixed this; it fixed same-state reproducibility only, and every ratio test is a cross-state comparison.",
         "source": "consciousness_engine.py"
       },
       {
@@ -163,6 +163,18 @@
             "role": "phi-rs 공식이 비통합을 의식으로 셈한다",
             "id": "measurement-phi",
             "detail": "bench_v2._min_partition 이 n>8 에서 피들러 부호로 한 번 자르고 최소화하지 않는다(완전탐색 대비 1.8~3.4배). 스윕 수정안은 미적용 — 25시드에서 분산은 줄지만 방향성을 무너뜨린다(5.8~9.5배 분리 → 0.97~1.57배). phi_rs 는 미빌드, class PhiIIT 사본 40개."
+          },
+          {
+            "name": "Φ is a step function",
+            "role": "비율 임계 3종이 추정기 자체 산포 안에 있다",
+            "id": "measurement-phi-step",
+            "detail": "PhiIIT 시드가 round(합,6)·round(표준편차,6)에서 나온다. 동일 텐서는 동일 Φ지만, 6번째 소수의 반올림 경계를 넘으면 디바이어스 셔플이 통째로 재추첨되고 점프 크기는 섭동 크기와 무관하다. 텐서3×draw10: n=32에서 1e-6 섭동이 시드 30/30 뒤집고 Φ를 최대 72.0% 이동, n=256에서 같은 섭동이 1054.7%, 1e-3이 1188.6%. 1e-9만 시드를 안 건드린다(0/30)."
+          },
+          {
+            "name": "which conditions it decides",
+            "role": "교차상태 비교라 재현성 수정이 못 덮는다",
+            "id": "measurement-phi-step-reach",
+            "detail": "ZERO_INPUT은 phi_end > phi_start*0.5, PERSISTENCE는 phi_history[-1] >= max(전반부)*0.8, SELF_LOOP은 end >= start*0.8. 셋 다 서로 다른 두 상태의 Φ를 비교하고, 두 상태는 항상 1e-6보다 훨씬 크게 다르다. 따라서 세 조건 전부 10배로 움직이는 추정기의 독립 추첨 두 개의 비율이다. 코드 주석은 시드 도입으로 이 문제가 해결됐다고 적혀 있으나, 해결된 것은 동일상태 재현성뿐이다."
           },
           {
             "name": "dead channels",
