@@ -145,8 +145,33 @@ in the mitosis engine, never fires.
 
 Checked against three input regimes — one fixed stimulus, fresh noise every
 step, and 24 stimuli in rotation — the cell count was 2 in all three. This is
-not a novelty-starved protocol; it is a threshold set for a tension scale the
-engine does not reach.
+not a novelty-starved protocol.
+
+### Correction, made in QD-6
+
+The "8× short" above is measured with **this bench's** input. Sweeping the
+input scale changes the picture and one sentence here was overstated:
+
+| input | norm | tension max | cells |
+|---|---|---|---|
+| `qualia_sense` (this bench) | 3.66 | 0.0285 | 2 |
+| `torch.randn` — the engine's own default | 6.09 | 0.0833 | 2 |
+| `qualia_sense` × 3 | 10.98 | 0.1917 | 2 |
+| `qualia_sense` × 10 | 36.61 | 2.3646 | **32** |
+| `randn` × 5 | 32.55 | 2.3789 | **32** |
+
+So it is **not** true that no input can reach the bar — inputs about 5× the
+engine's own default do, and then the population grows to `max_cells`
+immediately. `tension = (output ** 2).mean()` (mitosis.py:60) is an absolute
+magnitude, so it tracks input scale directly.
+
+What survives, and is stronger than the original claim: the bar is unreachable
+at **every input scale the repo itself uses**. The engine's own default is 3.6×
+short; `mitosis.demo()`'s `text_to_vector` output has norm 0.051 and produces
+T=0.01 against that demo's `split_threshold=1.5`, 150× short. The demo's one
+`MITOSIS` line comes from a `--- Forced Mitosis Demo ---` block calling
+`split_cell()` directly; across its 30 threshold-driven steps, zero splits
+occur. Threshold-driven mitosis has never fired on any path in this repo.
 
 ## What the run does show, attributed honestly
 
