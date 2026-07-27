@@ -177,6 +177,12 @@
             "detail": "ZERO_INPUT은 phi_end > phi_start*0.5, PERSISTENCE는 phi_history[-1] >= max(전반부)*0.8, SELF_LOOP은 end >= start*0.8. 셋 다 서로 다른 두 상태의 Φ를 비교하고, 두 상태는 항상 1e-6보다 훨씬 크게 다르다. 따라서 세 조건 전부 10배로 움직이는 추정기의 독립 추첨 두 개의 비율이다. 코드 주석은 시드 도입으로 이 문제가 해결됐다고 적혀 있으나, 해결된 것은 동일상태 재현성뿐이다."
           },
           {
+            "name": "but PERSISTENCE still reads real decline",
+            "role": "추첨통계 가설을 섞기 널이 반증했다",
+            "id": "measurement-persistence-null",
+            "detail": "관문이 찍은 11개 궤적(각 10체크포인트)의 값 순서만 섞어 10000회: 섞기 통과율 51.4% 대 실제 통과 18.2%(2/11). 실제가 널보다 33%p 낮다 — 순서가 정보를 나른다는 뜻이고 방향은 Φ 하락이다. '이 조건은 추정기 추첨 통계를 읽을 뿐'이라는 내 가설은 반증됐다. 계단 성질은 잡음을 얹지만 추세가 지배한다. 즉 12종 중 9종이 PERSISTENCE 로 막히는 건 1000스텝에서 Φ가 실제로 떨어지기 때문이다."
+          },
+          {
             "name": "dead channels",
             "role": "측정으로 하중 없음이 확인된 구조들",
             "id": "measurement-dead",
