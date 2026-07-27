@@ -981,3 +981,32 @@ Not landed in `bench_v2`. Replacing a condition's measurement is a larger change
 than fixing an estimator, the bar of 5 is still the number calibrated against
 collapsed populations, and the redesign clears it on 83% of seeds rather than
 all. The evidence is here; the choice is the owner's.
+
+## The same move does not open `HIVEMIND`
+
+If `SPONTANEOUS_SPEECH` failed because it never read the output, the obvious next
+step is to ask whether `HIVEMIND` — which also reads only hidden-state Φ — has the
+same defect. Two engines, connected or not, and the alignment of what they emit
+(mean cosine between their output trajectories), 128 cells, 3 seeds:
+
+| engine | connected | unconnected | difference |
+|---|---|---|---|
+| current | +0.0328 | +0.0021 | +0.0307 |
+| redesign | −0.0030 | +0.0578 | **−0.0608** |
+| **DEAD** | **+0.8474** | −0.0743 | **+0.9218** |
+| SCRAMBLE | +0.1172 | +0.0956 | +0.0216 |
+
+**A corpse wins by an order of magnitude.** Its states never change, so writing a
+mixture of the two into both leaves their outputs aligned forever — the same
+class of artefact that made SCRAMBLE top the hidden-state speech measure. Moving
+`HIVEMIND` to the output channel would make it anti-correlated in exactly the way
+moving `SPONTANEOUS_SPEECH` there fixed.
+
+The prescription that worked once does not generalise, and the redesign is worse
+than the current engine here (−0.06 against +0.03). On the shipped measure both
+still fail: current −8% and redesign −1% against solo, with the unconnected
+control confirming no effect either way.
+
+So the two remaining conditions fail for different reasons and need different
+answers: one was measuring the wrong quantity, the other is measuring something
+that genuinely is not happening.
