@@ -204,3 +204,33 @@ constant, an unreachable bar or a crash — all of which have been removed. The
 remaining question is what should hold a population above two cells when the
 quantity that drives division is degenerate at two, and that is an engine design
 question rather than a measurement one.
+
+### Repulsion does act at two cells — the metric I read did not
+
+The obvious answer to the deadlock was the repulsion term validated on
+`BenchEngine` this session. Measured against `ConsciousnessEngine` it appeared to
+do **nothing**: cells 2, tension spread 0.000107, cosine sd 0.000000, identical
+to six decimals at repulsion 0, 0.15 and 0.3.
+
+Two of my readings were wrong and both are recorded rather than dropped.
+
+**First**, I explained the null result as "at n=2 the two cells are pushed exactly
+opposite, so the angle cannot change". An isolated test refutes it — repulsion
+moves the pair's cosine from −0.274 to −0.407 / −0.615 / −0.893 at strength
+0.15 / 0.5 / 2.0. The mechanism works at two cells.
+
+**Second**, the term was firing all along. Instrumented: **300/300 steps**, state
+change 0.012704 per step, and the pair's cosine moving 0.201 → 0.150 over the
+run. What was flat was my *metric*: I reported **cosine standard deviation**, and
+with two cells there is exactly one off-diagonal pair, so its sd is 0 by
+construction no matter what the repulsion does.
+
+So the honest result is narrower and less convenient than either reading: the
+repulsion does push the two cells apart, by about a quarter of their overlap over
+300 steps, and **that is not enough to reach the split bar**. The deadlock is not
+that nothing can create spread at two cells; it is that what spread there is
+grows more slowly than division requires.
+
+A measure that is structurally zero at the population size under test is exactly
+the defect this session opened by finding — `sd = 0.0000` was not evidence of a
+static population, it was one pair.
