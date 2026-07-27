@@ -401,7 +401,18 @@ class MitosisEngine:
             if len(cell.tension_history) < self.split_patience:
                 continue
             recent = cell.tension_history[-self.split_patience:]
-            if all(t > self.split_threshold for t in recent):
+            # Sustained tension, measured as the MEAN of the window rather than
+            # every step of it. `all(t > bar)` demands a persistence that varying
+            # input structurally cannot supply: tension follows the input, so
+            # with stimuli in rotation it exceeds the bar on 50% of steps while
+            # the longest consecutive run is 2 against the 3 required — measured,
+            # and not chance, since a random 50% sequence produces runs of 3
+            # constantly. Under `all(...)` the engine could only divide when fed
+            # the same thing repeatedly, which is the opposite of novelty-driven
+            # division. The mean keeps "sustained" and drops "uninterrupted", and
+            # matches Cell.avg_tension, which already averages its recent window.
+            # See docs/mitosis-calibration.md.
+            if sum(recent) / len(recent) > self.split_threshold:
                 cells_to_split.append(cell)
 
         for cell in cells_to_split:

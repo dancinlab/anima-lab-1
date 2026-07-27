@@ -77,3 +77,75 @@ with a derived bar — and that the population does not improve what the QD seri
 was chasing: stimulus retention was 0.409 at 2 cells, 0.377 at 3.1, and 0.403 at
 31.8. Population size does not move it. These fixes make the engine behave as
 designed; they do not make it do more.
+
+---
+
+# Owner said go — the criterion was changed, and the failure moved
+
+`_check_splits` now compares the **mean** of the recent window against the bar
+instead of requiring every step of it to clear (`sum(recent)/len(recent)` vs
+`all(t > bar)`). That keeps "sustained" and drops "uninterrupted", and matches
+`Cell.avg_tension`, which already averages its recent window.
+
+`MitosisC.__init__`'s forced clone growth is also gone. It manufactured cells
+the merge logic deletes within ten steps, so `max_cells` only looked like a
+starting size; construction now honestly reports 2.
+
+## Division is possible under varying input now — and lands on the ceiling
+
+8 stimuli in rotation, 400 steps:
+
+| quantile | bar | cells | splits |
+|---|---|---|---|
+| 0.75 | 0.0462 | **31** | 984 |
+| 0.80 | 0.0594 | **2** | **0** |
+| 0.85 | 0.0603 | 2 | 0 |
+| 0.90 | 0.0673 | 2 | 0 |
+
+Before this change every one of these was 2 cells and 0 splits. So the
+impossibility is gone. But there is **no band** — between bars of 0.0462 and
+0.0594 the population flips from ceiling to floor with nothing in between.
+
+QD-6 pre-registered that "pinning to `max_cells` is the same failure as pinning
+to `min_cells`". By that standard **this moved the failure rather than fixing
+it**, and saying otherwise would be dishonest.
+
+## Why it always runs to the ceiling — measured
+
+At the shipped `noise_scale=0.014`, **97% of splits are undone**: 984 splits
+against 955 merges. Children differ from their parent by too little for their
+inter-cell tension to clear `merge_threshold`, so the engine deletes what it
+just made. Raising the noise stops the churn and changes nothing about the
+outcome:
+
+| noise_scale | cells | splits | merges | undone | mean inter-tension |
+|---|---|---|---|---|---|
+| 0.014 (shipped) | 31 | 984 | 955 | **97%** | 0.094 |
+| 0.05 | 32 | 30 | 0 | 0% | 0.53 |
+| 0.15 | 32 | 30 | 0 | 0% | 51.0 |
+| 0.40 | 32 | 30 | 0 | 0% | 2373 |
+
+Either the children are erased or they survive and the population saturates
+immediately. The deeper reason is visible in the tension as the population
+grows:
+
+| step | cells | mean tension per cell |
+|---|---|---|
+| 0 | 3 | 0.0315 |
+| 5 | 9 | 0.1947 |
+| 15 | 32 | **0.3881** |
+| 150 | 32 | 0.4611 |
+
+**Dividing does not relieve the pressure that caused it — it raises it, 12×
+from 3 cells to 32.** Each generation inherits its parent's weights plus noise,
+so outputs grow, so `tension = (output**2).mean()` grows, so the split
+condition holds harder the more it has already fired. The loop is positively
+self-reinforcing and the ceiling is the only thing that stops it.
+
+## The remaining decision
+
+Nothing about population size feeds back into tension. A working population
+needs that negative feedback — division has to lower per-cell load, or the
+trigger has to normalise by population — and either is a change to what tension
+*means*, which is a larger decision than changing when a comparison fires.
+That one is recorded, not taken.

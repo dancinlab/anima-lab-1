@@ -125,9 +125,15 @@ class MitosisC(CEngine):
         self.mechanism = mechanism
         self.engine = MitosisEngine(dim, hidden, dim, initial_cells=2, max_cells=max_cells)
 
-        # Grow to target
-        while len(self.engine.cells) < max_cells:
-            self.engine._create_cell(parent=self.engine.cells[0])
+        # No forced growth. This used to clone cells[0] up to max_cells, but the
+        # clones differ only by 0.014 of weight noise, which puts their inter-cell
+        # tension below merge_threshold — so the engine, which merges cells that
+        # grow too alike, deleted them again within ten steps. Measured 32 -> 2
+        # cells between step 5 and step 10 under a constant input, with Phi
+        # dropping to 0 because two cells carry no integrated information.
+        # The population is the engine's to grow by mitosis; manufacturing cells
+        # it is designed to remove only made max_cells look like a starting size.
+        # See docs/mitosis-calibration.md.
 
         # Mechanism modules
         self._step_count = 0
