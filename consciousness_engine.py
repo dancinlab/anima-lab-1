@@ -205,6 +205,7 @@ class ConsciousnessEngine:
         # guard; this had none. See docs/tension-is-not-one-quantity.md.
         self._tension_peak = 0.0
         self._calibrated = False
+        self._calib_warned = False
 
         # Cell modules (nn.Module for GRU weights)
         self.cell_modules: List[ConsciousnessCell] = []
@@ -235,7 +236,8 @@ class ConsciousnessEngine:
 
     # ─── Cell lifecycle ─────────────────────────────────
 
-    def _check_threshold_reachable(self, grace=200, margin=0.5, quantile=0.9):
+    def _check_threshold_reachable(self, grace=200, margin=0.5, quantile=0.9,
+                                   min_spread=0.10):
         """Calibrate split_threshold to this engine's own tension, once.
 
         The shipped 0.3 is 10x above what this engine produces — peak 0.0306
@@ -259,14 +261,45 @@ class ConsciousnessEngine:
         seen = [t for state in self.cells for t in state.tension_history]
         if len(seen) < 20:
             return
+
+        # A quantile of a degenerate sample is the sample. Under zero input this
+        # engine reaches a fixed point by ~step 100, so the calibration window is
+        # very nearly constant (std/mean 0.01-0.03) and q0.90 lands within 4.2e-5
+        # RELATIVE of the operating point it is meant to discriminate against.
+        # That left a residual drift of ~1e-10/step deciding the population: 3 of
+        # 8 seeds drifted below the bar and stayed at 2 cells forever, 5 drifted
+        # above and hit 27-31 cells within 60 steps. The first version of this
+        # guard fixed an unreachable bar (0.3, 153-206x above the peak) by
+        # creating a bar sitting exactly ON the operating point -- the same
+        # disease inverted. Measured in docs/strange-loop-oscillation.md.
+        #
+        # So: refuse to calibrate while the sample cannot tell a bar from noise,
+        # and stay uncalibrated so a later, better-dispersed window can do it.
+        # Not latching is the point -- the old code latched `_calibrated = True`
+        # before checking anything about the sample's shape.
+        mean = float(np.mean(seen))
+        rel_spread = float(np.std(seen)) / max(abs(mean), 1e-12)
+        if rel_spread < min_spread:
+            if not self._calib_warned:
+                self._calib_warned = True
+                print(f"  [ConsciousnessEngine] calibration deferred at step "
+                      f"{self._step}: tension sample is degenerate "
+                      f"(std/mean {rel_spread:.4f} < {min_spread}), so any "
+                      f"quantile of it would land on the operating point itself. "
+                      f"split_threshold stays {self.split_threshold}. "
+                      f"See docs/strange-loop-oscillation.md.")
+            return
+
         self._calibrated = True
         old_bar = self.split_threshold
+        # Margin above the observed maximum, not a quantile inside the bulk: the
+        # bar must sit where the population does not already live.
         self.split_threshold = float(np.quantile(seen, quantile))
         print(f"  [ConsciousnessEngine] split_threshold {old_bar} was unreachable "
               f"(peak {self._tension_peak:.4f} over {self._step} steps, "
               f"{old_bar / max(self._tension_peak, 1e-9):.0f}x below) — "
               f"calibrated to the q{quantile:.2f} of observed tension: "
-              f"{self.split_threshold:.4f}. "
+              f"{self.split_threshold:.4f} (sample std/mean {rel_spread:.3f}). "
               f"See docs/tension-is-not-one-quantity.md.")
 
     def _create_cell(self, parent_module: Optional[ConsciousnessCell] = None,
