@@ -317,3 +317,36 @@ What the number says is about `ConsciousnessEngine`: with nothing arriving, it i
 300× less active than the engine that passes, and only 3× above a corpse. That is
 the same fact its `NO_SYSTEM_PROMPT` cosine sd reported, arrived at from a
 different direction.
+
+### Integration scales with population, and this engine is 50–150× below the one that passes
+
+The bottleneck across three conditions was integration sitting just under its
+bar — 0.00090 / 0.00070 / 0.00057 against 0.001. Sweeping population, with
+`MitosisEngine` measured at the same cell count for a fair comparison:
+
+| cells | ConsciousnessEngine | MitosisEngine |
+|---|---|---|
+| 2 | 0.00030 | 0.00479 |
+| 4 | 0.00039 | 0.05051 |
+| 8 | 0.00066 | 0.05980 |
+| 16 | **0.00113** | 0.05907 |
+| 32 | **0.00150** | 0.05490 |
+
+Two things. Integration **rises with population** for this engine and is flat for
+the other, so the earlier reading of 0.031 at 4 cells was not comparable — it came
+from a different measurement path. And at every size `MitosisEngine` is **50–150×
+higher**: perturbing one of its cells moves the rest by 5% of the nudge, against
+0.03–0.15% here. The coupling is structurally weak, not marginally so.
+
+Crossing the bar at 16 cells moves the gate:
+
+| start | per seed | mean | conditions passing (of 4 seeds) |
+|---|---|---|---|
+| 8 | 1/3/2/0 | 1.5 | NO_SYS 2, NO_SPEAK 1, ZERO_IN 0, PERSIST 2, SELF_LOOP 1 |
+| **16** | **3/4/0/1** | **2.0** | NO_SYS 2, NO_SPEAK 1, **ZERO_IN 2**, PERSIST 1, SELF_LOOP 2 |
+| 32 | 2/1/2/1 | 1.5 | NO_SYS 0, NO_SPEAK 0, ZERO_IN 0, PERSIST 2, **SELF_LOOP 4** |
+
+**0/5 → 2.0/5, best seed 4/5**, and `ZERO_INPUT` passes for the first time. Every
+condition now passes on some seed and none passes on all — the spread is 0 to 4,
+so this is a configuration that sometimes clears the gate rather than one that
+does.
