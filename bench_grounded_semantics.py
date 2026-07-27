@@ -49,7 +49,15 @@ MIN_COUNT = 3
 SHUFFLES = 30
 
 
-def load_corpus():
+def load_corpus(path=None):
+    if path:
+        sents, freq = [], collections.Counter()
+        for line in pathlib.Path(path).open(encoding="utf-8", errors="replace"):
+            w = re.findall(r"[가-힣]{2,}", line)
+            if len(w) >= 3:
+                sents.append(w)
+                freq.update(w)
+        return sents, freq
     p = pathlib.Path(CACHE)
     if p.exists():
         d = pickle.load(open(p, "rb"))
@@ -157,11 +165,14 @@ def compose_score(names, labels, vecs, combos):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--shuffles", type=int, default=SHUFFLES)
+    ap.add_argument("--corpus", default=None,
+                    help="read a corpus file instead of the anima markdown tree")
     args = ap.parse_args()
 
     C = concepts()
-    sents, freq = load_corpus()
-    print(f"\n  근거 코퍼스 — anima/**/*.md · 문장 {len(sents):,} · 어휘 {len(freq):,}")
+    sents, freq = load_corpus(args.corpus)
+    src = args.corpus or "anima/**/*.md"
+    print(f"\n  근거 코퍼스 — {src} · 문장 {len(sents):,} · 어휘 {len(freq):,}")
 
     desc_words = {w for _, d in C.values() for w in re.findall(r"[가-힣]{2,}", d)}
     V, tgt = build_vectors(sents, freq, desc_words)

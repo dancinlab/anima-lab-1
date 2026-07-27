@@ -15,3 +15,7 @@ knowledge-rs/target/
 
 # python venv (local torch install for QD-5)
 .venv/
+
+# built training corpora (regenerate with build_corpus.py)
+data/corpus_v3.txt
+data/corpus_v3_arith.txt
