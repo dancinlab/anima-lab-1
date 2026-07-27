@@ -2384,7 +2384,18 @@ def run_verify(cells: int, dim: int, hidden: int, with_controls: bool = True):
         print(f"  VERDICT: NEEDS WORK ({total_pass}/{total_tests})")
     print(f"  {'=' * 70}")
 
-    return results
+    # A gate that prints "Deployment blocked" and then exits 0 does not block
+    # anything. `--verify` returned success on every path, including GATE VOID
+    # and including a run where the harness raised on every condition, so
+    # nothing calling it in a script could tell a clean run from a corpse or
+    # from a crash. Deploy on a nonzero exit is the only form in which the
+    # printed verdict is enforceable.
+    blocked = bool(voided and any(voided.values()))
+    unmeasured = sorted({en for (en, _tn), err in errored.items() if err})
+    if unmeasured:
+        print(f"\n  NOT MEASURED — the harness raised on: "
+              f"{', '.join(unmeasured)}. No verdict for those engines.")
+    return results, (2 if blocked else (3 if unmeasured else 0))
 
 
 # ──────────────────────────────────────────────────────────
@@ -2614,8 +2625,14 @@ Key insight: Phi(IIT) and Phi(proxy) are COMPLETELY DIFFERENT metrics.
         run_compare(args.cells, args.steps, args.dim, args.hidden)
 
     elif args.verify:
-        run_verify(args.cells, args.dim, args.hidden,
-                   with_controls=not args.no_controls)
+        _results, code = run_verify(args.cells, args.dim, args.hidden,
+                                    with_controls=not args.no_controls)
+        if code:
+            # 2 = a control cleared a condition (gate void). 3 = the harness
+            # raised, so nothing was measured. Both must be distinguishable
+            # from 0 by anything that scripts a deployment.
+            print()
+            raise SystemExit(code)
 
     elif args.philosophy:
         run_philosophy(args.cells, args.steps, args.dim, args.hidden)
