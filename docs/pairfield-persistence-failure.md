@@ -46,18 +46,28 @@ step 1000. **No quantity has an event at step 700.** Φ(A) reads 5.55 / 5.37 /
 5.46 / 5.80 at steps 400 / 600 / 700 / 900 — the seventh checkpoint is not
 distinguished from three others that the rule happened not to compare against.
 
+All 40 sampled points, Φ(A), seed 44, 256c — the gate reads only every fourth
+column of this:
+
 ```
-  Φ(A) |    *
-   12  | *     *          *        *     *  *
-       |   * *   * *  * *   *  * *  *  *  *   *  *  *
-    8  |            *    *        *        *        *
-       |         *     *      *  *      *      *
-    4  |
-       +--------------------------------------------- step
-       25            400        700              1000
+   12.5 |
+        |   *                *     *     *     *
+   10.8 |         *                    *      *
+        |      *   **      *            * **
+    9.1 |    *   *     *      **
+        |  *  *      **     *    **  *
+    7.4 |       *                     *      *  *
+        |                **
+    5.7 |**             *       *   *       *
+        |
+    4.0 |
+        +----------------------------------------
+         step 25                        step 1000
+                                    ^ step 700
 ```
 
-There is no trajectory here. There is a stationary series with a spread.
+There is no trajectory here. There is a stationary series with a spread, sampled
+ten times.
 
 ## 2. The estimator's own spread covers the drop
 
@@ -111,19 +121,27 @@ stays in 11.5–14.0 and isolates a single cell at every one of the 22 steps.
 Everything that moves in Φ is the cut the estimator *used*.
 
 `bench_v2.py:225-237` takes the **sign** of the Fiedler vector as the partition.
-That is not the minimum cut. It overshoots the true minimum by 3–7× and it is
-bistable — it lands on a 4-cell isolation or a 8–9-cell one, with cut values 35
-and 87, and it flips between them from one step to the next.
+That is not the minimum cut. It exceeds the best cut on its own ordering by 3–7×,
+and it is bistable: it settles on a 4-cell isolation (cut ≈ 35) or an 8–9-cell
+one (cut ≈ 85), with the occasional intermediate (step 793, k = 6, cut 58), and
+it flips between them from one step to the next.
 
 ```
-  cut   |  *        *              *              <- Fiedler sign cut, k=8..9
-   90   |
+   95.0 |                                              * = Fiedler sign cut
+        |          *       *           *               = = best cut, same ordering
         |
-   40   |*  * *  *    *  * * *  *   *  *  *  *    <- Fiedler sign cut, k=4
+   71.2 |
         |
-   12   |========================================  <- best cut, same ordering, k=1
-        +---------------------------------------- step
-        791                                   812
+        |    *
+   47.5 |
+        |  *   * *     *     * * * * *   * * * * * *
+        |*           *   *
+   23.8 |
+        |= = = = = = = =   = = = = = = = = = = = = =
+        |                =
+    0.0 |
+        +--------------------------------------------
+         791                                    812
 ```
 
 **So the spikes are the artefact and the low readings are the baseline.** The
@@ -184,7 +202,7 @@ five seeds. It does not.
 
 Narrative's Φ series at 32c, seed 43: 1.965 → 1.957 → 0.793 → 1.417 → 1.345 →
 1.459 → 0.723 → 1.889 → 0.902 → 1.454. Same shape, same bistable jumps, same
-lottery. Its jitter cv at 256 cells is 0.05–0.27, matching PairField's 0.07–0.28.
+lottery. Its jitter cv at 256 cells is 0.04–0.27, matching PairField's 0.07–0.28.
 
 There is no engine with a qualitatively different trajectory shape to compare
 against, because the shape is the estimator's.
