@@ -529,3 +529,40 @@ What the measurements do support, stated no more strongly than that: **connectin
 two of these engines does not raise their integrated information at any repulsion
 strength.** Measured properly for the first time, since the condition had never
 executed before this session.
+
+## A constant of mine was deciding the outcome
+
+The temporal-identity axis used `identity > 0.05`, a bar chosen by hand — the
+exact defect this session spent its length finding, introduced by the fix for it.
+It was deciding outcomes rather than sitting harmlessly: at repulsion 0.036 the
+engine reaches 9 consensus events with identity **+0.0120**, so a hand-picked
+number was the only thing keeping two conditions from being satisfiable together.
+
+The null is measurable. Scrambling the same population's rows makes self- and
+cross-continuity statistically identical, so what remains is noise:
+
+| repulsion | identity | scrambled null | null sd |
+|---|---|---|---|
+| 0.020 | 0.0051 | 0.0000 | 0.0000 |
+| 0.036 | 0.0173 | −0.0001 | 0.0001 |
+| 0.050 | 0.0678 | −0.0002 | 0.0002 |
+| 0.150 | 0.5706 | −0.0013 | 0.0023 |
+
+The hand-picked bar exceeded the measured null by a factor of **250**. Replaced
+with `null + 3·sd`, computed per run. The gate still rejects all four controls at
+0/7 with the engine at 5/7, so the change costs nothing it was buying.
+
+## 7/7 appeared once and did not reproduce
+
+With the constant gone, a sweep at 256 cells showed every condition passing at
+repulsion 0.036 — a 7/7. Across five seeds at that exact setting:
+
+| seed | 0 | 1 | 2 | 3 | 4 |
+|---|---|---|---|---|---|
+| total | 5/7 | 4/7 | 6/7 | **7/7** | 6/7 |
+| consensus events (bar 5) | 1 | 5 | 3 | 5 | 4 |
+
+**1 of 5 seeds, mean 5.6/7.** The consensus count sits right on its bar and
+crosses it at random, so the single 7/7 was the seed rather than the
+configuration. Reporting it as a result would have been this session's own
+recurring error — reading a peak without checking what produced it.

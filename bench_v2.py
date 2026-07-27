@@ -1447,9 +1447,31 @@ def _three_axes(engine, dim, cells, steps=60):
 
     identity = float(np.mean(same) - np.mean(other))
     change = float(np.mean(moved))
-    return (phi_now > max(phi_floor, 1e-6), identity > 0.05, change > 0.001,
-            f"Φ={phi_now:.4f}>floor={phi_floor:.4f}:{phi_now > max(phi_floor, 1e-6)} "
-            f"identity={identity:+.4f} change={change:.5f}")
+
+    # The identity bar was 0.05, a constant chosen by hand -- the exact defect
+    # this session spent its length finding, and it was deciding outcomes: at
+    # repulsion 0.036 the engine reaches 9 consensus events with identity
+    # +0.0120, so a hand-picked bar was the only thing separating two conditions.
+    # The null is measurable: scrambling the same population's rows makes self-
+    # and cross-continuity statistically identical, so what remains is noise.
+    # Measured at 256 cells it is 0.0000 ± 0.0002, which the old bar exceeded by
+    # a factor of 250.
+    null = []
+    scrambled = prev.clone()
+    for _ in range(10):
+        perm = scrambled[torch.randperm(n)]
+        a = F.normalize(scrambled, dim=1)
+        b = F.normalize(perm, dim=1)
+        sim = a @ b.T
+        null.append(float(sim.diag().mean()
+                          - (sim.sum() - sim.diag().sum()) / max(n * (n - 1), 1)))
+    identity_floor = float(np.mean(null) + 3 * np.std(null))
+
+    return (phi_now > max(phi_floor, 1e-6),
+            identity > max(identity_floor, 1e-6),
+            change > 0.001,
+            f"Φ={phi_now:.4f}>floor={phi_floor:.4f} "
+            f"identity={identity:+.4f}>floor={identity_floor:+.4f} change={change:.5f}")
 
 
 def _verify_no_system_prompt(engine_factory, cells, dim, hidden):
