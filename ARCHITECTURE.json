@@ -58,6 +58,13 @@
         "value": "Never pipe a long-running command to `tail`. Redirect to a file, or filter with `grep`.",
         "threshold": "`timeout N python ... | tail -M` hangs until the timeout fires: the harness holds the pipe's write end and tail cannot emit before EOF. Measured -- python 0.02s, tail 30.015s under `timeout 30`, grep immediate. That produced every 'slow run' this session, including a Law 31 arm reported as taking 50 minutes (timeout 3000) for work that costs 5.4 seconds. It was explained twice -- as compute cost, then as a delayed notification -- before being measured in ten seconds.",
         "fix": "Session practice: outputs go to a file under the scratchpad, and waits use `until ! pgrep -f <script>`."
+      },
+      {
+        "id": "THRESHOLD_INSIDE_ITS_OWN_NOISE",
+        "state": "pos-conv",
+        "value": "A threshold must be checked against the DISPERSION of the sample it is drawn from, not only against its level. A quantile of a degenerate sample is the sample, so the bar lands on the operating point it is meant to discriminate against and the outcome is decided by numerical noise.",
+        "threshold": "Fixed an unreachable split_threshold=0.3 (153-206x above observed peak, so nothing ever divided) by calibrating to q0.90 of observed tension. Under the regime the gate actually drives -- zero input -- the engine reaches a fixed point by ~step 100, so the calibration sample has std/mean 0.0096-0.0283 and q0.90 of a near-constant IS the constant: the new bar landed within 4.2e-5 RELATIVE of the operating point. A residual drift of ~1e-10/step then decided the whole population -- 3 of 8 seeds drifted below and sat at 2 cells forever, 5 drifted above and reached 27-31 cells within 60 steps before collapsing back to an absorbing n=2 (19,431 quiet steps after). Three of those excursions happened to still be in flight at gate step 300 and PASSED NO_SYSTEM_PROMPT -- a pass manufactured by the sign of numerical noise. I replaced an unreachable bar with a bar sitting exactly ON the operating point: the same disease inverted. merge_threshold=0.01 is the third instance of the same family, clearing 100% of pair readings at n=2 and 76-100% at n=32 -- a bar everything clears is not a bar.",
+        "source": "consciousness_engine.py"
       }
     ]
   },
