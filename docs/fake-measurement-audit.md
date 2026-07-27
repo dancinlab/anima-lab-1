@@ -72,6 +72,44 @@ Deciding what an ethics gate should block, and on what evidence, is a design
 decision. The site is annotated so the next reader does not mistake a gate that
 always opens for one that guards something.
 
+## The auditor was measured against what it was built to find
+
+Shipping a detector without measuring its recall is the same mistake as reading
+a peak without checking what produced it. Measured against the six defects this
+session found by hand, on the code **as it was before they were fixed**
+(git 710c0ec) — testing a fixed file proves nothing:
+
+| defect | check | caught |
+|---|---|---|
+| `cell_tension = 0.5` | A | ✓ |
+| `phi_preservation ∈ {0.5, 1.0}` vs 0.3 | **D** | ✓ |
+| `sha256` → `complexity` / `emotionality` / `entropy_input` | **E** | ✓ |
+| `split_threshold` vs 0.3 | C | ~ flags the comparison, cannot judge scale |
+| `best_rule` computed and discarded | — | ✗ |
+| gate `g` inert | — | ✗ |
+
+**2 of 6 before D and E, 3 of 6 plus one partial after.** The two misses are the
+same shape — a value that *is* read but cannot affect the outcome — which needs
+dataflow this tool does not do.
+
+An **F** was attempted and removed: *an additive term not mentioning the loop
+variable cannot change an argmax over that loop's candidates*, which is exactly
+the inert gate `g`. As written it produced **1137 hits** across the live root
+files and mis-attributed nested loops to the outermost variable, because it
+never checked the part that makes the pattern a defect — that the loop's result
+feeds a selection. A check that buries real findings under a thousand false ones
+is worse than no check.
+
+### D needed two precision fixes, both found by reading its output
+
+| symptom | cause | effect |
+|---|---|---|
+| `_ec1_wealth ∈ [0.0] vs 5.0 → always False` | `+=` was not treated as an assignment, so counters read as "only ever 0" | 40 of the first 55 hits |
+| `p_ngram ∈ [1.0] vs 0.05 → always False` | tuple unpacking `chi2, p = stats.chisquare(...)` was invisible, so only the skipped-data `else` literal was seen | two legitimate significance tests reported as unable to find significance |
+
+With both fixed, **D reports exactly one hit across 260 live files, and it is
+the real one.**
+
 ## Reproduce
 
 ```
