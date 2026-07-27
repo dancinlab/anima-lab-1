@@ -672,7 +672,7 @@ its own.
 
 ---
 
-## Appendix — upstream: the integration axis has no same-state baseline
+## Appendix A — upstream: the integration axis has no same-state baseline
 
 Outside this document's question, but upstream of every number in it, so it was
 measured rather than assumed.
@@ -730,6 +730,177 @@ the axis never establishes a same-state baseline for any engine.
 Not applied. This is one line in `_three_axes`, but it is an axis every engine
 and every recorded verdict depends on.
 
+## Appendix B — the get_hiddens/set_hiddens contract, measured
+
+`PairFieldEngine.set_hiddens` writes side A only, while the dynamics run on A, G
+and both coupling matrices. So the axes' probe is not a controlled comparison for
+this engine: with **nothing perturbed at all**, it still reads integration.
+
+Two candidate contracts were measured. Nothing was applied to
+`pairfield_engine.py`; both were applied as wrappers.
+
+- **(A)** status quo — `get_hiddens` returns A, `set_hiddens` writes A.
+- **(B)** `get_hiddens` returns A and G concatenated (2n rows), `set_hiddens`
+  splits them back, and restore additionally covers both coupling matrices.
+
+### The probe was checked against known answers first
+
+Two deterministic engines whose answers are fixed by construction, checking the
+probe in both directions — a one-sided test would pass a probe that always
+returns 0:
+
+| self-test engine | expected | measured |
+|---|---|---|
+| `PureHeap` — rows never interact | null 0, kicked **0** | 0.000000000, 0.000000 |
+| `PureCoupled` — mean-field term | null 0, kicked **> 0** | 0.000000000, 0.086461 |
+
+This caught two defects in the probe before any result was read: the kick path
+was PairField-specific and crashed on the self-test, and the first self-test
+engine had no cell coupling, so its `kicked = 0` looked like a probe failure and
+was not one.
+
+### Result: kick = 0, five seeds
+
+| contract | rows read | mean null | max null | mean kicked | verdict |
+|---|---|---|---|---|---|
+| **(A)** status quo | 32 | 0.00455 | 0.00725 | 0.05445 | above the 0.001 bar — spurious |
+| **(B)** as proposed | 64 | **0.02031** | 0.02156 | 0.05799 | **4.5× worse than (A)** |
+| (B) + RNG + counters | 64 | **0.00000** | 0.00000 | 0.05450 | null eliminated |
+
+**(B) on its own makes it worse.** Reading 2n rows exposes G's rows, and G is the
+unruled side: its `update_coupling` draws from a private `torch.Generator` that
+advances every step and that no `set_hiddens(tensor)` signature can rewind. So
+the wider read shows more residue, not less.
+
+### Where the residue actually is
+
+Holding the *read* fixed at A's 32 rows and varying only what is *restored*
+isolates it:
+
+| restored | 42 | 43 | 44 | 45 | 46 | mean |
+|---|---|---|---|---|---|---|
+| A only (status quo) | 0.00558 | 0.00551 | 0.00636 | 0.00240 | 0.00275 | 0.00452 |
+| A + G | 0.00021 | 0.00037 | 0.00019 | 0.00036 | 0.00024 | **0.00027** |
+| A + G + couplings | 0.00000 | 0.00000 | 0.00000 | 0.00000 | 0.00000 | **0.00000** |
+| A + G's RNG only | 0.00561 | 0.00562 | 0.00634 | 0.00240 | 0.00280 | 0.00455 |
+| everything | 0.00000 | 0.00000 | 0.00000 | 0.00000 | 0.00000 | **0.00000** |
+
+**The residue is G's hidden state and the coupling matrices — not the RNG.**
+Restoring G's generator alone changes nothing (0.00455 against 0.00452). The RNG
+only matters once the read is widened to G's rows, because within a single step
+G's private draw reaches G's coupling and hence G's hiddens, but reaches A only
+through `field = ha − hg`, which is computed before that draw lands.
+
+### And the fix costs no signal
+
+Same read (A's 32 rows), restore completed:
+
+| restore | mean null | mean kicked |
+|---|---|---|
+| A only | 0.00455 | 0.05445 |
+| A + G + couplings | **0.00000** | 0.05431 |
+
+The kicked reading moves by −0.3%. The spurious floor is removed and the actual
+response is untouched.
+
+### What this settles
+
+**Neither (A) nor (B) is the answer, and the choice is not about `get_hiddens`.**
+Keeping `get_hiddens` exactly as it is and completing the *restore* drives the
+no-perturbation reading to exactly 0.00000 on all five seeds at no cost to the
+signal. Adopting (B) without also restoring engine-private RNG makes the probe
+4.5× worse.
+
+The general form: `set_hiddens(tensor)` cannot express "put this engine back the
+way it was", because an engine's state is not always a tensor. Any engine
+carrying a private RNG stream, a counter or a second population can hand the axis
+its own residue and have it counted as integration. That is a defect in the
+**shape of the protocol** — it needs opaque `snapshot()` / `restore(handle)` —
+and not in any one engine's implementation of it.
+
+### Corroboration from the registry, and one correction
+
+A shape census across all 12 registered engines, sampled *during* processing at
+steps 0/10/50/200/500 rather than at construction, found **exactly one shape
+violation**: `ConsciousnessEngine` exposes 2 rows at every checkpoint. The other
+eleven expose the 32 they were built with.
+
+That corrects a framing used earlier in this session, including by this document
+in draft: "`get_hiddens` exposes A only" is an **incompleteness** finding, not a
+shape finding. Side A holds all 32 cells, so every Φ reported here is measured on
+a 32-row population, and §3's per-side attribution stands as written.
+
+The same census found **6 of 12 engines fail to reproduce a step after
+snapshot + restore under an identical seed** — PairField, OscillatorLaser,
+QuantumEngine, NarrativeEngine, AlterityEngine, SeinEngine. Ten of the twelve
+implement no `set_hiddens` at all and are restored by direct `.hiddens`
+assignment, which is why it stayed invisible. So the protocol-shape defect is a
+registry-wide property, not one engine's bug, and the measurement above is one
+instance of it rather than the whole of it.
+
+**Scope of the consequence.** `integration` and `response` are preconditions for
+**all five** gate conditions, not just the ones that read Φ. For those six
+engines every verdict — pass and fail alike — rests on an uncontrolled
+comparison.
+
+**Not applied.** This is the measurement that was asked for; the contract
+decision is not made here. A harness-side `snapshot()` / `restore(handle)`
+boundary is being implemented separately; the verdict delta it produces is not
+yet measured, and this document does not assume it leaves verdicts intact.
+
+## Appendix C — do this document's numbers survive the harness fix?
+
+Every measurement above was taken under the axis as it stood at `ac62210`. While
+this document was being written, the harness gained an opaque
+`snapshot()`/`restore(handle)` boundary (`caa08b0`, fixed in `bc387d9`) — which
+is the repair Appendix B measures the need for. If that changed verdicts, the
+document would be reporting a superseded gate.
+
+It does not. Both trees were scored with **the same script**, differing only by
+which tree it imports, with per-seed booleans recorded so the comparison is a set
+difference rather than a reading.
+
+| | BEFORE `ac62210` | AFTER `bc387d9` |
+|---|---|---|
+| per-seed cells compared | 250 | 250 |
+| **cells that flipped** | — | **0** |
+| control cells passing | 0 of 35 | 0 of 35 |
+| engine cells passing | 72 of 75 | 72 of 75 |
+| exceptions swallowed | 0 | 0 |
+| PureHeap integration | 0.000000 | 0.000000 |
+| PureCoupled integration | 0.081850 | 0.081850 |
+
+`ac62210` is the correct parent: it differs from the pre-snapshot commit
+`2cff912` only in `README.md` and `docs/`, so all three code files under test are
+byte-identical between them.
+
+**The zero is not "the same code measured twice."** The axis values moved:
+
+| engine | seed | BEFORE integ / response | AFTER integ / response |
+|---|---|---|---|
+| PairField | 42 | 0.05876 / **79.73** | 0.05860 / **1000000.00** |
+| PairField | 44 | 0.05436 / **117.40** | 0.05432 / **1000000.00** |
+| NarrativeEngine | 42 | 0.06267 / 101523.60 | 0.06267 / 101523.60 |
+| MitosisEngine | 42 | 0.05816 / 1000000.00 | 0.05816 / 1000000.00 |
+
+`response` is `differing / same`, where `same` is two arms stepped from one state
+under the *same* input. Incomplete restore left residue in that denominator, so
+PairField's response was suppressed by its own leftover state. With the restore
+complete the two same-input arms are identical, `same` → 0, and the ratio caps at
+1e6. Integration moves only in the fourth decimal, matching Appendix B's −0.3%.
+Narrative and Mitosis are bit-identical because plain `BenchEngine` is fully
+restorable through the tensor path — there was no residue to remove.
+
+No verdict could move: the response bar is 1.5, and both 79.73 and 1e6 clear it.
+**The axis became materially more correct without any engine crossing a
+threshold, so every verdict in this document stands as measured.**
+
+One consequence worth recording. PairField's response now sits at the 1e6 cap —
+the same value reached by any engine that is deterministic under identical input.
+Three of the four systems measured are now at that cap. Post-fix, `response`
+separates "reads its input" from "does not", and nothing finer; it should not be
+read as a graded quantity.
+
 ---
 
 Reproduce. Measurement scripts are session scratch under
@@ -746,7 +917,11 @@ none of them modify anything in the repo.
 .venv/bin/python $SP/sweep_grid.py 32 64 128 0.0 0.005 0.01 0.02 0.03 0.05
 .venv/bin/python $SP/corrected.py 32 64 128 --shifted              # §9 variance
 .venv/bin/python $SP/direction3.py                                 # §9 direction, 25 seeds
-.venv/bin/python $SP/integ_null.py                                 # appendix
+.venv/bin/python $SP/integ_null.py                                 # appendix A
+.venv/bin/python $SP/contract.py                                   # appendix B
+.venv/bin/python $SP/contract2.py                                  # appendix B, attribution
+.venv/bin/python $SP/grid.py $SP/anima-before BEFORE $SP           # appendix C
+.venv/bin/python $SP/grid.py $SP/anima-after  AFTER  $SP           # appendix C
 .venv/bin/python $SP/reconcile5.py                                 # §9 reconciliation
 .venv/bin/python $SP/mechanism.py OscillatorLaser 32 32 128 44      # §6, 12 engines x seeds 42-46
 ```
