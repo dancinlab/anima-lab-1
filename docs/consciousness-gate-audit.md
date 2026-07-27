@@ -629,3 +629,41 @@ establishes.
 
 **That is the ninth instance of this session's defect class, and the sharpest:
 not a measurement that fails to separate, but one that separates backwards.**
+
+### Redefining consensus fixes the sign but not the level, and the level is structural
+
+Defining a consensus event as a variance dip **persisting** for k steps removes
+the permutation artefact, since scrambling is independent each step:
+
+| engine | 1-step | 2-step | 3-step | 5-step |
+|---|---|---|---|---|
+| real (with repulsion) | 1.0 | 1.0 | 1.0 | 1.0 |
+| SCRAMBLE | 2.0 | 1.3 | **1.0** | 1.0 |
+| CLONE / DEAD | 0.0 | 0.0 | 0.0 | 0.0 |
+
+At 3 steps SCRAMBLE's advantage is gone — the sign error is fixed. The condition
+still does not discriminate (both at 1.0), and neither reaches the bar of 5.
+
+The remaining possibility was that 300 steps is simply too short a window. It is
+not. With the 3-step definition:
+
+| steps | real | SCRAMBLE |
+|---|---|---|
+| 300 | 1.0 | 1.0 |
+| 600 | 1.0 | 9.5 |
+| 1200 | 1.0 | 22.0 |
+| 2400 | **1.0** | **29.5** |
+
+**Eight times the window and the real engine is still at exactly 1.0.**
+SCRAMBLE accumulates linearly because permutation noise keeps producing dips.
+The engine converges once, early, and then never agrees again — the repulsion
+holds the factions apart permanently.
+
+That is a structural fact about this architecture, not a measurement artefact and
+not a window length. A bar of 5 consensus events is unreachable by an engine
+whose factions, once separated, do not reconverge.
+
+(An earlier hypothesis that repulsion blocks integration was withdrawn for lack
+of support at `HIVEMIND`. It has support **here**, for `SPONTANEOUS_SPEECH`
+specifically — the flat 1.0 across an 8× window — and is claimed only for this
+condition.)
