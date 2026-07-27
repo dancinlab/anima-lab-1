@@ -1236,3 +1236,47 @@ their bars measured from each population's own null, two of the original seven
 retired for pointing the opposite way from their names, and no claim that
 anything not in the control list is caught. What it is: a gate that can fail, an
 engine that passes it, and a record of what each number rests on.
+
+## A fifth defect in my own axes: they could not restore this engine's state
+
+`_three_axes` compares runs that must start from the same state, and it restored
+that state by assigning to `engine.hiddens`. `BenchEngine` has that attribute;
+`_CEAdapter` does not — so the assignment silently created a new one and the runs
+never shared a starting point.
+
+**Measured consequence.** The response axis read **1.11** for
+`ConsciousnessEngine`, against a bar of 1.5, and no engine parameter moved it —
+factions, ratchet and split patience all left it at 1.11–1.40. Stepping the
+engine directly from one state under two inputs gives a response ratio of
+**7,101 / 16,962 / 15,193 / 15,513** at input scale 0.1 / 0.5 / 2.0 / 10.0. The
+engine was not unresponsive; the axis could not see it.
+
+With a `set_hiddens` path on the adapter and the axes using it, the same engine
+reads **response 2,164** and — at `merge_threshold=0.01, initial_cells=8` —
+**clears all three axes** for the first time.
+
+That is the fifth defect of this class found in code I added this session, all of
+them scoring as FAIL and so indistinguishable from a real verdict. The first four
+were shape errors from a changing cell count; this one was silent, which is
+worse: nothing raised, the number was simply wrong.
+
+### Divergent search, and where it stands
+
+| lever | effect |
+|---|---|
+| merge off | population holds at start size, cosine −0.0338 (too independent) |
+| merge 0.01 + start 8 | cosine +0.0127, **all three axes pass** |
+| merge 0.02–0.08 × start 8/16/32 | no better |
+| faction count 1 / 2 / 12 | no effect on the axes |
+| Φ ratchet off | no effect |
+| split patience 1 | no effect |
+
+The gate is still 0/5 and the conditions now fail on their own terms rather than
+on the axes: `NO_SPEAK_CODE` var 0.0075 clears its 0.001 bar but its own axes
+probe fails, `ZERO_INPUT` Φ 0.0157 → 0.0000, `SELF_LOOP` 0.54× against 0.8×.
+
+**Each condition builds its own engine and measures the axes on that engine**, so
+the axes verdict differs per condition — `SELF_LOOP` reads response 14…, while
+`ZERO_INPUT` reads 1.x on the same configuration. Whether the precondition should
+be evaluated once per engine or per condition is a design question this exposed
+and does not answer.

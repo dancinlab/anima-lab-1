@@ -1401,6 +1401,18 @@ class _CEAdapter:
     def get_hiddens(self):
         return self.engine.get_states()
 
+    def set_hiddens(self, states):
+        """Restore cell states — the axes need a common starting point.
+
+        `_three_axes` assigned to `engine.hiddens`, which BenchEngine has and this
+        adapter does not, so the assignment silently created a new attribute and
+        the three runs it compares never started from the same state. Measured
+        consequence: the response axis read 1.11 for an engine whose own
+        step-from-one-state response ratio is 7,000-17,000.
+        """
+        for cell, row in zip(self.engine.cell_states, states):
+            cell.hidden = row.view_as(cell.hidden).detach().clone()
+
 
 def _make_ce(nc, d, h):
     try:
@@ -1521,18 +1533,24 @@ def _three_axes(engine, dim, cells, steps=60):
     # the other three are already rejected by the identity axis. Together
     # {integration, identity, change} rejects all five where the old set let
     # HEAP through.
+    def _restore(state):
+        if hasattr(engine, "set_hiddens"):
+            engine.set_hiddens(state)
+        else:
+            engine.hiddens = state.clone()
+
     base = engine.get_hiddens().clone()
     ripples = []
     for _ in range(6):
         probe_x = torch.randn(1, dim) * 0.1
-        engine.hiddens = base.clone()
+        _restore(base)
         engine.process(probe_x)
         undisturbed = engine.get_hiddens().clone()
 
         nudged = base.clone()
         kick = torch.randn(base.shape[1]) * 0.5
         nudged[0] = nudged[0] + kick
-        engine.hiddens = nudged
+        _restore(nudged)
         engine.process(probe_x)
         disturbed = engine.get_hiddens().clone()
 
@@ -1541,7 +1559,7 @@ def _three_axes(engine, dim, cells, steps=60):
         m = min(undisturbed.shape[0], disturbed.shape[0])
         moved_others = float((undisturbed[1:m] - disturbed[1:m]).norm())
         ripples.append(moved_others / max(float(kick.norm()), 1e-9))
-    engine.hiddens = base
+    _restore(base)
     integration = float(np.mean(ripples))
 
     # RESPONSE. Nothing above requires the engine to read its input at all. A
@@ -1556,8 +1574,16 @@ def _three_axes(engine, dim, cells, steps=60):
     # ignores x moves identically either way, so the ratio collapses to 1.
     base = engine.get_hiddens().clone()
 
+    def _set_state(state):
+        # Engines keep their cells in different places; assigning to a fixed
+        # attribute name silently no-ops on the ones that do not have it.
+        if hasattr(engine, "set_hiddens"):
+            engine.set_hiddens(state)
+        else:
+            engine.hiddens = state.clone()
+
     def _step_from(state, drive):
-        engine.hiddens = state.clone()
+        _set_state(state)
         engine.process(drive)
         return engine.get_hiddens().clone()
 
