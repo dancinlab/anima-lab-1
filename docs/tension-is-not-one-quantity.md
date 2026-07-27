@@ -234,3 +234,28 @@ grows more slowly than division requires.
 A measure that is structurally zero at the population size under test is exactly
 the defect this session opened by finding — `sd = 0.0000` was not evidence of a
 static population, it was one pair.
+
+### Starting above the floor does not open the gate either
+
+`min_cells = 2` is CB1's floor for Φ>1, not a starting point — this session
+established that, and that the `H297` citation for "N=2 is optimal" has no
+evidence document anywhere. And at `initial_cells = 8` under zero input the
+cosine sd was 0.165701, the one configuration where differentiation appeared at
+all. So starting above the floor was the obvious remaining test.
+
+| initial cells | 2 | 8 | 16 | 32 |
+|---|---|---|---|---|
+| gate | 0/5 | 0/5 | 0/5 | 0/5 |
+
+**No.** The same answer `mitosis.py` gave earlier in this session, where starting
+at 4, 8 or 16 froze the population at exactly its starting size and the corpus
+gate collapsed it back to the floor regardless.
+
+So the deadlock does not yield to more starting cells, to repulsion, to a
+calibrated bar, or to a mean-instead-of-all split rule. Every artefact between
+the engine and its 0/5 has been removed — four crashes, a hardcoded driver, an
+order-dependent quantity, an unreachable bar, an unsatisfiable conjunction — and
+the verdict is stable under all of them.
+
+`ConsciousnessEngine` does not differentiate. That is the finding, and it is
+about the engine rather than about anything measuring it.
