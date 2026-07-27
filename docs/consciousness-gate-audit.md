@@ -488,3 +488,44 @@ property of the population's aggregate trajectory and not of anything a cell doe
 .venv/bin/python bench_verify_audit.py                          # 32 cells
 .venv/bin/python bench_verify_audit.py --cells 256 --dim 64 --hidden 128
 ```
+
+## The last two conditions, and two of my own hypotheses that failed
+
+**`SPONTANEOUS_SPEECH` — a fix that measured worse.** The condition counts
+inter-faction variance below half the run's median, which a collapsed population
+satisfies permanently. The proposed fix was a *relative* dip against a 20-step
+rolling baseline, on the reasoning that a collapsed population is flat and
+produces no dips. Measured at 256 cells:
+
+| repulsion | events (median rule) | events (rolling rule) |
+|---|---|---|
+| 0.00 (collapsed) | 8 | **27** |
+| 0.05 | 2 | 0 |
+| 0.15 | 1 | 0 |
+| 0.25 | — | 0 |
+
+**Worse, and in exactly the direction it was meant to fix.** A collapsed
+population is not flat, it is *tiny and noisy* — median variance 0.0004 — and a
+near-zero signal has enormous relative fluctuation. Reverted, and the failed
+reasoning is recorded at the site.
+
+**`HIVEMIND` — no effect, and a hypothesis that did not survive.** With the
+corrected Φ and the repulsion engine, connection against the unconnected control
+gives −4% at 64 cells and +1% at 128. Changing the pass rule from solo to control
+would not make it pass; the effect is absent either way.
+
+The hypothesis was that the repulsion which prevents internal collapse also
+prevents external integration — that both remaining failures share one root.
+Measured at 128 cells across repulsion strengths:
+
+| repulsion | 0.00 | 0.05 | 0.15 | 0.25 |
+|---|---|---|---|---|
+| vs control | +10% | −13% | −1% | −7% |
+
+**No trend.** The single positive sits at Φ ≈ 0.01, a ratio taken at the floor
+and therefore meaningless. The hypothesis is not supported and is not claimed.
+
+What the measurements do support, stated no more strongly than that: **connecting
+two of these engines does not raise their integrated information at any repulsion
+strength.** Measured properly for the first time, since the condition had never
+executed before this session.

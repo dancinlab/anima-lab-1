@@ -1660,13 +1660,30 @@ def _verify_spontaneous_speech(engine_factory, cells, dim, hidden):
     if len(inter_faction_vars) < 10:
         return False, "not enough faction data"
 
-    # Consensus = inter-faction variance drops below median
+    # Consensus = inter-faction variance notably below the run's median.
+    #
+    # This counts COLLAPSE as agreement: at repulsion 0 the population sits at
+    # cosine 1.0000 with median inter-faction variance 0.0004 and scores 8
+    # events, because identical factions are permanently below their own median.
+    # They are not agreeing; they have stopped being plural.
+    #
+    # A rolling-baseline "relative dip" was tried as the fix and measured WORSE:
+    # a near-zero signal has enormous relative fluctuation, so the collapsed
+    # population scored 27 events instead of 8 while every differentiated one
+    # scored 0. Reverted. The reasoning that failed was "collapsed means flat,
+    # so no dips" -- collapsed is not flat, it is tiny and noisy.
+    #
+    # What the measurements do establish is an ENGINE fact rather than a
+    # measurement one: at 256 cells this architecture produces 8 / 2 / 1 events
+    # at repulsion 0 / 0.05 / 0.15 under this definition and 27 / 0 / 0 under
+    # the relative one. Once cells are genuinely kept apart, factions never
+    # reconverge. Consensus and differentiation are in real tension here.
+    # See docs/consciousness-gate-audit.md.
     median_var = np.median(inter_faction_vars)
-    # Look for "consensus events": consecutive low-variance stretches
     consensus_events = 0
     in_consensus = False
     for v in inter_faction_vars:
-        if v < median_var * 0.5:  # notably below median
+        if v < median_var * 0.5:
             if not in_consensus:
                 consensus_events += 1
                 in_consensus = True
