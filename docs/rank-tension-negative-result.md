@@ -126,6 +126,52 @@ the units but not the network's nonlinear response to scale — at ×10 input, w
 cell leads changes, so the ranks are computed over a different ordering. 79% is
 an improvement, not the invariance the argument claimed.
 
+## On real language it fails completely — and names the actual defect
+
+The ING record said synthetic vectors could refute a design but not land one,
+and that real corpus stimuli were the gate. `bench_specialization_corpus.py`
+runs it, on 24 sentences sampled from `data/corpus.txt`:
+
+| bar | 0.7 | 0.8 | 0.9 | 0.95 |
+|---|---|---|---|---|
+| synthetic | 9.0 | 9.3 | 14.0 | 13.0 |
+| **real corpus** | **2.0** | **2.0** | **2.0** | **2.0** |
+
+The floor, at every bar. Ownership never forms more than one group, so the
+coherence test — is the specialisation meaningful or just a partition? — could
+not run at all. Starting at 4, 8 or 16 cells does not help: the population
+**collapses back to 2** from every start.
+
+That collapse is the finding. Same code, same settings, 400 steps from 16 cells:
+
+| | splits | merges | final |
+|---|---|---|---|
+| synthetic randn | 8 | 6 | 18 |
+| real corpus | 7 | **21** | **2** |
+
+**Split rates barely differ. The merge side decides everything**, and I had spent
+the entire investigation on the split side.
+
+`_check_merges` is `all(t < 0.05 for t in recent)` — a raw magnitude against a
+bare constant, the exact shape this document opens by diagnosing, mirrored.
+Inter-cell tension measured against that bar:
+
+| | median | p90 | below 0.05 |
+|---|---|---|---|
+| real corpus | 0.0148 | 0.0205 | **100.0%** |
+| synthetic randn | 0.0830 | 0.1336 | 9.3% |
+
+The bar sits 2.4× above the 90th percentile of what real language produces, so
+every pair is permanently "redundant" and only `merge_patience = 10` and the
+`min_cells` floor prevent total collapse. This is `split_threshold = 0.3`
+against a 0.037 peak, in mirror image.
+
+Why real text and not synthetic: 24 corpus sentences under `text_vector` have
+mean pairwise cosine **+0.191** against randn's **+0.014** — 14× closer. Cells
+fed near-identical inputs stay near-identical. **The per-stimulus design's
+success was an artifact of stimuli that were nearly orthogonal**, and nothing in
+its argument said so.
+
 ## What this leaves
 
 - **The diagnosis holds.** All six defects are the same shape.
@@ -134,5 +180,12 @@ an improvement, not the invariance the argument claimed.
   Annotated at the site.
 - **`H297` has no evidence document.** CB1 does and says something narrower than
   the citation implies. Flagged, not silently trusted.
-- **Not landed in the engine.** Three seeds on synthetic vectors is enough to
-  refute a design, not enough to change how a running engine divides.
+- **`merge_threshold = 0.05` is a seventh instance of the root defect**, and the
+  one that actually governs population on real data. Annotated at the site.
+- **Nothing landed in the engine.** The per-stimulus split does not survive its
+  own gate, and the merge bar is a design decision that belongs with the split
+  bar rather than applied to half the ledger.
+- **A method note worth more than the design.** Synthetic stimuli made a broken
+  configuration look regulated across three independent properties. The
+  properties were real; the stimuli were not representative. Any future
+  population mechanism gets measured on corpus text before it is believed.

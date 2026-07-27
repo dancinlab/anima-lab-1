@@ -523,7 +523,26 @@ class MitosisEngine:
     # ─── Merge ───
 
     def _check_merges(self) -> List[Dict]:
-        """Check if any pair of cells should merge (too similar)."""
+        """Check if any pair of cells should merge (too similar).
+
+        ⚠ `merge_threshold = 0.05` is a raw magnitude against a bare constant —
+        the same shape as the `split_threshold = 0.3` defect, mirrored. Measured
+        (docs/rank-tension-negative-result.md), inter-cell tension over 400 steps
+        at 16 cells:
+
+            real corpus sentences   median 0.0148, p90 0.0205 → below the bar
+                                    100.0% of the time
+            synthetic randn vectors median 0.0830, p90 0.1336 → below  9.3%
+
+        On real language every pair is permanently "redundant" by this criterion
+        and only `merge_patience = 10` and the `min_cells` floor prevent total
+        collapse: 21 merges against 7 splits, 16 cells → 2. On near-orthogonal
+        synthetic vectors the same code gives 6 merges against 8 splits and holds
+        18 cells. Split rates barely differ; the merge side decides everything.
+
+        Not changed. Any fix here is the same decision as the split side and
+        belongs with it, not applied piecemeal to one half of the ledger.
+        """
         events = []
         # CB1: Consciousness requires minimum 2 cells. Never merge below min_cells.
         # 1 cell = Φ impossible (proven by CB1 benchmark: 14 merges → 1 cell → Φ=0).
