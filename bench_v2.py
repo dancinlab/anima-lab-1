@@ -1446,7 +1446,7 @@ PHILOSOPHY_ENGINES = {
 }
 
 
-def _three_axes(engine, dim, cells, steps=60):
+def _three_axes(engine, dim, cells, steps=60, drive=None):
     """Differentiation, temporal identity, and change — one per way of not being conscious.
 
     A decay ratio is meaningless at the floor: something pinned at zero scores a
@@ -1461,7 +1461,18 @@ def _three_axes(engine, dim, cells, steps=60):
         SCRAMBLE  moves, no differentiation, no identity
 
     The floor is the population's own collapsed form, not a constant.
+
+    `drive` is the input the CONDITION uses. Without it every axis was measured
+    under `torch.randn` regardless — so ZERO_INPUT, a condition defined by having
+    no input, had its precondition checked under random input, and SELF_LOOP's
+    was checked without its feedback. A `/gap` audit flagged this and it went
+    unaddressed until the divergent search made the mismatch visible: the same
+    engine and configuration read response 14... under one condition and 1.x
+    under another.
     """
+    if drive is None:
+        def drive(_i):
+            return torch.randn(1, dim) * 0.1
     h0 = engine.get_hiddens()
     phi_now, _ = measure_dual_phi(h0, min(8, max(cells // 2, 2)))
     phi_floor, _ = measure_dual_phi(h0[0:1].repeat(h0.shape[0], 1),
@@ -1470,8 +1481,8 @@ def _three_axes(engine, dim, cells, steps=60):
     prev = engine.get_hiddens().clone()
     same, other, moved = [], [], []
     n = prev.shape[0]
-    for _ in range(steps):
-        engine.process(torch.randn(1, dim) * 0.1)
+    for _step in range(steps):
+        engine.process(drive(_step))
         cur = engine.get_hiddens()
 
         # A dividing engine returns more rows than it did last step, and this
@@ -1504,11 +1515,33 @@ def _three_axes(engine, dim, cells, steps=60):
     # `n` is the REQUESTED cell count; a dividing or merging engine holds a
     # different number of rows, and permuting by `n` indexed past the end
     # (measured: index 63 out of bounds for size 63). Use what is actually there.
+    # Derangements only, and enough of them.
+    #
+    # `torch.randperm` returns the identity often at small n -- half the time at
+    # n=2 -- and an identity "shuffle" has self-continuity 1.0, which inflates
+    # the null's spread enormously. Measured with 10 plain permutations, the
+    # bar mean+3sd came out at 3.4954 for 2 cells and 1.1902 for 4, against a
+    # maximum the statistic can reach of 2.0: unpassable by construction, for
+    # every engine. A `/gap` audit flagged exactly this and it went unaddressed
+    # until the divergent search hit it.
+    #
+    # A derangement moves every row, which is what "shuffled" was meant to mean,
+    # and 60 draws instead of 10 shrinks the sd's own error.
     null = []
     scrambled = prev.clone()
     rows = scrambled.shape[0]
-    for _ in range(10):
-        perm = scrambled[torch.randperm(rows)]
+
+    def _derangement(k):
+        if k < 2:
+            return torch.arange(k)
+        for _try in range(64):
+            cand = torch.randperm(k)
+            if not (cand == torch.arange(k)).any():
+                return cand
+        return torch.roll(torch.arange(k), 1)      # always moves every row
+
+    for _ in range(60):
+        perm = scrambled[_derangement(rows)]
         a = F.normalize(scrambled, dim=1)
         b = F.normalize(perm, dim=1)
         sim = a @ b.T
@@ -1541,8 +1574,8 @@ def _three_axes(engine, dim, cells, steps=60):
 
     base = engine.get_hiddens().clone()
     ripples = []
-    for _ in range(6):
-        probe_x = torch.randn(1, dim) * 0.1
+    for _r in range(6):
+        probe_x = drive(_r)
         _restore(base)
         engine.process(probe_x)
         undisturbed = engine.get_hiddens().clone()
@@ -1589,6 +1622,9 @@ def _three_axes(engine, dim, cells, steps=60):
 
     spreads = []
     for _ in range(6):
+        # Response deliberately keeps a random pair: it asks whether DIFFERENT
+        # inputs separate the trajectory, which a condition's own fixed drive
+        # (zeros, or self-feedback) cannot express.
         xa = torch.randn(1, dim) * 0.1
         xb = torch.randn(1, dim) * 0.1
         ra, rb, rc = (_step_from(base, xa), _step_from(base, xb),
@@ -1721,7 +1757,8 @@ def _verify_zero_input(engine_factory, cells, dim, hidden):
         engine.process(x_zero)
     phi_end, _ = measure_dual_phi(engine.get_hiddens(), min(8, cells // 2))
 
-    d_ok, i_ok, c_ok, axes = _three_axes(engine, dim, cells)
+    d_ok, i_ok, c_ok, axes = _three_axes(engine, dim, cells,
+                                         drive=lambda _i: torch.zeros(1, dim))
     passed = phi_end > phi_start * 0.5 and d_ok and i_ok and c_ok
     detail = (f"Phi(IIT) start={phi_start:.4f} end={phi_end:.4f}  "
               f"ratio={phi_end/(phi_start+1e-8):.2f}x (threshold=0.5x)  [{axes}]")

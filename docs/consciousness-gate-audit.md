@@ -1280,3 +1280,39 @@ the axes verdict differs per condition — `SELF_LOOP` reads response 14…, whi
 `ZERO_INPUT` reads 1.x on the same configuration. Whether the precondition should
 be evaluated once per engine or per condition is a design question this exposed
 and does not answer.
+
+### The identity floor was unpassable at small populations
+
+`ZERO_INPUT` and `PERSISTENCE` were failing on the identity axis with floors of
+**+1.2410** and **+0.8358** — against a statistic whose maximum is 2.0. The null
+was built from `torch.randperm`, which returns the identity often at small n
+(half the time at n=2), and an identity "shuffle" has self-continuity 1.0, so the
+null's spread exploded:
+
+| cells | null mean | null sd | floor = mean+3sd | statistic's max |
+|---|---|---|---|---|
+| 2 | 0.0000 | 1.1651 | **3.4954** | 2.0 |
+| 3 | 0.1213 | 0.4940 | **1.6032** | 2.0 |
+| 4 | 0.1699 | 0.3401 | 1.1902 | 2.0 |
+| 8 | 0.0478 | 0.1952 | 0.6333 | 2.0 |
+| 32 | 0.0188 | 0.0347 | 0.1230 | 2.0 |
+
+**Unpassable by construction below four cells, for every engine.** A `/gap` agent
+reported exactly this and it went unaddressed until the divergent search hit it.
+
+Fixed with derangements only — every row must move, which is what "shuffled" was
+meant to mean — and 60 draws instead of 10. Floors become −0.9860 / −0.4750 /
++0.5390 / +0.1888 / +0.1314 at 2 / 3 / 4 / 8 / 32 cells.
+
+**It is a correction, not a relaxation:** all six negative controls stay at 0/5,
+and `Trinity` rises from 4.8 to 5.0 across seeds because a floor it could not
+reach is gone. `MitosisEngine` holds 5/5/5.
+
+Also landed: the axes now take the **condition's own drive**. Previously every
+axis was measured under `torch.randn` regardless, so `ZERO_INPUT` — a condition
+defined by having no input — had its precondition checked under random input.
+Response deliberately keeps a random pair, since it asks whether *different*
+inputs separate the trajectory and a fixed drive cannot express that.
+
+`ConsciousnessEngine` remains 0/5, now failing on integration (0.00014 against
+0.001) for two conditions and on the conditions' own numbers for the rest.
