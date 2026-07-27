@@ -1,5 +1,47 @@
 # The integration axis, measured against its own null
 
+> ## CORRECTED — my null denominator was wrong, and the 99.1% does reproduce
+>
+> The table below halves every null. `integration(eng, 0.0)` returns the raw
+> distance undivided, and the caller then divides by `torch.randn(HIDDEN).norm()`
+> — a **fresh draw without the 0.5 scale** the real kick carries. The raw arm
+> divides by `(torch.randn(64) * 0.5).norm() ≈ 4`; my null divided by
+> `torch.randn(64).norm() ≈ 8`. Every null figure below is therefore about **2×
+> too small**, and 47.1% × 2 ≈ 94% lands where it should.
+>
+> A teammate measured it correctly across 18 rows (both scales):
+>
+> | system | scale | shipped | null | corrected | null share | verdict |
+> |---|---|---|---|---|---|---|
+> | NOISE | 32c | 1.60321 | 1.59132 | 0.01189 | **99.3%** | PASS → PASS |
+> | NOISE | 256c | 4.71855 | 4.72332 | −0.00477 | **100.1%** | **PASS → FAIL** |
+> | SCRAMBLE | 32c | 1.05443 | 0.74940 | 0.30503 | 71.1% | PASS → PASS |
+> | SCRAMBLE | 256c | 2.25757 | 2.20446 | 0.05311 | 97.6% | PASS → PASS |
+> | PairField | 32c | 0.06027 | 0.00273 | 0.05754 | 4.5% | PASS → PASS |
+> | PairField | 256c | 0.02819 | 0.00718 | 0.02102 | **25.5%** | PASS → PASS |
+> | Narrative | 32c | 0.05870 | 0.00021 | 0.05849 | 0.4% | PASS → PASS |
+> | HEAP / DEAD | both | 0.00000 | 0.00000 | 0.00000 | — | FAIL → FAIL |
+>
+> **So the audit's 99.1% was right and I failed to reproduce it, rather than it
+> failing to reproduce.** The axis does measure RNG rather than interaction on
+> NOISE, and it is not confined to controls — 25.5% of `PairField`'s own reading
+> at 256 cells is nondeterminism.
+>
+> **What survives from below**: subtracting the null changes exactly **one verdict
+> of eighteen** (NOISE at 256c, PASS → FAIL). Everything else keeps its verdict —
+> HEAP and DEAD already fail, and the rest clear the bar corrected and are
+> rejected by identity or response instead.
+>
+> So the case for the fix is **closing the constructed bypass** (HEAP plus an
+> unrewindable RNG stream), not correcting today's control table, which it mostly
+> does not. The section below stands as the flawed measurement it was.
+
+---
+
+## Superseded — the original measurement, kept for the record
+
+
+
 A 40-lens audit reported that `_three_axes`' integration is 99.1% nondeterminism
 — total 0.32118 against 0.31833 from two identical runs — and that a HEAP plus a
 private RNG stream scores 5/5 while plain HEAP scores 0/5. That would make the
