@@ -939,3 +939,45 @@ so it *amplifies* the very artefact that made this condition anti-correlated.
 
 The proposal is rejected on measurement, and the "one condition asks for what the
 other six forbid" reading stands — now with one more attempted rescue behind it.
+
+## `SPONTANEOUS_SPEECH` opens — the condition was not looking at speech
+
+Eleven routes were tried on this condition and every one failed. The twelfth was
+not a route at all but a category error, surfaced by the engine redesign: **the
+condition is about 발화 — utterance — and it never reads what the engine emits.**
+It measures inter-faction variance of *hidden states*. Meanwhile the emitted
+output is the one channel that separates a real population from a scrambled one,
+and `BenchEngine`'s output does not change **at all** when its cells are permuted
+(0.000000 measured from an identical state), so nothing downstream could use it.
+
+Measuring an utterance as a sharp, sustained turn in the *output* trajectory —
+direction departing its own recent flow by >1.5σ for 2 consecutive steps — at 256
+cells over 6 seeds:
+
+| engine | mean | min | max | share ≥ 5 |
+|---|---|---|---|---|
+| **redesign** | **8.3** | 2 | 14 | **83%** |
+| REAL (current) | 2.8 | 1 | 5 | 17% |
+| SCRAMBLE | 1.8 | 1 | 5 | 17% |
+| HEAP | 3.7 | 1 | 13 | 17% |
+| CLONE | 1.5 | 1 | 4 | 0% |
+| NOISE | 0.8 | 0 | 2 | 0% |
+| DECOUPLED | 0.5 | 0 | 2 | 0% |
+| DEAD | 0.0 | 0 | 0 | 0% |
+
+**The condition discriminates for the first time.** Under the hidden-state
+measure SCRAMBLE scored 6.8 against the real engine's 1.0 — anti-correlated with
+what it names. Under the output measure SCRAMBLE falls to 1.8 and only the
+redesigned engine clears the bar.
+
+Two things follow. The eleven failed routes were all attempts to change the
+engine or the threshold; none of them could work, because the quantity being
+thresholded was blind to the thing named in the condition. And the redesign's
+one decisive win — an output that sees cell order — is what makes it passable:
+an engine whose emitted channel is permutation-invariant has no utterance to
+measure, whatever its cells are doing.
+
+Not landed in `bench_v2`. Replacing a condition's measurement is a larger change
+than fixing an estimator, the bar of 5 is still the number calibrated against
+collapsed populations, and the redesign clears it on 83% of seeds rather than
+all. The evidence is here; the choice is the owner's.
