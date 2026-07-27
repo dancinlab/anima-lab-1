@@ -79,6 +79,13 @@
         "value": "get_hiddens/set_hiddens is an unowned protocol with no contract. Before any number computed through it is trusted, assert that what comes out has the shape that was asked for and that writing it back actually restores the engine. Every statistic downstream describes the exposed slice, not the system.",
         "threshold": "Three instances this session, each larger, but they are NOT all the same violation -- a contract probe across all 12 registered engines separated them. (1) SHAPE: _CEAdapter is built with initial_cells=2, max_cells=nc; at 32 requested it exposes 2 rows (6%). It is the ONLY shape violation of the twelve, and it is the deployed runtime. Every anomaly I read as evidence that ConsciousnessEngine's gate failure was genuine is n=2 arithmetic: k in {0,1} are the only cuts two rows admit, complexity 0.0000 is np.std of a single value, Phi ~= cut because min_partition_mi/(n-1) with n-1 = 1 IS the cut. Verdict retracted to undetermined. (2) INCOMPLETENESS, not shape: PairFieldEngine.get_hiddens exposes side A only, but side A itself has all 32 cells, so the shape contract PASSES -- what is missing is G and both coupling matrices, which is a different defect from (1) and my first version of this record conflated them. (3) RESTORE: set_hiddens restores side A only while the dynamics run on A, G and both couplings, so the axes' same-state-one-nudge probe is not a controlled comparison -- at kick=0, no perturbation at all, integration reads 0.01783/0.01154/0.00353/0.00413/0.00395 against a 0.001 bar. Ten of the twelve engines implement no set_hiddens at all and are restored by direct .hiddens assignment. A sibling audit had already reported that _CEAdapter never grows past 4 cells at any requested max -- the signal was on the board and went unconnected for several turns.",
         "source": "bench_v2.py"
+      },
+      {
+        "id": "NO_COLLAPSE_TEST_REWARDS_STASIS",
+        "state": "pos-conv",
+        "value": "A condition phrased as the ABSENCE of something bad is satisfied most perfectly by the absence of everything. Before keeping such a rule, check what a system that never moves scores on it -- if stasis is a top score, the rule ranks corpses above live systems no matter what its mean separation looks like.",
+        "threshold": "Second instance, and I introduced the second one while removing the first. PERSISTENCE was 'monotonic or recovers'. The monotonic disjunct was retired this session because a stationary Phi is trivially non-decreasing: it fired 0 times across 163 live-engine runs and 100% of the time on corpses. I removed it and left recovers as the sole rule -- and recovers has the identical property, because final >= 0.8 * max(first five) is trivially true when Phi never changes. Measured independently by two sessions with agreeing numbers: DEAD 100% and CLONE 100% at both 32c and 256c, above most engines, while HEAP (parts that never interact) scores 20% at 32c and 0% at 256c. The mean looks correct -- controls 51.4% vs engines 80.0% at 32c, 45.7% vs 80.0% at 256c -- only because two errors point opposite ways: the corpses that CANNOT MOVE rank above every engine and the corpse that declines ranks below all of them. Ordering inside the control set is backwards. A separate shuffle null shows the decline signature the rule detects is not engine-specific at all: at 256c no engine shows it and three controls do, HEAP at -44.3 points with slope -0.1315. And PairField, whose Phi SLOPE IS POSITIVE at both scales (+0.0249, +0.1434), fails the condition anyway -- the engine blocked for collapsing over time is the one going up.",
+        "source": "bench_v2.py"
       }
     ]
   },
@@ -177,10 +184,10 @@
             "detail": "ZERO_INPUT은 phi_end > phi_start*0.5, PERSISTENCE는 phi_history[-1] >= max(전반부)*0.8, SELF_LOOP은 end >= start*0.8. 셋 다 서로 다른 두 상태의 Φ를 비교하고, 두 상태는 항상 1e-6보다 훨씬 크게 다르다. 따라서 세 조건 전부 10배로 움직이는 추정기의 독립 추첨 두 개의 비율이다. 코드 주석은 시드 도입으로 이 문제가 해결됐다고 적혀 있으나, 해결된 것은 동일상태 재현성뿐이다."
           },
           {
-            "name": "but PERSISTENCE still reads real decline",
-            "role": "추첨통계 가설을 섞기 널이 반증했다",
+            "name": "the decline is real but not engine-specific",
+            "role": "추첨통계 가설은 반증됐고, 그 반증도 조건을 구하지 못한다",
             "id": "measurement-persistence-null",
-            "detail": "관문이 찍은 11개 궤적(각 10체크포인트)의 값 순서만 섞어 10000회: 섞기 통과율 51.4% 대 실제 통과 18.2%(2/11). 실제가 널보다 33%p 낮다 — 순서가 정보를 나른다는 뜻이고 방향은 Φ 하락이다. '이 조건은 추정기 추첨 통계를 읽을 뿐'이라는 내 가설은 반증됐다. 계단 성질은 잡음을 얹지만 추세가 지배한다. 즉 12종 중 9종이 PERSISTENCE 로 막히는 건 1000스텝에서 Φ가 실제로 떨어지기 때문이다."
+            "detail": "32세포 11개 궤적의 순서만 섞어 10000회: 섞기 51.4% 대 실제 18.2%. 순서가 정보를 나르고 방향은 Φ 하락 — '추첨 통계일 뿐'이라는 가설은 반증됐다. 다만 같은 널을 대조군에 돌리면 하락 서명이 엔진 고유가 아니다: 256세포에서 엔진은 하나도 안 보이고 대조군 셋이 보이며 HEAP 이 −44.3%p, 기울기 −0.1315 로 어느 엔진보다 크다. 부분들이 아예 상호작용하지 않는 계가 가장 강하게 쇠퇴한다."
           },
           {
             "name": "PERSISTENCE does not discriminate",
