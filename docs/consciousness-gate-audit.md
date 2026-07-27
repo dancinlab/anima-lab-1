@@ -743,3 +743,54 @@ Faction sync only accelerated it. **The repulsion has been compensating in state
 space for the absence of per-cell weights** — which is also why, once cells are
 pushed apart, nothing brings them back: there is no per-cell structure for them
 to reconverge *around*.
+
+### Per-cell weights: one implementation diverged, the working one is not enough
+
+The finding above says cells cannot differ structurally because they share one
+map. The obvious response is to give each cell its own parameters.
+
+**A per-cell gain on the hidden state diverges.** `h ← h · (1 + g)` compounds
+every step, so any cell with gain above 1 blows up: NaN within the run. That is
+an implementation error, not a result, and the same shape as the norm drift the
+repulsion had — a multiplicative term with nothing holding it.
+
+**A per-cell signature on the input is stable** — each cell sees
+`x · w_i + b_i`, which does not feed back. Measured at 128 cells, 400 steps, no
+repulsion:
+
+| signature scale | cosine | consensus | norm |
+|---|---|---|---|
+| shared weights (none) | +1.0000 | 1.5 | 110.17 |
+| 0.2 | +0.9189 | 0.0 | 111.44 |
+| 0.5 | +0.8310 | 0.0 | 110.20 |
+| 1.0 | **+0.7469** | **0.0** | 106.36 |
+
+It reduces collapse monotonically and **does not prevent it**: 0.7469 against the
+0.38 that repulsion reaches. Pushing the scale higher is not a route either — at
+1.0 the signature `x·(1+N(0,1)) + N(0,1)` already dominates the input, so cells
+stop responding to what arrives.
+
+Consensus stays at 0 throughout.
+
+## Every route tested, and what remains
+
+| route | result |
+|---|---|
+| repulsion strength (6 values × 3 seeds) | no stable 7/7 |
+| repulsion form (restoring vs constant) | identical |
+| consensus definition (persistence) | fixes the sign, not the level |
+| observation window (8×) | exactly 1.0 throughout |
+| faction count (2–48) | exactly 1.0 at every count |
+| faction removal | 1.0; collapse persists without factions |
+| per-cell weights on state | diverges (NaN) |
+| per-cell signature on input | collapse reduced to 0.7469, consensus 0 |
+
+**The engine produces at most one consensus event, under every configuration
+tested.** The bar of 5 was set against collapsed populations, which reach it by
+being uniform rather than by agreeing. Nothing in the repulsion layer, the
+faction layer, or a per-cell input signature changes that.
+
+What has not been tried, and is the only thing left that could: per-cell
+parameters *inside* the shared map — a distinct transform per cell rather than a
+distinct view of the input. That is a change to `BenchMind`'s structure and to
+what a "cell" is in this architecture, not a parameter of the layers around it.
