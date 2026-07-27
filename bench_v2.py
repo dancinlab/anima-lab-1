@@ -1421,8 +1421,15 @@ def _make_ce(nc, d, h):
         return BenchEngine(nc, d, h, d, min(8, nc // 2))
 
 
+def _make_pairfield(nc, d, h):
+    """The A/G pair as an engine. Lazy import -- pairfield_engine imports us."""
+    from pairfield_engine import PairFieldEngine
+    return PairFieldEngine(nc, d, h, d)
+
+
 ENGINE_REGISTRY = {
     "ConsciousnessEngine": _make_ce,
+    "PairField":        _make_pairfield,
     "MitosisEngine":    lambda nc, d, h: BenchEngine(nc, d, h, d, min(8, nc // 2)),
     "OscillatorLaser":  lambda nc, d, h: OscillatorLaser(nc, d, h, d, min(8, nc // 2)),
     "QuantumEngine":    lambda nc, d, h: QuantumEngine(nc, d, h, d, min(8, nc // 2)),
