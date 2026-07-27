@@ -345,3 +345,59 @@ it. Passing is not evidence the mechanism is absent; it is evidence the lottery
 landed well. **Any deployment decision resting on which engines this condition
 passed is resting on the same coin the FAIL verdicts came from** — with the single
 exception above.
+
+## RETRACTED: the carve-out was n=2 arithmetic, and the ordering is 31/32
+
+Both claims in the section above are corrected.
+
+### `ConsciousnessEngine`'s verdict is undetermined, not sound
+
+The gate builds it with 32 cells and reads Φ off **two**. Verified directly:
+
+```
+requested 32 cells  →  get_hiddens() returns (2, 128)  →  1 pair
+```
+
+So every "anomaly" that made it look like a clean carve-out is arithmetic from
+n = 2, not dynamics:
+
+| observation | what it actually is at n=2 |
+|---|---|
+| k ∈ {0, 1} | the only cuts two rows admit |
+| `n_pairs_sampled` = 1 | one pair exists |
+| complexity exactly 0.0000 | `np.std` of a single MI value is 0 by construction |
+| Φ ≈ cut (0.0267 / 0.0264) | `min_partition_mi/(n−1)` with n−1 = 1 **is** the cut |
+| differentiation 1.0125 | a statement about two rows, not thirty-two |
+
+Measured directly at steps 100 / 500 / 1000: **Φ = 0.00000** every time, on one
+pair. Its 32-cell population was never in the calculation.
+
+I wrote "its population never integrates, so there is no partition to flip" and
+called it **the one verdict in the whole run that is not suspect**, and carried
+that into `ARCHITECTURE.json`. Both are withdrawn. The verdict is **undetermined**.
+
+**This is the third instance of one defect family, and the largest.** My
+`set_hiddens` restores side A only; `get_hiddens` on the pair exposes side A only;
+and `_CEAdapter` exposes 2 rows of a 32-cell engine. A separate audit had already
+flagged that `_CEAdapter` "never grows past 4 cells at any requested max" — the
+signal was on the board and I did not connect it.
+
+### The ordering claim is 31/32, and the counterexample is on a passing seed
+
+Extending the decomposition to seeds 42/43 (which **pass** for most engines):
+
+| engine | seed | cv(Φ) | cv(cut) | cv(diff) | corr(Φ,cut) |
+|---|---|---|---|---|---|
+| PairField | 42 | 0.388 | 0.373 | 0.136 | +0.928 |
+| NarrativeEngine | 42 | 0.263 | 0.282 | 0.116 | +0.869 |
+| OscillatorLaser | 43 | 0.167 | 0.163 | 0.089 | +0.731 |
+| **QuantumEngine** | **43** | 0.141 | **0.113** | **0.126** | **−0.051** |
+
+`QuantumEngine` at seed 43 has `cv(cut) < cv(diff)`, and `corr(Φ, cut) = −0.051`
+against `corr(Φ, diff) = +0.909` — Φ's variance is carried by differentiation
+there, not the cut. So **`cv(cut) > cv(diff) > cv(cplx)` is 31/32, not universal.**
+
+The partition still wanders on that run (12 distinct sizes, k = 4–16), so the
+mechanism is present; it is simply not the dominant term. And the single
+counterexample sits on a **passing** seed — exactly where a claim assembled from
+failing seeds would never have looked.

@@ -246,35 +246,92 @@ mechanism there.
 | QuestioningEngine | 4–16 | 13 / 13 | 0.433 / 0.237 | 0.446 / 0.265 | 0.125 / 0.133 | 0.075 / 0.080 | +0.854 / +0.421 |
 | SeinEngine | 4–16 | 12 / 12 | 0.209 / 0.208 | 0.186 / 0.256 | 0.105 / 0.125 | 0.065 / 0.084 | +0.875 / +0.354 |
 
-**What holds in all 24 runs:** `cv(cut) > cv(diff) > cv(cplx)`, without exception.
-The cut is the highest-variance factor for every engine at both seeds, and
-`cv(cut) ≈ cv(Φ)` throughout. In eleven of twelve the partition wanders over
+**What holds in 24 of 24 failing-seed runs:** `cv(cut) > cv(diff) > cv(cplx)`.
+The cut is the highest-variance factor for every engine at both failing seeds,
+and `cv(cut) ≈ cv(Φ)` throughout. In eleven of twelve the partition wanders over
 10–14 distinct sizes spanning k = 3 or 4 up to 16.
 
-**What does not hold:** `corr(Φ, cut)` is positive in 21 of 24 runs but goes
-negative at seed 46 for MitosisEngine (−0.222) and DesireEngine (−0.454), and to
-zero for FinitudeEngine (−0.003). "Φ's variance *is* the cut" is false for those.
-The weaker claim — the cut has the largest spread — survives 24/24.
+**What does not hold:** `corr(Φ, cut)` is positive in 21 of 24 but goes negative
+at seed 46 for MitosisEngine (−0.222) and DesireEngine (−0.454), and to zero for
+FinitudeEngine (−0.003). "Φ's variance *is* the cut" is false for those.
 
-### The carve-out: ConsciousnessEngine fails for a different reason
+### The ordering is not universal — a passing seed breaks it
+
+Seeds 44 and 46 are seeds that *fail* for eleven of these engines, so the table
+above could describe the failing regime rather than the estimator. The same
+decomposition on the **passing** seeds 42 and 43, four engines:
+
+| engine | seed | cv(Φ) | cv(cut) | cv(diff) | cv(cplx) | corr(Φ, cut) | distinct k |
+|---|---|---|---|---|---|---|---|
+| PairField | 42 | 0.388 | 0.373 | 0.136 | 0.067 | +0.928 | 13 (4–16) |
+| PairField | 43 | 0.280 | 0.232 | 0.149 | 0.078 | +0.677 | 11 (4–16) |
+| NarrativeEngine | 42 | 0.263 | 0.282 | 0.116 | 0.062 | +0.869 | 14 (2–16) |
+| NarrativeEngine | 43 | 0.186 | 0.218 | 0.122 | 0.063 | +0.334 | 12 (5–16) |
+| OscillatorLaser | 42 | 0.118 | 0.140 | 0.086 | 0.056 | +0.444 | 8 (4–16) |
+| OscillatorLaser | 43 | 0.167 | 0.163 | 0.089 | 0.046 | +0.731 | 13 (4–16) |
+| QuantumEngine | 42 | 0.221 | 0.209 | 0.118 | 0.081 | +0.813 | 12 (3–16) |
+| **QuantumEngine** | **43** | 0.141 | **0.113** | **0.126** | 0.074 | **−0.051** | 12 (4–16) |
+
+**QuantumEngine at seed 43 breaks the ordering**: `cv(cut) = 0.113` is *below*
+`cv(diff) = 0.126`, `corr(Φ, cut)` is −0.051, and `corr(Φ, diff)` is +0.909. On
+that run Φ's variance is carried by differentiation, not the cut.
+
+So over all 32 runs measured — 12 engines × 2 failing seeds, plus 4 engines × 2
+passing seeds — the ordering holds **31 of 32**, not universally. The partition
+still wanders (12 distinct sizes, k = 4–16) on the exception, so the mechanism is
+present there; it is simply not the dominant term that run.
+
+This is the check that was worth running: the exception exists, and it exists on
+a passing seed, which is exactly where a claim built only from failing seeds
+would not have looked.
+
+### The carve-out: ConsciousnessEngine is not being measured on 32 cells
 
 `ConsciousnessEngine` is the one engine where the wandering partition is absent,
 and the table shows it: **k takes 2 values, 0 and 1**, against 10–14 for every
-other engine. `k = 0` means the Fiedler cut put every cell on one side — a
-degenerate, empty partition.
+other engine. The reason is not a property of its dynamics.
 
-Its numbers are a different failure altogether. Φ mean 0.0267 against 1.4–2.3 for
-the rest; cut mean 0.0264 against 74–123; differentiation 1.0125, meaning its
-cells are essentially orthogonal; complexity exactly 0.0000. Its population never
-integrates at all, so Φ is pinned at the floor and there is no partition to flip.
-It is the only engine the gate fails on all five seeds, and it fails them
-honestly.
+```
+engine                asked for   get_hiddens() exposes
+ConsciousnessEngine      32           (2, 128)      <-- two cells
+PairField                32          (32, 128)
+NarrativeEngine          32          (32, 128)
+MitosisEngine            32          (32, 128)
+Trinity                  32          (32, 128)
+```
+
+**The gate constructs it with 32 cells and reads Φ off 2.** Everything anomalous
+in its row follows arithmetically from n = 2, not from the engine:
+
+| observation | cause |
+|---|---|
+| k ∈ {0, 1} only | with 2 rows the only cuts are trivial |
+| `n_pairs_sampled` = 1 | one pair exists |
+| complexity exactly 0.0000 | `np.std` of a single MI value returns 0 by construction |
+| Φ ≈ cut (0.0267 vs 0.0264) | `min_partition_mi / (n−1)` with n−1 = 1 is the cut itself |
+| Φ mean 0.0267 vs 1.4–2.3 | a two-cell MI reading, measured at three checkpoints as 0.00000 |
+| differentiation 1.0125 | the two rows are dissimilar — it says nothing about 32 cells |
+
+> **Correction.** An earlier reading of this row said ConsciousnessEngine's
+> "cells are essentially orthogonal" and "its population never integrates at
+> all". That was wrong: differentiation ≈ 1.0 is computed over two rows, and
+> complexity 0.0000 is forced by there being one MI value, not measured. The
+> engine's actual 32-cell population was never in the calculation.
+
+So its five failures are not the cut mechanism, but neither are they the clean
+"fails honestly" they first looked like. **The gate is scoring a two-cell
+projection of a 32-cell engine**, which is the same interface defect as
+`PairFieldEngine.get_hiddens()` returning A only (§3) and `set_hiddens` being a
+partial restore — one order of magnitude worse. Whether ConsciousnessEngine
+integrates is not established either way by anything in this document; the
+measurement never reached it.
 
 **Scope, corrected.** The shared cut mechanism is established for **eleven of
-twelve** engines, not for all twelve, and ConsciousnessEngine is excluded by
-measurement rather than by omission. "PERSISTENCE is the estimator" holds for the
-eleven; for ConsciousnessEngine the verdict appears to be tracking something
-real.
+twelve** engines, and ConsciousnessEngine is excluded by measurement rather than
+by omission. But it is excluded because it was never measured on its own
+population, not because it is a counterexample — so "PERSISTENCE is the
+estimator" holds for eleven of twelve, and the twelfth is undetermined rather
+than sound.
 
 `NarrativeEngine` passes here, but not because its trajectory differs in kind —
 only at this grid and this scale:
@@ -533,6 +590,11 @@ of the steps in that window, differentiation and complexity are flat to ±1.5%,
 and only the chosen partition moves. Refuted again by §3 at a second scale, where
 separation, norms and coupling are flat through the whole window.
 
+**"The cut-dominance ordering is an artefact of looking only at failing
+seeds."**  Partly right, and §6 records it: on passing seeds the ordering holds
+7 of 8, and QuantumEngine seed 43 breaks it outright (cv(cut) 0.113 below
+cv(diff) 0.126, corr(Φ,cut) −0.051). The claim is now 31/32, not universal.
+
 **"It is estimator randomness."** Refuted by §4, in the other direction: at 32
 rows the pair set is exhaustive, the constructor seed is dead, and the singleton
 is deterministic and order-independent. The jitter sd at the failing checkpoint
@@ -572,12 +634,13 @@ The defect is in `PhiIIT._minimum_partition` (`bench_v2.py:225-237`) and in the
 shape of `_verify_persistence`'s pass rule (`bench_v2.py:1794-1796`), and it
 applies across the fleet: ten of twelve engines are blocked by it, on nine
 different seed sets, and **eleven of twelve share the mechanism** — the cut is
-the highest-variance factor in all 24 runs measured. Seed 46 fails by 0.006 with
+the highest-variance factor in 31 of the 32 runs measured, the exception being
+QuantumEngine at the passing seed 43. Seed 46 fails by 0.006 with
 no drop in its trajectory at all.
 
-ConsciousnessEngine is the one exception and fails honestly: its partition takes
-two values instead of thirteen, and its Φ sits at the floor because its cells
-never integrate (§6).
+ConsciousnessEngine is the one exception, and not because it fails honestly: the
+gate builds it with 32 cells and reads Φ off the 2 its `get_hiddens()` exposes
+(§6). Its verdict is undetermined, not sound.
 
 ### A PASS from this gate does not distinguish an engine from the ones it beat
 
@@ -685,7 +748,7 @@ none of them modify anything in the repo.
 .venv/bin/python $SP/direction3.py                                 # §9 direction, 25 seeds
 .venv/bin/python $SP/integ_null.py                                 # appendix
 .venv/bin/python $SP/reconcile5.py                                 # §9 reconciliation
-.venv/bin/python $SP/mechanism.py OscillatorLaser 32 32 128 44      # §6, all 12 engines
+.venv/bin/python $SP/mechanism.py OscillatorLaser 32 32 128 44      # §6, 12 engines x seeds 42-46
 ```
 
 Runtime note: `corrected.py` takes ~15 min per system pair and the 256-cell
