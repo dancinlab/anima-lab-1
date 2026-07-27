@@ -73,7 +73,14 @@ measured reasons rather than one: the corpus contains no natural language
 (QD-10), and the only other semantic source in the repo is too small and too
 form-confounded to carry a composition result past a shuffled-label control.
 
-**The concrete blocker is data.** Nothing in this repository has ever shown any
-of these systems what a concept means. That is not fixable by architecture, by
+> **Corrected by QD-12.** The two failures below are real and stand — the form
+> confound and the failed shuffled-label control both reproduce. What does not
+> stand is the conclusion drawn from them. Rebuilding the concept vectors from
+> a corpus that is actually language (`anima/**/*.md`, type/token 6.50%) makes
+> the same composition test pass at +8.3σ / +7.5σ. The blocker was not data;
+> it was looking in only two places.
+
+**The blocker looked like data.** Nothing in *these two sources* had shown the
+system what a concept means. That is not fixable by architecture, by
 a further encoding, or by another experiment on the present inputs — it needs a
 real corpus, which is an external dependency this session cannot satisfy.

@@ -34,9 +34,14 @@ Korean bigrams each occur **exactly 3000 times** (`둘이+합치면`, `합치면
 the English has `together_they(3000)`, and one prose line is
 `느낌 느낌 느낌 느낌 느낌 느낌 느낌 느낌`.
 
-**No part of this 70MB is natural language.** Semantic understanding of a
-combination is therefore not merely unmeasured here — there is nothing for it
-to be made of. This is a data defect, not an architecture one, and it sits
+**No part of this 70MB is natural language.** That much stands.
+
+> **Corrected by QD-12.** This card went on to conclude that semantics was
+> therefore impossible in this repo. Wrong: it never looked past this file.
+> The sibling `anima` repository's markdown is natural language — 1,144,691
+> Korean tokens over 82,873 types, type/token 6.50% against this corpus's
+> 0.24% — and grounding the concepts in it makes semantic composition pass at
+> +8.3σ. The defect in `corpus_v2.txt` is real; the blocker drawn from it was not. This is a data defect, not an architecture one, and it sits
 upstream of ConsciousLM and AnimaLM as much as of anything tested in this series.
 
 ## Part 2 — structural understanding, which is testable and partly there
