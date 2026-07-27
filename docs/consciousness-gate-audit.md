@@ -279,6 +279,68 @@ Direction is checkable and now permanent:
 .venv/bin/python bench_verify_audit.py --phi-sanity --cells 64 --hidden 128
 ```
 
+## Fixing Φ was attempted, measured, and reverted — for a reason that is the finding
+
+The corrected Φ was put into `bench_v2` and the audit re-run at 64 cells. It made
+the reported score worse in a way worth reading carefully:
+
+| | shipped Φ | corrected Φ |
+|---|---|---|
+| REAL | 5/7 | **1/7** |
+| CLONE | 4/7 | **4/7** |
+
+**CLONE beats REAL four to one.** The numbers behind it:
+
+| | Φ start | Φ end | ratio | verdict |
+|---|---|---|---|---|
+| REAL | **0.6745** | **0.0039** | 0.01× | FAIL |
+| CLONE | 0.0036 | 0.0034 | 0.95× | **PASS** |
+
+The corrected Φ is doing its job exactly right. It puts a collapsed population at
+the floor (0.0036) and a differentiated one well above it (0.6745), and it
+reveals a real fact the shipped measure was hiding: **the real engine loses 99%
+of its Φ under zero input.**
+
+What fails is the shape of the conditions. `ZERO_INPUT`, `PERSISTENCE` and
+`SELF_LOOP` are ratios, and a ratio is meaningless at the floor — something
+pinned at zero scores a perfect 1.00 for not decaying. This is the same defect
+identified at the top of this document, now unavoidable: with an honest Φ, *only*
+the already-dead can pass a pure decay test.
+
+So the Φ change is reverted, and the owner decision is sharper than "which Φ":
+**the conditions need an absolute floor conjoined with the ratio** — Φ must have
+been above some minimum to begin with. Landing a corrected Φ without that would
+ship a gate where a mirror outscores the engine.
+
+### Direction alone is not enough either
+
+A first corrected version used only `(min_cut/(n−1)) × differentiation` and
+inverted the *other* way, rising monotonically to its maximum at full
+independence. The cause is measurable: a 16-bin histogram MI estimator reads
+
+| dim | 32 | 64 | 128 | 256 | 512 |
+|---|---|---|---|---|---|
+| MI between independent signals | 2.21 | 1.58 | 0.94 | 0.53 | 0.27 |
+
+where the truth is 0. That floor keeps `min_cut` large for an unconnected
+population. Subtracting a shuffled null — same marginals, no relationship, so
+what remains is the estimator's own bias — puts the maximum back inside:
+
+| | cosine | shipped | direction only | + debiased |
+|---|---|---|---|---|
+| identical | +1.0000 | 28.46 | 0.000 | 0.000 |
+| slightly diff | +0.9638 | 16.13 | 0.542 | 0.220 |
+| **moderately diff** | +0.7465 | 11.18 | 2.002 | **0.242** |
+| well diff | +0.3266 | 8.14 | **5.032** | 0.213 |
+| independent | −0.0043 | **12.50** | 2.571 | 0.160 |
+
+Three measures, three different maxima. Only the debiased one has it in the
+interior, which is where integrated information requires it.
+
+```
+.venv/bin/python bench_verify_audit.py --phi-candidate --cells 32 --hidden 128
+```
+
 ## Not changed
 
 The seven conditions themselves. Which of them to strengthen, and to what, is a

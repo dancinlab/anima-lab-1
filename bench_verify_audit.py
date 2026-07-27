@@ -160,12 +160,31 @@ def phi_candidate(cells=32, hidden=128):
         candidate = (min_cut / (n − 1)) × (1 − mean pairwise cosine)
                      ^ what the best cut destroys   ^ differentiation
 
-    This is not landed. It is here so the direction can be compared against the
-    shipped measure on identical inputs, which is what the owner decision needs.
+    Direction alone is not enough. A 16-bin histogram MI estimator reads 2.21 /
+    1.58 / 0.94 / 0.53 / 0.27 nats between signals that are completely
+    independent at dim 32 / 64 / 128 / 256 / 512, where the truth is 0. That
+    floor keeps `min_cut` large for an unconnected population, so the candidate
+    without debiasing rises monotonically to its maximum at full independence —
+    the opposite inversion. Subtracting a shuffled null is what puts the maximum
+    back in the interior: measured at 32 cells, 0.000 collapsed → 0.474 at
+    cosine +0.92 → 0.102 independent.
+
+    This is not landed, and the reason is measured rather than cautious. With it
+    in `bench_v2`, CLONE scores 4/7 against REAL's 1/7, because the corrected Φ
+    correctly puts a collapsed population at the floor and the gate's conditions
+    are RATIOS — `phi_end / phi_start` is a perfect 1.00 for something that was
+    already zero. The Φ is not what fails there; the conditions are.
     """
     from bench_v2 import PhiIIT
 
     calc = PhiIIT(n_bins=16)
+    rng = np.random.default_rng(0)
+
+    def mi_debiased(a, b, k=3):
+        raw = calc._mutual_information(a, b)
+        null = np.mean([calc._mutual_information(a, rng.permutation(b))
+                        for _ in range(k)])
+        return max(0.0, raw - null)
     torch.manual_seed(0)
     base = torch.randn(1, hidden) * 0.1
     cases = [
@@ -179,33 +198,40 @@ def phi_candidate(cells=32, hidden=128):
 
     print(f"\n  Φ 후보 — 방향 비교 ({cells} 세포)")
     print("  통합은 자를 것과 이을 것이 둘 다 있어야 한다\n")
-    print(f"  {'상태':>16} {'코사인':>9} {'현재 Φ':>9} {'후보 Φ':>9}")
+    print(f"  {'상태':>16} {'코사인':>9} {'현재 Φ':>9} {'방향만':>9} {'후보 Φ':>9}")
 
-    shipped, cand = [], []
+    shipped, undebiased, cand = [], [], []
     for name, H in cases:
         n = H.shape[0]
         rows = [H[i].numpy() for i in range(n)]
         mi = np.zeros((n, n))
+        mi_d = np.zeros((n, n))
         for i in range(n):
             for j in range(i + 1, n):
-                v = calc._mutual_information(rows[i], rows[j])
-                mi[i, j] = mi[j, i] = v
+                mi[i, j] = mi[j, i] = calc._mutual_information(rows[i], rows[j])
+                mi_d[i, j] = mi_d[j, i] = mi_debiased(rows[i], rows[j])
         total = mi.sum() / 2
         cut = calc._minimum_partition(n, mi)
+        cut_d = calc._minimum_partition(n, mi_d)
         hn = H / torch.clamp(H.norm(dim=1, keepdim=True), min=1e-9)
         cos = float(((hn @ hn.T).sum() - n) / (n * (n - 1)))
+        diff = max(0.0, 1.0 - cos)
 
         cur = max(0.0, (total - cut) / (n - 1))
-        new = (cut / (n - 1)) * max(0.0, 1.0 - cos)
+        raw_dir = (cut / (n - 1)) * diff
+        new = (cut_d / (n - 1)) * diff
         shipped.append(cur)
+        undebiased.append(raw_dir)
         cand.append(new)
-        print(f"  {name:>16} {cos:>+9.4f} {cur:>9.2f} {new:>9.3f}")
+        print(f"  {name:>16} {cos:>+9.4f} {cur:>9.2f} {raw_dir:>9.3f} {new:>9.3f}")
 
     print()
     print(f"  현재 Φ 최대: {cases[int(np.argmax(shipped))][0]}"
+          f"   방향만 최대: {cases[int(np.argmax(undebiased))][0]}"
           f"   후보 Φ 최대: {cases[int(np.argmax(cand))][0]}")
-    print("  후보는 양끝에서 0 이 되지는 않는다 — 무작위 신호끼리도 유한 표본에서")
-    print("  상호정보 추정치가 양으로 치우치기 때문. 최대가 안쪽에 있다는 것이 요점이다.\n")
+    print("  방향만 고치면 반대로 뒤집혀 완전 독립이 최고점을 받는다 —")
+    print("  독립 신호끼리도 상호정보 추정치가 양수라 절단값이 0 으로 안 떨어지기 때문.")
+    print("  뒤섞기로 그 바닥을 빼야 최대가 안쪽으로 온다.\n")
     return shipped, cand
 
 
