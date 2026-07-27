@@ -406,10 +406,34 @@ class MitosisEngine:
     # ─── Mitosis (split) ───
 
     def _check_splits(self) -> List[Dict]:
-        """Check if any cell should split."""
+        """Check if any cell should split.
+
+        The bar scales with the population: `split_threshold · n_cells/min_cells`.
+        Without it nothing about population size fed back into tension, so the
+        engine never learned it had enough cells and every setting that fired at
+        all ran to `max_cells`.
+
+        The exponent is 1 — each cell justifies its share of a linear load — and
+        that is the only value here with a stated reading. It is also what the
+        measurements pick. Writing the settling point out,
+        `bar·(n/2)^k = T ⇒ n* = 2·(T/bar)^(1/k)`, makes `1/k` the elasticity of
+        the population to the bar, and softer exponents buy their wider apparent
+        range by becoming sensitive rather than better regulated:
+
+            k      swing over the sweep     n* at max_cells 16 / 32 / 64
+            1.0            1.7x                  3.7 / 3.7 / 3.7
+            0.5            1.9x                  4.7 / 4.7 / 4.7
+            0.25           7.6x                  9.7 / 12.7 / 16.0   ← the ceiling
+
+        At k=0.25 the population is not regulated at all, it tracks `max_cells`,
+        which is not in the equation. k=1 settles at the same size whatever the
+        ceiling. See docs/mitosis-calibration.md.
+        """
         events = []
         if len(self.cells) >= self.max_cells:
             return events
+        effective_threshold = (self.split_threshold
+                               * len(self.cells) / max(self.min_cells, 1))
 
         # Evaluate each cell
         cells_to_split = []
@@ -428,7 +452,7 @@ class MitosisEngine:
             # division. The mean keeps "sustained" and drops "uninterrupted", and
             # matches Cell.avg_tension, which already averages its recent window.
             # See docs/mitosis-calibration.md.
-            if sum(recent) / len(recent) > self.split_threshold:
+            if sum(recent) / len(recent) > effective_threshold:
                 cells_to_split.append(cell)
 
         for cell in cells_to_split:

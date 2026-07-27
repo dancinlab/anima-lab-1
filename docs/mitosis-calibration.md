@@ -270,3 +270,68 @@ An earlier section here called the post-661a083 control "a cliff, no band".
 That was measured before the child-inflation fix. With it, the control is
 already a slope (32 → 22.0 → 13.3 → 2.0) and 2 of 8 settings land interior.
 The saturation is real; "cliff" was stale and is corrected above.
+
+---
+
+# 심화 → 굳히기: the band metric was measuring the wrong thing
+
+The a/b write-up above scored arm B by **band width** — how many calibration
+quantiles land the population strictly inside the floor and ceiling — and on
+that score k=0.25 won 6/8 against k=1.0's 4/8. Deepening the analysis inverts
+the conclusion.
+
+## The algebra says width is sensitivity
+
+With the bar scaled as `bar·(n/2)^k`, the population settles where the bar meets
+the typical tension:
+
+```
+bar · (n*/2)^k = T        ⇒        n* = 2 · (T/bar)^(1/k)
+```
+
+So **1/k is the elasticity of the population to the bar**. Softening k does not
+regulate better; it makes n* swing harder for the same turn of the calibration
+knob. Width in quantile-space *is* sensitivity, and sensitivity to a knob is
+fragility.
+
+Predictions are not results, so both halves were measured.
+
+| k | predicted slope −1/k | measured slope | population swing |
+|---|---|---|---|
+| **1.0** | −1.00 | −1.68 | **1.7×** |
+| 0.5 | −2.00 | −1.82 | 1.9× |
+| **0.25** | −4.00 | **−5.96** | **7.6×** |
+
+The ordering and direction hold. (The magnitudes are not exact — tension is not
+perfectly flat across population sizes — but softer k is steeper every time.)
+
+## The ceiling test settles it
+
+`max_cells` does not appear in `n* = 2·(T/bar)^(1/k)`, so a regulated settling
+point must not depend on it.
+
+| k | max=16 | max=32 | max=64 | tracks the ceiling? |
+|---|---|---|---|---|
+| **1.0** | 3.7 | 3.7 | 3.7 | **no** |
+| 0.5 | 4.7 | 4.7 | 4.7 | no |
+| **0.25** | 9.7 | 12.7 | 16.0 | **yes** |
+
+At k=0.25 the population is not regulated at all — it scales with the ceiling.
+Its "interior" figures (25.3, 15.0, 12.7) were **the ceiling wearing a
+different hat**, which is why they looked so much more useful.
+
+## Landed — and k did not have to be guessed after all
+
+`_check_splits` now compares against `split_threshold · n_cells/min_cells`.
+The exponent is 1: the only value with a stated reading (each cell justifies
+its share of a linear load), the least elastic of the three (1.7× swing), and
+the one whose settling point is invariant to `max_cells` — 3.7 cells at 16, 32
+and 64 alike, with a cell-count sd of 0.00 over the last 100 steps.
+
+**The earlier worry that k would be a fresh magic number does not survive
+measuring it.** The alternatives are not other defensible choices; they are
+worse-regulated, and one of them is not regulated at all. `mitosis.demo()`
+still completes.
+
+The small population is the regulated value, not a shortfall. Anything larger,
+here, was the ceiling.
