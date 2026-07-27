@@ -1491,11 +1491,48 @@ def _three_axes(engine, dim, cells, steps=60):
                           - (sim.sum() - sim.diag().sum()) / max(n * (n - 1), 1)))
     identity_floor = float(np.mean(null) + 3 * np.std(null))
 
-    return (phi_now > max(phi_floor, 1e-6),
+    # INTEGRATION replaces the differentiation conjunct, on two measured
+    # grounds from a /gap audit. (1) Differentiation rejected nothing: at 32
+    # cells all five of REAL/DEAD/NOISE/CLONE/SCRAMBLE cleared it, because the
+    # "floor" is residual debias noise (~0.005) rather than a property of the
+    # population, so it was a dominated axis. (2) A HEAP -- sync, debate and
+    # repulsion all off, so parts never interact -- passed all three axes and
+    # walked the gate, which is fatal for something claiming to measure
+    # INTEGRATED information: nothing was checking that the parts interact.
+    #
+    # Perturb one cell, take one step, and see how far the OTHERS moved
+    # relative to the size of the nudge, against the same step without it.
+    # Measured at 32 cells: REAL 0.05170, HEAP 0.00000, DEAD 0.00000,
+    # NOISE 1.61347, CLONE 3.57363, SCRAMBLE 0.98416. It rejects HEAP and DEAD;
+    # the other three are already rejected by the identity axis. Together
+    # {integration, identity, change} rejects all five where the old set let
+    # HEAP through.
+    base = engine.get_hiddens().clone()
+    ripples = []
+    for _ in range(6):
+        probe_x = torch.randn(1, dim) * 0.1
+        engine.hiddens = base.clone()
+        engine.process(probe_x)
+        undisturbed = engine.get_hiddens().clone()
+
+        nudged = base.clone()
+        kick = torch.randn(base.shape[1]) * 0.5
+        nudged[0] = nudged[0] + kick
+        engine.hiddens = nudged
+        engine.process(probe_x)
+        disturbed = engine.get_hiddens().clone()
+
+        moved_others = float((undisturbed[1:] - disturbed[1:]).norm())
+        ripples.append(moved_others / max(float(kick.norm()), 1e-9))
+    engine.hiddens = base
+    integration = float(np.mean(ripples))
+
+    return (integration > 0.001,
             identity > max(identity_floor, 1e-6),
             change > 0.001,
-            f"Φ={phi_now:.4f}>floor={phi_floor:.4f} "
-            f"identity={identity:+.4f}>floor={identity_floor:+.4f} change={change:.5f}")
+            f"integration={integration:.5f} "
+            f"identity={identity:+.4f}>floor={identity_floor:+.4f} change={change:.5f} "
+            f"[Φ={phi_now:.4f} floor={phi_floor:.4f}]")
 
 
 def _verify_no_system_prompt(engine_factory, cells, dim, hidden):

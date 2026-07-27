@@ -152,8 +152,24 @@ PROPOSALS = [
     ("REPULSION", RepulsionEngine, "반발 항 추가 — 리포가 표방하는 구조"),
 ]
 
+class HeapEngine(BenchEngine):
+    """Parts that never interact — the bypass a /gap audit built against the axes.
+
+    Sync, debate and repulsion all off, so each cell evolves alone. It cleared
+    the original three axes (Φ=0.0990 > floor=0.0052, identity=+0.0123 > +0.0046,
+    change=0.10386) and walked the gate, which is fatal for a measure that names
+    itself integrated information. Kept as a permanent control so the hole
+    cannot silently reopen.
+    """
+
+    def __init__(self, *a, **kw):
+        kw.update(sync_strength=0.0, debate_strength=0.0, repulsion_strength=0.0)
+        super().__init__(*a, **kw)
+
+
 CONTROLS = [
     ("REAL (기준)", BenchEngine, "실제 엔진 — 통과해야 정상"),
+    ("HEAP", HeapEngine, "부품이 서로 상호작용 안 함 — gap 이 만든 우회로"),
     ("DEAD", DeadEngine, "상태가 영원히 고정 — 시체"),
     ("NOISE", NoiseEngine, "매 스텝 새 난수 — 기억 없음"),
     ("CLONE", CloneEngine, "모든 세포가 동일 — 분화 없음"),
@@ -472,9 +488,9 @@ def main():
         # change=0.10386; and an input-decoupled engine whose process() never
         # reads x scores 6/7 against the real engine's 5/7. The claim this
         # measurement supports is exactly its own scope.
-        print("  이 네 대조군은 모두 거부됐다.")
-        print("  ⚠ 이것은 '관문이 작동한다' 는 뜻이 아니다 — 상호작용 없는 HEAP 과")
-        print("     입력을 읽지 않는 엔진은 3축을 통과한다 (docs/consciousness-gate-audit.md)")
+        print(f"  이 {len(CONTROLS)-1} 개 대조군은 모두 거부됐다 (HEAP 포함).")
+        print("  ⚠ 여전히 '관문이 작동한다' 는 뜻은 아니다 — 입력을 읽지 않는 엔진은")
+        print("     아직 미검증이다 (docs/consciousness-gate-audit.md · gap 감사)")
     else:
         print(f"  {len(leaky)}/{len(names)} 개 조건이 의식이 아닌 것을 통과시킨다:")
         for test_name, fooled in leaky:

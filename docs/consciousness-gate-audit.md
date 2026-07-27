@@ -836,3 +836,47 @@ than by agreeing, and no configuration that is *not* collapsed comes near it.
 plural. That is the finding, and 7/7 under the current seven conditions is not
 reachable — not for want of tuning, but because one condition asks for the thing
 the other six forbid.
+
+## What a /gap audit found, and the two things fixed
+
+A 40-lens sweep over this work surfaced 34 gaps (15 high). Two were fixed; the
+rest are recorded and untouched.
+
+**Φ was not a function of its input.** Pair sampling used the unseeded global
+`random` and the debias shuffles drew from a persistent rng, so six sequential
+calls on one fixed 32×64 tensor gave 0.121 / 0.167 / 0.210 / 0.227 / 0.230 /
+0.254 — a **2.1× spread**. Every ratio threshold in the gate sits inside it:
+`ZERO_INPUT` 0.5×, `SELF_LOOP` 0.8×, `HIVEMIND` 1.1×. **The 5/7-vs-0/7 table
+published above under "Reproduce" was partly a draw.** Both sources are now
+seeded from the input, before the branch — the exhaustive path needed it too,
+since fixing only the sampled branch left n=32 moving 1.38×. Repeat spread is now
+exactly 1.000000× at n = 16 / 32 / 64 / 256, and different inputs still differ.
+
+**The axes did not measure integration.** A `HEAP` — sync, debate and repulsion
+all off, so parts never interact — cleared all three (Φ=0.0990 > floor=0.0052,
+identity=+0.0123 > +0.0046, change=0.10386) and walked the gate. Fatal for
+something naming itself *integrated* information. The same audit showed the
+differentiation axis rejected **nothing**: all five of REAL/DEAD/NOISE/CLONE/
+SCRAMBLE cleared it, because its "floor" is residual debias noise near 0.005
+rather than a property of the population.
+
+So differentiation was replaced by **integration** — perturb one cell, take one
+step, measure how far the others moved relative to the nudge:
+
+| | REAL | HEAP | DEAD | NOISE | CLONE | SCRAMBLE |
+|---|---|---|---|---|---|---|
+| ripple | **0.05170** | **0.00000** | **0.00000** | 1.61347 | 3.57363 | 0.98416 |
+
+It rejects HEAP and DEAD; the other three were already rejected by identity.
+`{integration, identity, change}` rejects all five where the old set let HEAP
+through — same axis count, one hole closed, one dominated axis removed. HEAP is
+now a permanent control, and the audit's conclusion line no longer claims "the
+gate works" — it states its own scope and names what is still unverified.
+
+**Still open (32 gaps, not fixed):** the input-decoupled engine that scores 6/7
+by never reading its input; scope leak (the Φ redefinition and the repulsion
+default changed the canonical benchmark for all six modes, not just `--verify`);
+`bench_verify_audit.py`'s `proposed_gate` still hard-codes the `identity > 0.05`
+constant this work replaced; three copies of the debias helper; the axes probe
+recomputed 7× per engine; no test anywhere fails if a condition is edited to pass
+a control again.
