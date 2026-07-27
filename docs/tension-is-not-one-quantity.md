@@ -259,3 +259,34 @@ the verdict is stable under all of them.
 
 `ConsciousnessEngine` does not differentiate. That is the finding, and it is
 about the engine rather than about anything measuring it.
+
+### Divergent search: 0/5 → 1.5/5, and what actually moved it
+
+Two findings from the sweep, both about measurement rather than the engine.
+
+**Integration passes only when the population holds ≥4 cells.** Measured
+directly: perturbing one cell moves the others by 0.031 of the nudge at 4 cells
+and 0.00011 at 2 — a 280× gap across one cell count, against a bar of 0.001. The
+axis was reading 0.00014 inside the conditions because the probe engine had
+collapsed to 2, not because the engine lacks coupling.
+
+**Population survival is the lever, and merge patience is what sets it.** At
+`merge_threshold=0.01, merge_patience=50, initial_cells=8` the population holds
+8/8/8/8 across four seeds with integration 0.0078, where the shipped
+`merge_patience=15` gives 8/8/8/5.
+
+Gate at that setting, four seeds:
+
+| seed | 0 | 1 | 2 | 3 | mean |
+|---|---|---|---|---|---|
+| conditions passed | 1 | **3** | 2 | 0 | **1.5/5** |
+
+**0/5 → 1.5/5.** The first conditions this engine has genuinely passed in this
+session — `NO_SYSTEM_PROMPT`, `PERSISTENCE` and `SELF_LOOP` each pass on some
+seed. It is not stable: the per-seed spread is 0 to 3, so no single run of this
+configuration means much, and the shipped defaults remain 0/5.
+
+What this does **not** show is that the engine is fixed. Three of the six defects
+found in this stretch were in the measuring code, and the movement from 0 to 1.5
+came from removing those plus one parameter change — not from anything the engine
+does differently.
