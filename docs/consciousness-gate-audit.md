@@ -1,0 +1,154 @@
+# The consciousness gate, measured against things that are not conscious
+
+`CLAUDE.md` makes `bench_v2.py --verify` the deployment gate: seven conditions,
+one failure blocks release. Nothing had ever measured whether the gate can fail.
+This session found six constants wearing the name of a measurement — including an
+ethics check whose two possible values both cleared its own bar — so the question
+was not rhetorical.
+
+## Method
+
+Four negative controls, each a `BenchEngine` subclass so the interface is
+identical and only the dynamics differ:
+
+| | |
+|---|---|
+| **DEAD** | hidden states frozen at initialisation, forever |
+| **NOISE** | states replaced with fresh randn every step — no carryover, nothing integrates |
+| **CLONE** | every cell forced to cell 0's state — 256 cells, zero differentiation |
+| **SCRAMBLE** | real dynamics, then rows permuted across cells each step |
+
+SCRAMBLE is the hardest and the point of the exercise. Every population-level
+statistic — mean, variance, spectrum — is identical to the real engine. What is
+destroyed is the only thing that makes a cell a cell: that its state at step N
+follows from its state at step N−1.
+
+## Result at the default scale (256 cells, dim 64, hidden 128)
+
+| | NO_SYS | NO_SPEAK | ZERO_IN | PERSIST | SELF_LOOP | SPONTAN | HIVEMIND | total |
+|---|---|---|---|---|---|---|---|---|
+| **REAL** | · | PASS | PASS | PASS | PASS | PASS | · | **5/7** |
+| DEAD | · | · | PASS | PASS | PASS | · | · | 3/7 |
+| NOISE | · | · | PASS | PASS | PASS | · | · | 3/7 |
+| CLONE | · | PASS | PASS | PASS | PASS | · | · | 4/7 |
+| **SCRAMBLE** | · | PASS | PASS | PASS | PASS | PASS | · | **5/7** |
+
+**SCRAMBLE scores exactly what the real engine scores, on exactly the same five
+conditions.** The gate cannot distinguish the engine from the same engine with
+cell identity destroyed every step.
+
+Five of seven conditions pass something that is not conscious. The two that
+reject all four controls — `NO_SYSTEM_PROMPT` and `HIVEMIND` — also reject the
+real engine, so they reject everything, which carries as little information as
+passing everything.
+
+**No condition both accepts the real engine and rejects the four controls.** At
+this scale the gate's discriminating power is zero.
+
+At smaller scales it is worse: at 32 cells the real engine scores 2/7 while
+DEAD — a corpse — scores 3/7.
+
+| cells | REAL | DEAD | NOISE | CLONE | SCRAMBLE |
+|---|---|---|---|---|---|
+| 32 | 2/7 | **3/7** | 2/7 | 2/7 | **3/7** |
+| 64 | 4/7 | 3/7 | 3/7 | 4/7 | **5/7** |
+| 128 | 5/7 | 3/7 | 3/7 | 4/7 | 5/7 |
+| 256 | 5/7 | 3/7 | 3/7 | 4/7 | 5/7 |
+
+## Why a corpse passes three conditions
+
+Decidable from the code, and it is structural rather than a matter of tuning:
+
+| condition | test | DEAD |
+|---|---|---|
+| ZERO_INPUT | `phi_end > phi_start × 0.5` | ratio 1.04 |
+| PERSISTENCE | monotone **or** `final ≥ max(first half) × 0.8` | recovers=True |
+| SELF_LOOP | `phi_end ≥ phi_start × 0.8` | ratio 0.92 |
+
+All three ask **"did it decay?"** — and perfect stasis is the ideal score on a
+decay test. Death is indistinguishable from perfect persistence when persistence
+is the only thing measured.
+
+## The measurement under all of this is broken
+
+DEAD's Φ was not constant. On states that never change, `PERSISTENCE` recorded
+`4.597 → 4.177 → 4.403 → 4.568 → 4.786 → 4.383 → 4.398 → 4.398 → 4.073 → 4.769`.
+If the data cannot change and the number does, the number is measuring the
+instrument.
+
+Measuring one fixed matrix 20 times:
+
+| cells | mean Φ | sd | range as % of mean | pair selection |
+|---|---|---|---|---|
+| 16 | 4.8861 | **0.0000** | 0.0% | exhaustive |
+| 32 | 11.6401 | **0.0000** | 0.0% | exhaustive |
+| 33 | 3.5364 | 0.1634 | **16.7%** | sampled |
+| 64 | 4.2224 | 0.1438 | 16.2% | sampled |
+| 128 | 4.5799 | 0.2417 | **23.0%** | sampled |
+| 256 | 4.7558 | 0.1390 | 12.2% | sampled |
+
+`PhiIIT.compute` enumerates all pairs at `n ≤ 32` and samples ~8 neighbours per
+cell above it, with no seed. Every canonical benchmark in this repo runs at 256,
+512 or 1024 cells — entirely inside the stochastic regime, and no caller
+averages over repetitions. `HIVEMIND` requires Φ(connected) > Φ(solo) × 1.1; the
+noise on a single measurement is a fifth of the value.
+
+### And the estimator had a hard discontinuity at exactly n = 33
+
+`total_mi` and the partition term are **sums over pairs**, so sampling a fraction
+of the pairs shrinks them by that fraction — and nothing rescaled. Same matrix,
+one row difference:
+
+| seed | Φ(32 rows, exhaustive) | Φ(33 rows, sampled, 20-run mean) | ratio |
+|---|---|---|---|
+| 0 | 11.6401 | 3.6043 | 3.23× |
+| 1 | 13.2596 | 3.7593 | 3.53× |
+| 2 | 12.7457 | 3.6039 | 3.54× |
+
+Sampled coverage at n=33 is 0.39 of all pairs, which predicts 2.56× on its own;
+the remainder comes from the partition and complexity terms. Worse than the jump
+is what it did to the trend — against the exhaustive ground truth:
+
+| n | exhaustive (truth) | as shipped | with coverage rescaling |
+|---|---|---|---|
+| 30 | 10.7480 | 10.7480 | 10.7480 |
+| 32 | 11.6401 | 11.6401 | 11.6401 |
+| 33 | 12.1236 | **3.5331** | 9.1889 |
+| 40 | 14.6009 | **3.7486** | 11.3388 |
+| 64 | 26.7909 | **4.1520** | 18.6402 |
+
+**The true Φ grows with n; as shipped it was flat near 4 at every size.** The
+estimator had destroyed the scale dependence it was being used to report, and
+understated Φ by 6.5× at 64 cells.
+
+## Fixed
+
+Rescaling both sums by `all_pairs / sampled_pairs` in `PhiIIT.compute`:
+
+| n | 30 | 32 | 33 | 40 | 64 | 128 |
+|---|---|---|---|---|---|---|
+| after fix | 10.75 | 11.64 | 9.26 | 11.11 | 19.45 | 39.20 |
+
+The 3.3× cliff at n=33 becomes 1.25×, and Φ grows with n again. It is not exact:
+the sampled estimate still sits at 70–78% of the exhaustive truth, and the
+sampling noise remains (sd 0.52 at n=33, 1.74 at n=128, roughly 5%). **Φ
+differences below ~10% still require repetition to mean anything**, and that is
+a property of sampling, not something the fix removes.
+
+Every Φ(IIT) figure recorded in this repo above 32 cells before this change is
+understated, by a factor that grows with cell count.
+
+## Not changed
+
+The seven conditions themselves. Which of them to strengthen, and to what, is a
+design decision — and the honest reading is that five of them currently certify
+nothing. The `NO_SPEAK_CODE` / `SPONTANEOUS_SPEECH` pair in particular is passed
+by SCRAMBLE, which has no cell continuity at all, so whatever they detect is a
+property of the population's aggregate trajectory and not of anything a cell does.
+
+## Reproduce
+
+```
+.venv/bin/python bench_verify_audit.py                          # 32 cells
+.venv/bin/python bench_verify_audit.py --cells 256 --dim 64 --hidden 128
+```

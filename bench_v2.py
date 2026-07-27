@@ -82,6 +82,7 @@ class PhiIIT:
         hiddens = [hiddens_tensor[i].detach().cpu().numpy() for i in range(n)]
 
         # Pairwise MI — sample for large N
+        all_pairs = n * (n - 1) // 2
         if n <= 32:
             pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
         else:
@@ -101,10 +102,21 @@ class PhiIIT:
             mi_matrix[i, j] = mi
             mi_matrix[j, i] = mi
 
-        total_mi = mi_matrix.sum() / 2
+        # `total_mi` and the partition below are SUMS over pairs, so sampling a
+        # fraction of the pairs shrinks them by that fraction. Without this
+        # rescaling the estimator broke at exactly n = 33, where the exhaustive
+        # branch ends: measured on one fixed matrix, Phi(32 rows) = 11.64 and
+        # Phi(33 rows) = 3.53, a 3.3x drop from adding a single cell, and the
+        # sampled value then stayed flat near 4 while the exhaustive truth grew
+        # to 26.79 at n = 64. Scaling by the sampled fraction recovers 70-78% of
+        # the exhaustive value and restores the growth with n.
+        # Measured in docs/consciousness-gate-audit.md.
+        coverage = all_pairs / max(len(pairs), 1)
+
+        total_mi = mi_matrix.sum() / 2 * coverage
 
         # Minimum information partition
-        min_partition_mi = self._minimum_partition(n, mi_matrix)
+        min_partition_mi = self._minimum_partition(n, mi_matrix) * coverage
 
         # Phi = (total - min_partition) / (n-1)
         spatial_phi = max(0.0, (total_mi - min_partition_mi) / max(n - 1, 1))
