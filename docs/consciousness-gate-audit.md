@@ -566,3 +566,32 @@ repulsion 0.036 — a 7/7. Across five seeds at that exact setting:
 crosses it at random, so the single 7/7 was the seed rather than the
 configuration. Reporting it as a result would have been this session's own
 recurring error — reading a peak without checking what produced it.
+
+## There is no stable 7/7 operating point
+
+Six repulsion strengths × three seeds at 256 cells, every condition:
+
+| repulsion | mean | 7/7 | consensus events per seed |
+|---|---|---|---|
+| 0.025 | 3.67 | 0/3 | 1 / 6 / 3 |
+| 0.030 | 5.33 | 0/3 | 3 / 7 / 3 |
+| 0.033 | 5.33 | 0/3 | 2 / **9** / 3 |
+| 0.036 | 5.00 | 0/3 | 1 / 5 / 3 |
+| **0.040** | **5.67** | **1/3** | 1 / 3 / 6 |
+| 0.045 | 5.67 | 0/3 | 1 / 1 / 3 |
+
+**No setting gives 7/7 across seeds.** The consensus column says why: at a fixed
+configuration the count ranges from 1 to 9 while the bar is 5. The spread of the
+observable is larger than the distance to its own threshold, so whether a run
+reaches 7/7 is decided by the seed and not by the configuration — which is
+exactly what the two isolated 7/7 results (seed 42, seed 3) were.
+
+**This is not a threshold that tuning can cross.** Making `SPONTANEOUS_SPEECH`
+reachable requires the condition to judge over repetitions rather than count once
+in 300 steps — the same class of fix already applied to `HIVEMIND`, where a
+single trial's sign flipped between seeds until `n_trials = 3` was added.
+
+That is the state at the end of this work: the gate discriminates, the engine no
+longer collapses, every recorded Φ is on a definition that punishes collapse
+rather than rewarding it, and the remaining gap is a condition whose noise
+exceeds its own margin.
