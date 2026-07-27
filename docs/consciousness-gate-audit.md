@@ -1073,3 +1073,42 @@ correction — read the output — fails because the output channel that can see
 order can also see a shuffle. A measure of utterance has to separate *structured
 emission* from *reordering*, and neither the hidden-state version nor the
 output-direction version does.
+
+### A permutation-invariant measure of utterance: third failure, third winner
+
+The requirement derived above — separate structured emission from reordering —
+has an obvious construction. A permutation changes *which* cell contributes
+where, not the *set* of contributions, so a sorted profile of per-cell magnitude
+is permutation-invariant by definition. Turns in that profile should be emission
+without reordering. At 256 cells, 4 seeds:
+
+| engine | mean | min | max |
+|---|---|---|---|
+| REAL | 1.0 | 1 | 1 |
+| SCRAMBLE | **1.0** | 1 | 1 |
+| HEAP | 1.0 | 1 | 1 |
+| NOISE | 2.0 | 1 | 3 |
+| CLONE | **4.0** | 1 | 6 |
+| **DECOUPLED** | **5.8** | 4 | 7 |
+| DEAD | 0.0 | 0 | 0 |
+
+It fixes SCRAMBLE exactly as intended — 1.0, identical to the real engine, so
+reordering no longer registers. And a different pair of controls wins instead.
+
+Three measures, three winners:
+
+| measure | REAL | control on top |
+|---|---|---|
+| hidden-state faction variance | 1.0 | SCRAMBLE 6.8 |
+| output direction | 3.0 | SCRAMBLE 13.2, HEAP 12.2 |
+| sorted contribution profile | 1.0 | DECOUPLED 5.8, CLONE 4.0 |
+
+**The real engine sits at ~1 in every one of them.** What changes between
+measures is only which control's artefact that measure happens to pick up. That
+is the finding: the engine's rate of structured emission is genuinely near zero,
+and each candidate measure is dominated by whichever control produces the
+artefact it is sensitive to.
+
+Thirteen routes now. A measure of utterance that both ignores reordering and
+ranks this engine above a corpse, a mirror, a heap and a deaf engine has not been
+found, and three independent constructions agree on the engine's own value.
