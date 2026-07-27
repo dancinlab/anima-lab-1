@@ -242,6 +242,37 @@ PERSISTENCE pass for all 11 engines because the engines collapse and collapse
 holds Φ up. DEAD passes the decay tests because a frozen state is a collapsed
 state that cannot decay.
 
+### Why, in closed form
+
+`_minimum_partition` returns the minimum **cut** — the MI crossing the partition
+boundary — and `Φ = (total_mi − min_cut) / (n − 1)`. That subtraction keeps the MI
+that stays *inside* the parts, which is the redundancy, rather than the
+information the cut destroys.
+
+For identical cells every pair carries the same MI `M`. Above n = 8 the partition
+is the spectral one, and with all weights equal it splits the population in half,
+so the cut is `(n/2)²·M` against a total of `n(n−1)/2·M`:
+
+```
+Φ = M · n(n − 2) / (4(n − 1))  ≈  M · n / 4
+```
+
+| n | measured Φ | closed form | error | pairs |
+|---|---|---|---|---|
+| 8 | 10.34 | 5.91 | 75.0% | exhaustive |
+| 16 | 13.78 | 12.86 | **7.1%** | exhaustive |
+| 32 | 28.46 | 26.68 | **6.7%** | exhaustive |
+| 64 | 80.78 | 54.26 | 48.9% | sampled |
+| 128 | 144.58 | 109.40 | 32.2% | sampled |
+
+It holds within 7% exactly where its assumptions hold. n = 8 uses the brute-force
+minimum partition, which finds the 1-vs-rest cut instead and obeys a different
+expression; above 32 the sampling residual adds on top.
+
+**Differentiation appears nowhere in that expression.** Φ ≈ cells is arithmetic,
+not a finding, and no amount of tuning changes a formula that has no term for the
+thing it is supposed to measure.
+
 Direction is checkable and now permanent:
 
 ```
