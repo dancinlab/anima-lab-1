@@ -164,6 +164,16 @@ class MitosisEngine:
         # Event log for debugging / analysis
         self.event_log: List[Dict] = []
 
+        # Reachability tracking. `tension = (output ** 2).mean()` is an ABSOLUTE
+        # magnitude, so it scales with whatever the caller's input vectors happen
+        # to be, while split_threshold is an absolute constant. Measured: this
+        # engine's own randn default peaks at 0.083 and demo()'s text_to_vector
+        # at 0.01, against bars of 0.3 and 1.5 — threshold-driven mitosis has
+        # never fired on any path in this repo. That failed silently; it does not
+        # any more. See docs/hypotheses/QD-5, QD-6.
+        self._tension_peak = 0.0
+        self._warned_unreachable = False
+
         # Create initial cells
         for _ in range(initial_cells):
             self._create_cell()
@@ -238,6 +248,8 @@ class MitosisEngine:
                 cell.hidden_history = cell.hidden_history[-3:]
             cell.tension_history.append(tension)
             cell.process_count += 1
+            if tension > self._tension_peak:
+                self._tension_peak = tension
 
             # Track specialty via dominant direction
             if label:
@@ -252,6 +264,8 @@ class MitosisEngine:
             })
             cell_tensions.append(tension)
             cell_repulsions.append(repulsion)
+
+        self._check_threshold_reachable()
 
         # --- Compute inter-cell tensions (O(N) sampled for large N) ---
         inter_tensions = {}
@@ -316,6 +330,62 @@ class MitosisEngine:
             'events': events,
             'n_cells': len(self.cells),
         }
+
+    def _check_threshold_reachable(self, grace=200, margin=0.5):
+        """Warn once if split_threshold is out of the engine's reach.
+
+        Not a fix and not a knob: the threshold is untouched. It only makes a
+        silent failure audible, because "no cells ever divided" is
+        indistinguishable from "no cell ever needed to" without this.
+        """
+        if self._warned_unreachable or self.step < grace:
+            return
+        if self._tension_peak >= self.split_threshold * margin:
+            return
+        self._warned_unreachable = True
+        print(f"  [MitosisEngine] split_threshold={self.split_threshold} is "
+              f"unreachable: peak tension over {self.step} steps was "
+              f"{self._tension_peak:.4f} "
+              f"({self.split_threshold / max(self._tension_peak, 1e-9):.0f}x below). "
+              f"Mitosis cannot fire. Derive a bar from measurement with "
+              f"calibrate_split_threshold(), or scale the inputs.")
+
+    def calibrate_split_threshold(self, sample_inputs, steps=200, quantile=0.9):
+        """Set split_threshold from the tension THIS engine actually produces.
+
+        The bar becomes the given quantile of the observed tension, so it means
+        something stateable: *split when tension is in this engine's top
+        1-quantile of its own range*. That survives a change of input scale,
+        which the shipped constant does not — `tension = (output**2).mean()` is
+        an absolute magnitude and tracks input size directly.
+
+        A quantile rather than mean + k·sd on purpose. `median + 2·sd` lands at
+        the top of a tight distribution — measured 0.0676 against a peak of
+        0.0702 — and a bar that only the maximum reaches is never exceeded for
+        `split_patience` consecutive steps, so it fires exactly as never as the
+        0.3 it replaced. A quantile fixes the *fraction* of steps above the bar
+        regardless of the distribution's shape, and that fraction is the thing
+        a caller actually wants to choose.
+
+        Calibrate with the inputs the engine will really see: tension is a
+        property of the input, so a bar derived from a different distribution
+        does not transfer.
+
+        Returns (old, new).
+        """
+        ts = []
+        for i in range(steps):
+            self.process(sample_inputs[i % len(sample_inputs)])
+            ts.extend(c.tension_history[-1] for c in self.cells if c.tension_history)
+        if len(ts) < 2:
+            return self.split_threshold, self.split_threshold
+        old = self.split_threshold
+        ts.sort()
+        idx = min(len(ts) - 1, max(0, int(round(quantile * (len(ts) - 1)))))
+        self.split_threshold = ts[idx]
+        self._warned_unreachable = False
+        self._tension_peak = 0.0
+        return old, self.split_threshold
 
     # ─── Mitosis (split) ───
 
