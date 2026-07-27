@@ -81,7 +81,12 @@ except ImportError:
 LN2 = math.log(2)
 
 PSI_BALANCE  = 0.5      # Shannon entropy maximum (1/2)
-PSI_COUPLING = 0.014    # consciousness coupling constant (α), bench-verified
+# Every other module defines this as LN2 / 2**5.5 = 0.015317 — consciousness_
+# gravity, consciousness_phase_transition, consciousness_meter, consciousness_
+# map, consciousness_api, golden_moe_v2, dream_language. This file carried a
+# hardcoded 0.014 labelled "bench-verified", 8.6% off the canonical definition:
+# a magic number wearing the constant's name. Derived here like everywhere else.
+PSI_COUPLING = LN2 / 2**5.5   # 0.015317 — consciousness coupling constant (α)
 PSI_STEPS    = 3 / LN2  # 4.33 — information bits per evolution
 PSI_ENTROPY  = 0.998    # near-perfect democracy across factions
 PSI_GATE_TRAIN = 1.0    # Law 81: learn hard
