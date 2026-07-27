@@ -4,3 +4,5 @@
 {"ts":"2026-07-26T18:49:27.416Z","kind":"verdict","id":"QD-4","tier":"FAIL","exit":1,"cmd":"python3 bench_psi_recall.py","file":"state/QD-4.txt"}
 {"ts":"2026-07-26T18:58:39.348Z","kind":"verdict","id":"QD-5","tier":"FAIL","exit":1,"cmd":".venv/bin/python bench_psi_mitosis.py","file":"state/QD-5.txt"}
 {"ts":"2026-07-27T02:33:30.313Z","kind":"verdict","id":"QD-6","tier":"FAIL","exit":1,"cmd":".venv/bin/python bench_mitosis_calibration.py","file":"state/QD-6.txt"}
+{"ts":"2026-07-27T08:39:58.111Z","kind":"verdict","id":"MITOSIS-POP-FEEDBACK","tier":"PASS","exit":0,"cmd":".venv/bin/python bench_population_elasticity.py","file":"state/MITOSIS-POP-FEEDBACK.txt"}
+{"ts":"2026-07-27T08:41:19.538Z","kind":"verdict","id":"MITOSIS-POP-FEEDBACK","tier":"PASS","exit":0,"cmd":".venv/bin/python bench_population_elasticity.py","file":"state/MITOSIS-POP-FEEDBACK.txt"}

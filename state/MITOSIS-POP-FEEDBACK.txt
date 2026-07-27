@@ -1,0 +1,106 @@
+# verdict MITOSIS-POP-FEEDBACK
+# cmd: .venv/bin/python bench_population_elasticity.py
+# tier: PASS  exit=0  at 2026-07-27T08:41:19.537Z
+# ── captured stdout+stderr (verbatim) ──
+
+  탄력도 — n* = 2·(T/bar)^(1/k) 예측 검증 · 3 seeds × 400 steps
+  민감할수록 보정 손잡이를 조금만 돌려도 집단이 크게 흔들린다
+
+       k      예측 기울기 −1/k       측정 기울기         집단 진폭(최대/최소)
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [DD55] WARNING: Φ conservation violated! 0.116 → 0.128 (ratio=1.103)
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [DD55] WARNING: Φ conservation violated! 0.183 → 0.202 (ratio=1.101)
+  [DD55] WARNING: Φ conservation violated! 0.116 → 0.128 (ratio=1.103)
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [DD55] WARNING: Φ conservation violated! 0.183 → 0.202 (ratio=1.101)
+  [DD55] WARNING: Φ conservation violated! 0.116 → 0.128 (ratio=1.103)
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+     1.0            -1.00        -1.68                  1.7×
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+     0.5            -2.00        -1.82                  1.9×
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+    0.25            -4.00        -5.96                  7.6×
+
+  천장 불변성 — n* 는 max_cells 에 의존하면 안 된다 (식에 없으므로)
+       k     max=16     max=32     max=64       천장 추종?
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [DD55] WARNING: Φ conservation violated! 0.183 → 0.202 (ratio=1.101)
+  [DD55] WARNING: Φ conservation violated! 0.116 → 0.128 (ratio=1.103)
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [DD55] WARNING: Φ conservation violated! 0.183 → 0.202 (ratio=1.101)
+  [DD55] WARNING: Φ conservation violated! 0.116 → 0.128 (ratio=1.103)
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [DD55] WARNING: Φ conservation violated! 0.183 → 0.202 (ratio=1.101)
+  [DD55] WARNING: Φ conservation violated! 0.116 → 0.128 (ratio=1.103)
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+     1.0        3.7        3.7        3.7           no
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+     0.5        4.7        4.7        4.7           no
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0702 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0629 (5x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0843 (4x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+    0.25        9.7       12.7       14.8           no
+
+  기울기가 −1/k 에 가까우면 식이 맞는 것이고,
+  그러면 k 를 줄이는 것은 규제를 개선하는 게 아니라 민감도를 키우는 것.
+
+

@@ -81,9 +81,14 @@ class NormalisedTriggerEngine(MitosisEngine):
         self.pop_exponent = exponent
 
     def _check_splits(self):
+        # The base engine now applies its own linear factor (0597e24), so this
+        # must REPLACE it rather than compound with it: pre-dividing by `ratio`
+        # leaves a net exponent of exactly `pop_exponent`. Without this the arm
+        # measures k+1 — after the landing, the k=0.25 row silently became k=1.25
+        # and read 3.0 cells at every ceiling instead of tracking it.
         base = self.split_threshold
         ratio = len(self.cells) / max(self.min_cells, 1)
-        self.split_threshold = base * (ratio ** self.pop_exponent)
+        self.split_threshold = base * (ratio ** (self.pop_exponent - 1.0))
         try:
             return super()._check_splits()
         finally:

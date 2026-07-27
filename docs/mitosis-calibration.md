@@ -335,3 +335,17 @@ still completes.
 
 The small population is the regulated value, not a shortfall. Anything larger,
 here, was the ceiling.
+
+## One more thing the landing broke, caught by re-running
+
+`bench_population_feedback.py`'s arm B multiplies the bar by `ratio^k` — and
+after the landing the base engine multiplies by `ratio` as well, so the arm was
+silently measuring **k+1**. The k=0.25 row flipped to 3.0 cells at every ceiling
+and would have read as "regulated after all", which is the opposite of the
+finding it was there to support. The subclass now pre-divides by `ratio` so its
+net exponent is exactly `k`, and the ceiling test reproduces: 3.7 / 3.7 / 3.7 at
+k=1.0 against 9.7 / 12.7 / 18.8 at k=0.25.
+
+Found by recording the verdict and reading the captured output rather than
+trusting the run that had already scrolled past. A bench that subclasses the
+thing it measures has to be re-checked whenever that thing changes.
