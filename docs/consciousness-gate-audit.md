@@ -1,5 +1,24 @@
 # The consciousness gate, measured against things that are not conscious
 
+> **Outcome.** The three coupled fixes are landed in `bench_v2.py`. Every
+> negative control now scores **0/7** and the engine holds **5/7**. `SCRAMBLE`,
+> which tied the real engine at 5/7 under the shipped gate, is at zero.
+>
+> | | REAL | DEAD | NOISE | CLONE | SCRAMBLE | leaking conditions |
+> |---|---|---|---|---|---|---|
+> | shipped | 5/7 | 3/7 | 3/7 | 4/7 | **5/7** | 5/7 |
+> | Φ + repulsion + 3 axes on the ratios | 5/7 | 1/7 | 1/7 | 1/7 | 2/7 | 3/7 |
+> | **axes as a precondition of all seven** | **5/7** | **0/7** | **0/7** | **0/7** | **0/7** | **0/7** |
+>
+> The engine is **not** at 7/7. It fails `SPONTANEOUS_SPEECH` and `HIVEMIND`, and
+> the first is a real cost of the repulsion: consensus events drop to 1 against a
+> bar of 5, because keeping cells apart makes agreement rare. That tension
+> between differentiation and consensus is now visible instead of hidden.
+>
+> **Every Φ(IIT) figure recorded before this is on the old definition and is not
+> comparable** — the old one was maximal at collapse, the new one is minimal there.
+
+
 `CLAUDE.md` makes `bench_v2.py --verify` the deployment gate: seven conditions,
 one failure blocks release. Nothing had ever measured whether the gate can fail.
 This session found six constants wearing the name of a measurement — including an
