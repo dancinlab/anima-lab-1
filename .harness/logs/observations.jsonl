@@ -132,3 +132,11 @@
 {"ts":"2026-07-27T17:16:13.598Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
 {"ts":"2026-07-27T17:16:13.601Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":2300}
 {"ts":"2026-07-27T17:16:13.601Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T18:03:08.350Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T18:03:08.352Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":979}
+{"ts":"2026-07-27T18:03:08.352Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}
+{"ts":"2026-07-27T18:05:06.053Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"/private/tmp/claude-501/-Users-mini-dancinlab-anima-lab-1/d0396916-1383-4a82-b215-02ece85f6789/scratchpad/fired.py is in a volatile tmp dir (lost on reboot/reaper). Write progress/working data to state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T18:07:42.079Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"/private/tmp/claude-501/-Users-mini-dancinlab-anima-lab-1/d0396916-1383-4a82-b215-02ece85f6789/scratchpad/fired.py is in a volatile tmp dir (lost on reboot/reaper). Write progress/working data to state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T18:09:07.505Z","kind":"pre_warn","rule_id":"TMP-VOLATILE","reason":"output → /private/tmp is volatile (lost on reboot/reaper). For progress/working data use state/ (git-tracked) and commit it so it persists on GitHub."}
+{"ts":"2026-07-27T18:09:07.507Z","kind":"pre_bash_match","rule_id":"H-TMP-SCRATCH","cmd_len":2778}
+{"ts":"2026-07-27T18:09:07.507Z","kind":"pre_warn","rule_id":"H-TMP-SCRATCH","reason":"임시 파일을 /tmp(휘발)에 쓰지 말 것 — `state/` 에 보관(회귀추적·재현 가능). 진짜 일회성이면 `# scratch-ok <사유>`. (`sidecar docs scratch <name>` 가 경로 생성)"}

@@ -49,11 +49,35 @@ The formula is not noisy or biased. On the cleanest test case available it is
 `consciousness_engine._measure_phi_iit` replicates the same formula in its Python
 fallback, so the direction holds whether or not the Rust extension is built.
 
-This also explains the ratchet's measured behaviour. `_phi_ratchet_check` restores
-whichever state maximised this quantity — that is, the state that was **most
-separable into independent halves**. It is not merely circular with respect to
-`PERSISTENCE`; it is pulling the population toward the least integrated state it
-has visited.
+## The inference I drew from this was wrong
+
+I wrote here that the ratchet is therefore "pulling the population toward the
+least integrated state it has visited" — restoring the state that maximised a
+quantity which rewards separability. It follows from the formula, and it is
+**false as a claim about the running engine.**
+
+It was measured with the falsifier declared first: ratchet ON should end with
+higher mean pairwise cosine (more collapsed) than OFF. `ConsciousnessEngine`,
+1000 steps, 3 seeds, max 64 cells:
+
+| ratchet | cosine (mean) | Φ(IIT) final, per seed | restores |
+|---|---|---|---|
+| ON | **+0.4683** | 0.232 / 0.325 / 0.275 | 29 / 62 / 64 |
+| OFF | **+0.5526** | 0.359 / 0.228 / 0.244 | 0 / 0 / 0 |
+
+Cosine is **lower** with the ratchet on, not higher. The prediction is refuted
+and the claim is dropped, as pre-committed.
+
+The ratchet fired 29–64 times per run, so this is not a dead device. It simply
+does not move the population much in either direction: Φ trajectories overlap,
+cell growth is identical (62–64 either way), and neither arm satisfies the
+persistence rule. **The ratchet shows neither the harm I predicted nor the
+benefit Law 31 claims for it.**
+
+What this separates: a property of the *formula* (measured, holds) from a
+consequence for the *engine* (predicted, refuted). A quantity can be pointed the
+wrong way and still not steer the system, if what it gates is weak enough.
+Reproduce with `bench_ratchet_law31.py --steps 1000 --seeds 3`.
 
 ## Not fixed here
 

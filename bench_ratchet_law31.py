@@ -25,6 +25,18 @@ PRE-DECLARED PREDICTION, so this can come out wrong:
 FALSIFIER: if cosine(on) ≤ cosine(off) across seeds, the reading above is wrong
 and the ratchet is not driving collapse — say so and drop the claim.
 
+RESULT: THE FALSIFIER FIRED. 1000 steps, 3 seeds, max 64 cells — cosine is
++0.4683 with the ratchet ON against +0.5526 OFF. LOWER, not higher. The reading
+above is dropped.
+
+The ratchet restored 29–64 times per run, so the device runs; it just does not
+move the population. Φ trajectories overlap (ON 0.232/0.325/0.275 final vs OFF
+0.359/0.228/0.244), cell growth is identical at 62–64 either way, and neither arm
+satisfies the persistence rule. The ratchet shows neither the harm predicted here
+nor the benefit Law 31 claims for it — so Law 31's key #1 is unsupported, but not
+for the reason predicted. A quantity can point the wrong way and still fail to
+steer the system, if what it gates is weak enough.
+
 Reported per arm: corrected Φ(IIT) from `bench_v2.PhiIIT` (not the engine's own,
 which is the thing under suspicion), the engine's internal Φ, mean pairwise
 cosine, restore count, and whether `PERSISTENCE`'s own rule holds.

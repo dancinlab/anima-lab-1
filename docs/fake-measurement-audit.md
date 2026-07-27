@@ -157,3 +157,43 @@ absence of collapse is the ratchet restoring away every drop, that benchmark
 confirmed the device rather than the property. **Not resolved here** — `PERSIST3`
 would have to be rerun with the ratchet off to separate them, and that is a claim
 about a recorded law, not a defect to quietly fix.
+
+### Follow-up: the ratchet is inert, not harmful
+
+The section above said the ratchet "pins Φ" and "on a live engine makes things
+worse (7× drop)". That came from an inline implementation which is not in the
+repo and does not reproduce. Rebuilt as `bench_ratchet_law31.py` with the device
+wrapped so it can be applied to any engine, and two defects surfaced in the probe
+itself: the check was gated on `getattr(self, 'step_count', 0) % 10 == 0`, and
+`NoiseEngine` has no `step_count`, so the noise arm was ratcheted every step
+against the real arm's every tenth — 876 restores vs 9, an artefact. And
+`PhiIIT.compute` returns `(phi, components)`, appended whole.
+
+With both fixed, `ConsciousnessEngine`, 1000 steps, 3 seeds, max 64 cells:
+
+| ratchet | cosine | Φ(IIT) final | restores | cells | persists |
+|---|---|---|---|---|---|
+| ON | +0.4683 | 0.232 / 0.325 / 0.275 | 29 / 62 / 64 | 62–63 | no |
+| OFF | +0.5526 | 0.359 / 0.228 / 0.244 | 0 / 0 / 0 | 62–64 | no |
+
+**Law 31's key #1 is unsupported** — Φ does not hold up better with the ratchet.
+But the earlier "7× drop" is also withdrawn: the ratchet does not degrade the
+engine either. It fires 29–64 times and changes almost nothing.
+
+Three further claims made during this investigation and refuted by measurement:
+
+- *"The engine never divides"* — it reaches 63 cells at 1000 steps and logs 1178
+  split events by 1500. The 600-step probe that showed 2 cells was simply short;
+  growth begins between 600 and 1000.
+- *"The q0.90 split calibration blocks mitosis"* — single-step tension clears the
+  0.005642 bar 7.2% of the time and the 5-step mean only 0.7%, but that is ample
+  across 1500 steps × 62 cells, and splits fire.
+- *"A step costs 3 s; the run took 50 minutes"* — 1000 steps cost 5.15 s and four
+  `PhiIIT.compute` calls at n=63 cost 0.26 s. The 50-minute figure does not
+  reproduce and appears to have been a delayed background notification read as
+  runtime.
+
+What survives from the ratchet line of inquiry is the thing that prompted it:
+`PERSISTENCE`'s Φ rule passes plain noise with no ratchet at all
+(`docs/phi-rs-direction.md`), so the pre-session gate was vacuous on its own
+regardless of what the ratchet does.
