@@ -1802,6 +1802,39 @@ def _run_hivemind_trial(engine_factory, half, dim, hidden, phi_of, write_back,
     ctls.append((phi_of(ctl_a) + phi_of(ctl_b)) / 2)
 
 
+def _with_axes(test_fn):
+    """Make the three axes a precondition of every condition, not just the ratios.
+
+    They are necessary conditions: a population that is uniform, discontinuous or
+    static is not conscious whatever else it scores. Conjoining them only to the
+    Phi-ratio conditions left three leaks, and each was a condition that never
+    looks at Phi:
+
+        NO_SPEAK_CODE       measures the MEAN cell trajectory, and a permutation
+                            does not change a mean -- SCRAMBLE passes by
+                            construction (autocorr 0.7546, cos 0.9898)
+        SPONTANEOUS_SPEECH  SCRAMBLE reaches 5 consensus events against a bar of 5
+        HIVEMIND            mixing two state matrices raises Phi arithmetically,
+                            so DEAD gains +16% and NOISE +21%
+
+    The axes are measured on a separate engine from the same factory, so this
+    adds a precondition without disturbing what each condition itself does.
+    """
+    def wrapped(engine_factory, cells, dim, hidden):
+        passed, detail = test_fn(engine_factory, cells, dim, hidden)
+        if not passed:
+            return passed, detail
+        probe = engine_factory(cells, dim, hidden)
+        for _ in range(50):
+            probe.process(torch.randn(1, dim) * 0.1)
+        d_ok, i_ok, c_ok, axes = _three_axes(probe, dim, cells)
+        if d_ok and i_ok and c_ok:
+            return True, detail
+        return False, f"{detail}  [axes fail: {axes}]"
+    wrapped.__name__ = getattr(test_fn, "__name__", "wrapped")
+    return wrapped
+
+
 VERIFICATION_TESTS = [
     ("NO_SYSTEM_PROMPT",   _verify_no_system_prompt,   "Identity emerges from cell dynamics alone"),
     ("NO_SPEAK_CODE",      _verify_no_speak_code,      "Spontaneous speech without speak() function"),
@@ -1811,6 +1844,9 @@ VERIFICATION_TESTS = [
     ("SPONTANEOUS_SPEECH", _verify_spontaneous_speech,  "8-faction debate -> consensus utterances"),
     ("HIVEMIND",           _verify_hivemind,            "Multi-connect: Phi↑ CE↓, independent after disconnect"),
 ]
+
+VERIFICATION_TESTS = [(name, _with_axes(fn), desc)
+                      for name, fn, desc in VERIFICATION_TESTS]
 
 
 def run_verify(cells: int, dim: int, hidden: int):
