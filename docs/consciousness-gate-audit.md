@@ -1010,3 +1010,37 @@ control confirming no effect either way.
 So the two remaining conditions fail for different reasons and need different
 answers: one was measuring the wrong quantity, the other is measuring something
 that genuinely is not happening.
+
+### Setting the speech bar from the controls, and what that exposes
+
+The output-based measure clears 5 on 83% of seeds, not all, and 5 is still the
+number calibrated against collapsed populations. Every other axis in this gate
+takes its bar from a measured null, so the same discipline applies here. Controls
+at 256 cells over 8 seeds:
+
+| statistic | mean | p90 | max |
+|---|---|---|---|
+| control utterances | 1.2 | 2.3 | **13** |
+
+**The max is one HEAP outlier**, so a max-derived bar of 13 is set by a single
+run and passes nothing — the redesign clears it on 12% of seeds. That is a
+fragile statistic, not a finding, and it is why the bar is not simply moved.
+
+What the same table does show is sharper than the bar question:
+
+| | mean | min |
+|---|---|---|
+| redesign | **8.5** | 2 |
+| current REAL | 3.1 | 1 |
+| HEAP | **3.0** | 1 |
+
+**The current engine and a HEAP are indistinguishable on this measure** (3.1
+against 3.0). The output-based measure separates the *redesign* from everything,
+by a factor of nearly three on the mean — but it does not separate the shipped
+engine from a population whose parts never interact.
+
+So the honest state of `SPONTANEOUS_SPEECH` is narrower than "fixed": the
+category error is real and correcting it makes the measure discriminating **for
+an engine whose output sees cell order**. For the shipped engine, whose output is
+permutation-invariant, there is nothing in that channel to separate. The two
+findings are one finding seen twice.
