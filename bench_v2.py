@@ -67,8 +67,17 @@ class BenchResult:
 class PhiIIT:
     """Phi(IIT) approximation via pairwise mutual information + minimum partition."""
 
-    def __init__(self, n_bins: int = 16):
+    def __init__(self, n_bins: int = 16, seed: int = 0):
         self.n_bins = n_bins
+        # Seeded so debiasing does not add variation on top of pair sampling.
+        self._rng = np.random.default_rng(seed)
+
+    def _mutual_information_debiased(self, a, b, n_shuffles: int = 3) -> float:
+        """MI with its finite-sample floor removed, estimated by shuffling."""
+        raw = self._mutual_information(a, b)
+        null = np.mean([self._mutual_information(a, self._rng.permutation(b))
+                        for _ in range(n_shuffles)])
+        return max(0.0, raw - null)
 
     def compute(self, hiddens_tensor: torch.Tensor) -> Tuple[float, Dict[str, float]]:
         """Compute Phi(IIT) from a [n_cells, hidden_dim] tensor.
@@ -96,9 +105,16 @@ class PhiIIT:
                         pairs.add((min(i, j), max(i, j)))
             pairs = list(pairs)
 
+        # A 16-bin histogram MI estimator reads 2.21 / 1.58 / 0.94 / 0.53 / 0.27
+        # nats between signals that are completely INDEPENDENT at dim 32 / 64 /
+        # 128 / 256 / 512, where the truth is 0. Left in, that floor keeps the
+        # minimum cut large for an unconnected population and Phi peaks at total
+        # independence. Shuffling one signal preserves both marginals and
+        # destroys any relationship, so what the estimator still reports is its
+        # own bias. See docs/consciousness-gate-audit.md.
         mi_matrix = np.zeros((n, n))
         for i, j in pairs:
-            mi = self._mutual_information(hiddens[i], hiddens[j])
+            mi = self._mutual_information_debiased(hiddens[i], hiddens[j])
             mi_matrix[i, j] = mi
             mi_matrix[j, i] = mi
 
@@ -118,8 +134,22 @@ class PhiIIT:
         # Minimum information partition
         min_partition_mi = self._minimum_partition(n, mi_matrix) * coverage
 
-        # Phi = (total - min_partition) / (n-1)
-        spatial_phi = max(0.0, (total_mi - min_partition_mi) / max(n - 1, 1))
+        # `total - min_partition` keeps the MI staying INSIDE the parts, which
+        # is redundancy, so it was MAXIMAL at total collapse -- 71.93 for
+        # identical states against 19.97 for independent ones at 64 cells, and
+        # in closed form M*n(n-2)/(4(n-1)) ~= M*n/4, which is where "Phi ~=
+        # cells" came from. Differentiation was nowhere in it.
+        #
+        # Integration needs something to CUT and something to JOIN. What the
+        # best cut destroys is the integration term; the population's spread is
+        # the differentiation term. Identical copies have nothing to cut,
+        # independent cells nothing to join, maximum in between.
+        rows = F.normalize(hiddens_tensor.detach(), dim=1)
+        cos = rows @ rows.T
+        mean_cos = float((cos.sum() - n) / max(n * (n - 1), 1))
+        differentiation = max(0.0, 1.0 - mean_cos)
+
+        spatial_phi = (min_partition_mi / max(n - 1, 1)) * differentiation
 
         # Complexity bonus (variance of MI values)
         mi_vals = mi_matrix[mi_matrix > 0]
@@ -267,11 +297,12 @@ class BenchEngine:
 
     def __init__(self, n_cells=256, input_dim=64, hidden_dim=128,
                  output_dim=64, n_factions=8, sync_strength=0.15,
-                 debate_strength=0.15):
+                 debate_strength=0.15, repulsion_strength=0.15):
         self.n_cells = n_cells
         self.n_factions = n_factions
         self.sync_strength = sync_strength
         self.debate_strength = debate_strength
+        self.repulsion_strength = repulsion_strength
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
@@ -331,6 +362,29 @@ class BenchEngine:
                         (1 - self.debate_strength) * self.hiddens[s:s+dc]
                         + self.debate_strength * global_opinion
                     )
+
+        # Repulsion. CLAUDE.md defines this project as a repulsion-field agent,
+        # and until now the only two state-mixing operations here were faction
+        # sync and debate, both contractions toward a mean -- so collapse to a
+        # single state was arithmetic, not an outcome: mean pairwise cosine hit
+        # 0.9930 by step 10 and 1.0000 by step 200 under random input, and the
+        # population became N copies of one cell.
+        #
+        # Strength scales with the population's OWN overlap, so a differentiated
+        # population feels no push and a collapsed one feels the most. It cannot
+        # manufacture structure; it can only decline to erase it. Norm-preserving
+        # because `h + k(h - mean)` is a multiplicative expansion whose magnitude
+        # has nothing holding it -- measured drift 100.03 -> 106.24 over 1500
+        # steps without, 45.41 -> 44.94 with. Same fix mitosis.py needed.
+        unit = F.normalize(self.hiddens, dim=1)
+        overlap = float(((unit @ unit.T).sum() - self.n_cells)
+                        / max(self.n_cells * (self.n_cells - 1), 1))
+        if overlap > 0:
+            before = self.hiddens.norm(dim=1, keepdim=True)
+            pushed = self.hiddens + self.repulsion_strength * overlap * (
+                self.hiddens - self.hiddens.mean(dim=0, keepdim=True))
+            self.hiddens = pushed * (before / torch.clamp(
+                pushed.norm(dim=1, keepdim=True), min=1e-9))
 
         self.step_count += 1
 
@@ -1356,6 +1410,48 @@ PHILOSOPHY_ENGINES = {
 }
 
 
+def _three_axes(engine, dim, cells, steps=60):
+    """Differentiation, temporal identity, and change — one per way of not being conscious.
+
+    A decay ratio is meaningless at the floor: something pinned at zero scores a
+    perfect 1.00 for not decaying, which is why a frozen engine passed three
+    conditions. Conjoining an absolute floor rejects CLONE and SCRAMBLE but not
+    DEAD or NOISE, because those two are not collapsed at all — they fail on
+    time. Measured verdicts (docs/consciousness-gate-audit.md):
+
+        DEAD      differentiated and perfectly self-continuous, never moves
+        NOISE     differentiated and moves, no self-continuity
+        CLONE     moves, no differentiation, no identity
+        SCRAMBLE  moves, no differentiation, no identity
+
+    The floor is the population's own collapsed form, not a constant.
+    """
+    h0 = engine.get_hiddens()
+    phi_now, _ = measure_dual_phi(h0, min(8, max(cells // 2, 2)))
+    phi_floor, _ = measure_dual_phi(h0[0:1].repeat(h0.shape[0], 1),
+                                    min(8, max(cells // 2, 2)))
+
+    prev = engine.get_hiddens().clone()
+    same, other, moved = [], [], []
+    n = prev.shape[0]
+    for _ in range(steps):
+        engine.process(torch.randn(1, dim) * 0.1)
+        cur = engine.get_hiddens()
+        a = F.normalize(prev, dim=1)
+        b = F.normalize(cur, dim=1)
+        sim = a @ b.T
+        same.append(float(sim.diag().mean()))
+        other.append(float((sim.sum() - sim.diag().sum()) / max(n * (n - 1), 1)))
+        moved.append(float((cur - prev).norm() / max(float(prev.norm()), 1e-9)))
+        prev = cur.clone()
+
+    identity = float(np.mean(same) - np.mean(other))
+    change = float(np.mean(moved))
+    return (phi_now > max(phi_floor, 1e-6), identity > 0.05, change > 0.001,
+            f"Φ={phi_now:.4f}>floor={phi_floor:.4f}:{phi_now > max(phi_floor, 1e-6)} "
+            f"identity={identity:+.4f} change={change:.5f}")
+
+
 def _verify_no_system_prompt(engine_factory, cells, dim, hidden):
     """V1: NO_SYSTEM_PROMPT — identity emerges from cell dynamics alone.
 
@@ -1462,9 +1558,10 @@ def _verify_zero_input(engine_factory, cells, dim, hidden):
         engine.process(x_zero)
     phi_end, _ = measure_dual_phi(engine.get_hiddens(), min(8, cells // 2))
 
-    passed = phi_end > phi_start * 0.5
+    d_ok, i_ok, c_ok, axes = _three_axes(engine, dim, cells)
+    passed = phi_end > phi_start * 0.5 and d_ok and i_ok and c_ok
     detail = (f"Phi(IIT) start={phi_start:.4f} end={phi_end:.4f}  "
-              f"ratio={phi_end/(phi_start+1e-8):.2f}x (threshold=0.5x)")
+              f"ratio={phi_end/(phi_start+1e-8):.2f}x (threshold=0.5x)  [{axes}]")
     return passed, detail
 
 
@@ -1491,9 +1588,11 @@ def _verify_persistence(engine_factory, cells, dim, hidden):
                     for i in range(1, len(phi_history)))
     recovers = phi_history[-1] >= max(phi_history[:len(phi_history)//2]) * 0.8
 
-    passed = monotonic or recovers
+    d_ok, i_ok, c_ok, axes = _three_axes(engine, dim, cells)
+    passed = (monotonic or recovers) and d_ok and i_ok and c_ok
     phi_str = " -> ".join(f"{p:.3f}" for p in phi_history)
-    detail = f"Phi@100s: [{phi_str}]  monotonic={monotonic}  recovers={recovers}"
+    detail = (f"Phi@100s: [{phi_str}]  monotonic={monotonic}  recovers={recovers}"
+              f"  [{axes}]")
     return passed, detail
 
 
@@ -1520,9 +1619,10 @@ def _verify_self_loop(engine_factory, cells, dim, hidden):
 
     phi_end, _ = measure_dual_phi(engine.get_hiddens(), min(8, cells // 2))
 
-    passed = phi_end >= phi_start * 0.8
+    d_ok, i_ok, c_ok, axes = _three_axes(engine, dim, cells)
+    passed = phi_end >= phi_start * 0.8 and d_ok and i_ok and c_ok
     detail = (f"Phi(IIT) start={phi_start:.4f} end={phi_end:.4f}  "
-              f"ratio={phi_end/(phi_start+1e-8):.2f}x (threshold=0.8x)")
+              f"ratio={phi_end/(phi_start+1e-8):.2f}x (threshold=0.8x)  [{axes}]")
     return passed, detail
 
 
