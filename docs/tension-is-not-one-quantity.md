@@ -111,3 +111,34 @@ verdict. Fixed by comparing only the cells present in both.
 Stopping here: each fix has been exposing the next edge, which is the pattern
 this session identified as the wrong way to work. The remaining failures are
 measured and stated rather than chased.
+
+### The calibrated bar and the patience rule were incompatible
+
+Calibration fired (0.3 → 0.0052, peak 0.0056 — reachable) and the population
+still sat at 2 cells 200 steps later. The split rule was
+`all(t > bar for t in last split_patience)`, and the calibrated bar is the q0.90
+of observed tension, so clearing it on **five consecutive** readings has
+probability ≈ 0.1⁵ — about 1 in 100,000 steps per cell. **The bar was reachable
+and the conjunction was not.** `mitosis.py` already uses the mean over the window
+for exactly this reason; the same rule here:
+
+| step | 0 | 100 | 200 | 250 | 300 | 400 |
+|---|---|---|---|---|---|---|
+| cells, `all()` rule | 2 | 2 | 2 | 2 | 2 | 2 |
+| cells, mean rule | 2 | 2 | 2 | 2 | **63** | 63 |
+
+Division works. `PERSISTENCE` now records Φ growing 0.000 → 0.312 → 0.535 where
+it read 0.000 throughout before.
+
+One more crash of the same family surfaced and is fixed: the identity axis built
+its shuffled null with `torch.randperm(n)` on the REQUESTED cell count, indexing
+past the end of an engine holding fewer rows (index 63, size 63).
+
+**Still 0/5, and every verdict is now real rather than a shape error:**
+`NO_SYSTEM_PROMPT` cosine sd 0.0000 — under zero input the tension never reaches
+even the calibrated bar, so that condition still sees 2 cells and one pair;
+`NO_SPEAK_CODE` var 0.0006 against 0.001; `SELF_LOOP` Φ 0.0000 → 0.0000.
+
+Four crashes were removed from the audit path in this pass, all of them mine and
+all scored as FAIL — the same defect `HIVEMIND` had at the start of this session,
+where a 0.3s crash was recorded as a failed condition for eleven engines.

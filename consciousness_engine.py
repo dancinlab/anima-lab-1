@@ -557,7 +557,17 @@ class ConsciousnessEngine:
                 continue
             recent = state.tension_history[-self.split_patience:]
             self._check_threshold_reachable()
-            if all(t > self.split_threshold for t in recent):
+            # Mean over the window, not `all(t > bar)`.
+            #
+            # The calibrated bar is the q0.90 of observed tension, so requiring
+            # EVERY one of `split_patience` consecutive readings to clear it has
+            # probability ~0.1^5 -- about 1 in 100,000 steps per cell. Measured:
+            # after calibration fired at step 200 (0.3 -> 0.0052, peak 0.0056)
+            # the population still sat at 2 cells at step 400. The bar was
+            # reachable and the conjunction was not.
+            #
+            # mitosis.py already uses the mean for this reason. Same rule here.
+            if sum(recent) / len(recent) > self.split_threshold:
                 to_split.append(i)
 
         for idx in to_split:

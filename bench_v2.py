@@ -1489,15 +1489,20 @@ def _three_axes(engine, dim, cells, steps=60):
     # and cross-continuity statistically identical, so what remains is noise.
     # Measured at 256 cells it is 0.0000 ± 0.0002, which the old bar exceeded by
     # a factor of 250.
+    # `n` is the REQUESTED cell count; a dividing or merging engine holds a
+    # different number of rows, and permuting by `n` indexed past the end
+    # (measured: index 63 out of bounds for size 63). Use what is actually there.
     null = []
     scrambled = prev.clone()
+    rows = scrambled.shape[0]
     for _ in range(10):
-        perm = scrambled[torch.randperm(n)]
+        perm = scrambled[torch.randperm(rows)]
         a = F.normalize(scrambled, dim=1)
         b = F.normalize(perm, dim=1)
         sim = a @ b.T
         null.append(float(sim.diag().mean()
-                          - (sim.sum() - sim.diag().sum()) / max(n * (n - 1), 1)))
+                          - (sim.sum() - sim.diag().sum())
+                          / max(rows * (rows - 1), 1)))
     identity_floor = float(np.mean(null) + 3 * np.std(null))
 
     # INTEGRATION replaces the differentiation conjunct, on two measured
