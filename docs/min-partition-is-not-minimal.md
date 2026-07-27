@@ -79,3 +79,42 @@ and the min-cut readings prefer a fully collapsed system to an independent one b
 direction, and which of the two it bought must be stated.
 
 Reproduce: the n=12 comparison above, or read `bench_v2.py:225-237`.
+
+## The sweep buys stability, not direction
+
+Three independent measurements agree the sweep is a better minimum: it matches
+exhaustive truth exactly where exhaustive is computable, and it cuts Φ's
+checkpoint spread 3.5–3.8× while all seven negative controls stay at 0.
+
+That is one axis. The other is direction, and the two must not be conflated.
+Measured on the constructions the direction argument rests on — n = 8, dim 4000,
+debiased MI, both cuts taken from the same matrices:
+
+| construction | total | sign-cut | sweep | shipped Φ | swept Φ |
+|---|---|---|---|---|---|
+| IDENTICAL (every cell a copy — zero integration by construction) | 89.035 | 50.864 | 22.255 | **7.2662** | **3.1793** |
+| INDEPENDENT (no integration) | 0.047 | 0.002 | 0.002 | 0.0003 | 0.0003 |
+
+**collapsed / independent: shipped 24,880× · swept 10,886×**
+
+The sweep halves the ratio and still prefers total collapse by four orders of
+magnitude. A measure that is maximal where integrated information must be zero is
+not repaired by making it quieter.
+
+```
+  IDENTICAL    shipped ████████████████████████  7.27
+               swept   ██████████                3.18
+  INDEPENDENT  shipped ▏                         0.0003
+               swept   ▏                         0.0003
+```
+
+So the sweep is worth landing for what it is — a partition function that actually
+partitions — but landing it must state that the direction defect survives it.
+`bench_v2` needed three coupled changes to get direction: min-cut **and** a
+differentiation factor **and** debiased MI. The sweep is one of three.
+
+**Pre-declared before running:** if the sweep also ranked IDENTICAL above
+INDEPENDENT, it bought stability only. It did.
+
+Reproduce: `scratchpad/sweep_direction.py`, or the SPLIT/RING section of
+`docs/phi-rs-direction.md` with `sweep_cut` substituted for `sign_cut`.

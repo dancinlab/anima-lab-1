@@ -115,10 +115,11 @@ these columns is a lower bound on how far the sign cut is from the minimum.
 | **806** | **1.317** | **84.45** | 13.69 | 0.4681 | 0.4171 | **8** |
 | 807 | 0.640 | 38.80 | 12.46 | 0.4779 | 0.4188 | 4 |
 
-Across the full 40-step window: differentiation stays in 0.4681–0.4837 and
-complexity in 0.4064–0.4285 — both flat to ±2%. The best cut on the ordering
-stays in 11.5–14.0 and isolates a single cell at every one of the 22 steps.
-Everything that moves in Φ is the cut the estimator *used*.
+Over the full 40 steps 791–830, differentiation stays in 0.4681–0.4837 and
+complexity in 0.4064–0.4285 — both flat to ±2%. Over the 22 steps 791–812 where
+the cut was also refined, the best cut on the ordering stays in 11.52–14.04 and
+isolates a **single cell at every one of the 22**. Everything that moves in Φ is
+the cut the estimator *used*.
 
 `bench_v2.py:225-237` takes the **sign** of the Fiedler vector as the partition.
 That is not the minimum cut. It exceeds the best cut on its own ordering by 3–7×,
@@ -222,13 +223,30 @@ uncoupled control: A and G never interact.
 | 0.050 | 3/5 | 42, 43 | 6.55 | 103.56 | 1.305 | 0.221 |
 
 The pass count is not ordered by strength, and **the uncoupled control at
-strength 0.000 scores 4/5 — better than the default.** Two engines that never
-touch are not a pair; a strength read off this column would be read off the
-lottery. The only quantities that do move monotonically with strength are the
+strength 0.000 ties the default at 4/5**, failing a different seed (46 against
+42). Two engines that never touch are not a pair; a column on which the
+non-pair scores what the pair scores is not carrying the pair. A strength read
+off it would be read off the lottery. The only quantities that move
+monotonically with strength are the
 ones that should: separation rises 84.6 → 103.6 and Φ mean falls 1.77 → 1.31.
 
-`strength = 0.020` scoring 5/5 is the same coincidence as `−1` scoring 5/5 in the
-grid table. See §8 for whether it survives moving the ruler.
+Repeated at 256c/64d/128h, the same sweep gives a different answer again — and
+flips what the uncoupled control does:
+
+| strength | pass | seeds failing | peak \|h\| | A–G sep | Φ mean | Φ sd | Φ cv |
+|---|---|---|---|---|---|---|---|
+| 0.000 (uncoupled) | **0/5** | 42, 43, 44, 45, 46 | 6.69 | 239.88 | 13.577 | 1.815 | 0.134 |
+| 0.010 | 4/5 | 45 | 5.83 | 244.85 | 13.904 | 1.545 | 0.111 |
+| 0.020 | 4/5 | 44 | 5.71 | 255.28 | 12.616 | 2.008 | 0.159 |
+| **0.030 (default)** | 4/5 | 44 | 6.74 | 270.08 | 12.372 | 1.901 | 0.154 |
+
+At 256 cells **no strength passes all five seeds**, 0.020 is no better than the
+default, and the uncoupled control goes from 4/5 at 32 cells to 0/5 here. A
+control whose verdict inverts with cell count is not measuring the property it
+was built to isolate.
+
+`strength = 0.020` scoring 5/5 at 32 cells is the same coincidence as `−1`
+scoring 5/5 in the grid table. See §8 for whether it survives moving the ruler.
 
 **No change to `pairfield_engine.py` is warranted. `DEFAULT_STRENGTH = 0.03` is
 not implicated in this failure.**
@@ -254,7 +272,7 @@ information partition" means. Nothing else was touched.
 | SCRAMBLE | 0/20 | 0.813 | 38.43 | **0/20** | 0.637 | 11.19 |
 | LINEAR | 0/20 | 0.194 | 1.87 | **0/20** | 0.121 | 1.48 |
 
-**All six negative controls stay out**, at 0/20 before and after. Φ's
+**All seven negative controls stay out**, at 0/20 before and after. Φ's
 checkpoint-to-checkpoint spread on the real engines falls by 3.5× and the verdict
 stops depending on the grid.
 
@@ -276,7 +294,8 @@ the whole window. There is no event to see.
 is 2/5 at 32c and 4/5 at 256c, with the same jump sizes and the same jitter cv.
 
 **"A lower strength genuinely stabilises the pair."** Refuted by §6: the pass
-count is not ordered by strength and the uncoupled control beats the default.
+count is not ordered by strength at either scale, at 32 cells the uncoupled
+control ties the default at 4/5, and at 256 cells no strength reaches 5/5 at all.
 
 The last of those deserves its own table, because "0.020 scores 5/5" is exactly
 the kind of result this session has been burned by. Strength × checkpoint grid,
@@ -312,9 +331,10 @@ PairFieldEngine is not the cause of its own PERSISTENCE failure. Through the
 window where the gate reports a collapse and a partial recovery, the pair is
 bounded (peak \|h\| 4.86 against a 1e4 guard), coupled (separation 244–257,
 never near zero), and stationary in every quantity that describes it. What moves
-is the Fiedler sign-cut inside Φ, which overshoots the true minimum cut by 3–7×
-and flips between two overshoots from step to step; the `recovers` rule then
-compares one flip against the max of five.
+is the Fiedler sign-cut inside Φ, which exceeds the best cut on its own ordering
+by 3–7× — so it is at least that far above the true minimum — and flips between
+two such overshoots from step to step; the `recovers` rule then compares one flip
+against the max of five.
 
 The defect is in `PhiIIT._minimum_partition` (`bench_v2.py:225-237`) and in the
 shape of `_verify_persistence`'s pass rule (`bench_v2.py:1794-1796`), and it
@@ -333,6 +353,12 @@ none of them modify anything in the repo.
 .venv/bin/python $SP/grid_shift.py PairField 32 64 128   # §4
 .venv/bin/python $SP/traj.py NarrativeEngine 32 64 128   # §5
 .venv/bin/python $SP/sweep_strength.py 32 64 128 0.0 0.005 0.01 0.02 0.03 0.05  # §6
+.venv/bin/python $SP/sweep_strength.py 256 64 128 0.0 0.01 0.02 0.03            # §6
 .venv/bin/python $SP/sweep_grid.py 32 64 128 0.0 0.005 0.01 0.02 0.03 0.05      # §8
 .venv/bin/python $SP/corrected.py 32 64 128 --shifted    # §7
+.venv/bin/python $SP/micro.py 32 64 128 46 790 830       # §3, component split
 ```
+
+Runtime note: `corrected.py` at 32 cells takes ~15 min per system pair and the
+256-cell sweeps ~10 min per strength on a saturated machine. Run them in the
+background and read the file; do not pipe them to `tail`.
