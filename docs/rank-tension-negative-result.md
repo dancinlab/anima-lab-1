@@ -172,6 +172,71 @@ fed near-identical inputs stay near-identical. **The per-stimulus design's
 success was an artifact of stimuli that were nearly orthogonal**, and nothing in
 its argument said so.
 
+## Both sides relative — and the answer is not about the bar at all
+
+Fixing one half of the ledger is what produced the previous result, so
+`bench_relative_population.py` makes both halves relative at once: split on a
+cell's rank among cells, merge on a pair's rank among pairs. Registered before
+running (P1 convergence, P2 the risk that quantiles decide, P3 the separator).
+
+Everything collapses to the floor:
+
+| 분열/병합 quantile | narrow | broad | synthetic |
+|---|---|---|---|
+| 0.80 / 0.10 | 2.0 | 2.0 | 2.0 |
+| 0.90 / 0.15 | 2.0 | 2.0 | 2.0 |
+| 0.95 / 0.25 | 2.0 | 2.0 | 2.0 |
+
+**P1 "passed" and the criterion was badly designed** — "real and synthetic within
+4 cells" is satisfied by total collapse. Pre-registering P3 as the pass condition
+is what caught it: NARROW (internal cosine +0.435) and BROAD (+0.037) both settle
+at 2.0, so the population cannot tell a homogeneous stimulus set from a diverse
+one. P2 confirmed.
+
+The reason is structural, not tuning. **A rank puts the bottom item at exactly
+0.00 and the top at exactly 1.00, by construction.** So "bottom 15%" is
+unconditionally true of some pair and "top 10%" unconditionally true of some
+cell — both rules fire forever, and the one that is easier to satisfy wins.
+Merges outnumbered splits 13.3 to 7.3.
+
+**A rank erases "how much", so it cannot say "nobody is redundant."**
+
+## The signal is blind to what the criterion is supposed to respond to
+
+A z-score keeps magnitude and can say that, so before building it: measured on
+the same narrow/broad sets, per step, the lowest pair's z —
+
+| | median min-z | p5 | share below −2 |
+|---|---|---|---|
+| narrow (+0.435) | −1.90 | −2.13 | **33.3%** |
+| broad (+0.037) | −1.62 | −2.33 | **33.3%** |
+
+Identical firing rate. Not worth building, and the check cost one run instead of
+an engine.
+
+That pointed one level down — is it normalisation destroying the information, or
+was it never there? Raw inter-cell tension, no normalisation of any kind:
+
+| | median | mean | p10 |
+|---|---|---|---|
+| narrow (+0.435) | 0.01083 | 0.01122 | 0.00421 |
+| broad (+0.037) | 0.01070 | 0.01097 | 0.00421 |
+
+**0.99×.** Internal similarity differs 12-fold; inter-cell tension does not move.
+
+So no threshold on inter-cell tension — absolute, calibrated, rank, quantile or
+z-score — can regulate population against the diversity of the input, because
+the quantity does not carry that information. Six framings of the bar were
+tried; the bar was never the thing.
+
+What it does carry: with the population pinned at 8 cells, variation across
+stimuli within a pair is 0.00197 against 0.00279 across pairs, a ratio of 1.4×.
+That is **not** enough to say weights dominate, and the tempting story that it
+measures weight difference rather than input difference is not supported.
+The accurate statement is narrower and is what the measurements show: inter-cell
+tension responds to **which** stimulus arrived, and not to **how diverse the
+stimulus set is**.
+
 ## What this leaves
 
 - **The diagnosis holds.** All six defects are the same shape.
