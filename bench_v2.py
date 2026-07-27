@@ -2099,6 +2099,11 @@ VERIFICATION_TESTS = [(name, _with_axes(fn), desc)
                       for name, fn, desc in VERIFICATION_TESTS]
 
 
+# Seeds the gate runs every condition under. A condition passes only if it
+# passes on ALL of them -- see run_verify for why one seed was not enough.
+VERIFY_SEEDS = (42, 43, 44, 45, 46)
+
+
 def _run_controls(cells: int, dim: int, hidden: int):
     """Run the negative controls through every condition, in the same run.
 
@@ -2120,14 +2125,21 @@ def _run_controls(cells: int, dim: int, hidden: int):
     voided = {name: [] for name, _, _ in VERIFICATION_TESTS}
     for label, cls, _desc in CONTROLS[1:]:              # [0] is the real engine
         for test_name, test_fn, _d in VERIFICATION_TESTS:
-            torch.manual_seed(42)
-            try:
-                passed, _detail = test_fn(
-                    lambda c, d, h: factory_for(cls, c, d, h), cells, dim, hidden)
-            except Exception:
-                passed = False                          # a crash is not a pass
-            if passed:
-                voided[test_name].append(label)
+            # A control that clears the bar on ANY seed voids the condition.
+            # Engines must pass every seed; corpses need only pass one to prove
+            # the condition cannot tell them apart. Asymmetric on purpose --
+            # both directions favour withholding the verdict.
+            for sd in VERIFY_SEEDS:
+                torch.manual_seed(sd)
+                try:
+                    passed, _detail = test_fn(
+                        lambda c, d, h: factory_for(cls, c, d, h),
+                        cells, dim, hidden)
+                except Exception:
+                    passed = False                      # a crash is not a pass
+                if passed:
+                    voided[test_name].append(f"{label}(seed {sd})")
+                    break
     return voided
 
 
@@ -2176,12 +2188,29 @@ def run_verify(cells: int, dim: int, hidden: int, with_controls: bool = True):
 
         factory = ENGINE_REGISTRY[eng_name]
         for test_name, test_fn, test_desc in VERIFICATION_TESTS:
-            torch.manual_seed(42)
             t0 = time.time()
-            try:
-                passed, detail = test_fn(factory, cells, dim, hidden)
-            except Exception as e:
-                passed, detail = False, f"ERROR: {e}"
+            # Every seed must pass. The gate judged on seed 42 alone, and that
+            # is where its verdicts kept breaking: five engines it called
+            # DEPLOYABLE dropped to 4/5 once the seed moved, and so did
+            # PairField (5/5 5/5 4/5 5/5 4/5 across 42-46 at this scale). A
+            # deployment verdict that depends on which seed was drawn is a coin
+            # flip wearing a number. This is the repo's own rule -- "1개라도
+            # 실패 시 배포 금지" -- applied to the seed axis.
+            per_seed = []
+            for sd in VERIFY_SEEDS:
+                torch.manual_seed(sd)
+                try:
+                    ok, det = test_fn(factory, cells, dim, hidden)
+                except Exception as e:
+                    ok, det = False, f"ERROR: {e}"
+                per_seed.append((sd, ok, det))
+            passed = all(ok for _sd, ok, _d in per_seed)
+            failed_seeds = [sd for sd, ok, _d in per_seed if not ok]
+            detail = next((d for _sd, ok, d in per_seed if not ok),
+                          per_seed[0][2])
+            if failed_seeds and len(failed_seeds) < len(VERIFY_SEEDS):
+                detail = (f"UNSTABLE — failed on seed(s) {failed_seeds} of "
+                          f"{VERIFY_SEEDS}; {detail}")
             elapsed = time.time() - t0
 
             mark = "PASS" if passed else "FAIL"
