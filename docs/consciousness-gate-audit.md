@@ -667,3 +667,34 @@ whose factions, once separated, do not reconverge.
 of support at `HIVEMIND`. It has support **here**, for `SPONTANEOUS_SPEECH`
 specifically — the flat 1.0 across an 8× window — and is claimed only for this
 condition.)
+
+### Changing the repulsion's form does not help either
+
+The last untried route: the repulsion pushes whenever there is any overlap, so
+once factions separate they stay separated. `CLAUDE.md`'s Law 71 — maximise
+freedom *subject to* a floor — suggests a force that relaxes once the floor is
+safe. Implemented as a restoring force acting only on the overlap that exceeds
+the population's own recent level (an EMA, so no constant):
+
+| | cosine | consensus |
+|---|---|---|
+| constant repulsion | +0.3872 | 1.0 |
+| restoring force | +0.3854 | **1.0** |
+
+Identical. The EMA tracks whatever level the population reaches, so the force
+becomes a servo holding it there; the moment of release never arrives.
+
+**Four independent routes, all closed by measurement:**
+
+| attempt | result |
+|---|---|
+| tune repulsion strength (6 values × 3 seeds) | no stable 7/7 |
+| redefine consensus as persistence | fixes the sign, not the level |
+| extend the window 8× | exactly 1.0 throughout |
+| change the repulsion's form | identical to constant |
+
+Consensus at 1 is a property of the faction dynamics themselves — not of the
+repulsion's strength, not of its form, not of the observation window, and not of
+how a consensus event is defined. Anything further is a change to how factions
+form and re-form, which is a different piece of architecture than the one this
+work touched.
