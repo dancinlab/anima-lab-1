@@ -170,3 +170,78 @@ INDEPENDENT, it bought stability only. It did.
 
 Reproduce: `scratchpad/sweep_direction.py`, or the SPLIT/RING section of
 `docs/phi-rs-direction.md` with `sweep_cut` substituted for `sign_cut`.
+
+## The drop was the baseline. I read the trajectory backwards.
+
+The trajectory that started this — `1.866 … 2.009 1.960 0.845 2.095 1.259 1.216`
+at 32c/32d/128h, seed 44 — was reproduced digit for digit, and a step-resolution
+trace of steps 681–730 shows what the checkpoints were sampling:
+
+```
+  2.20 |                          *
+  1.90 |  *                   * **
+  1.60 |   *
+       |      *
+  1.30 |             *       *           *           *
+       |    **      *     * *
+  1.00 |                                           *
+       |**     *****  **** *       ****** ********* * ****
+  0.70 |
+       +--------------------------------------------------
+        681                    ^ step 700                730
+```
+
+**Φ is below 1.0 on 32 of those 50 steps — 64% of the time.** Steps 695–700 read
+0.845, 0.844, 0.845, 0.825, 1.128, 0.845.
+
+So the 7th checkpoint caught the level Φ *sits at most of the time*. **What is
+anomalous is the six checkpoints before it**, every one of which happened to land
+on an excursion. I described this as "holds near 2.0 for six checkpoints, then
+drops to 0.845" in three messages and in a commit. That is backwards.
+
+Across all 50 steps `differentiation` stays 0.4639–0.4773 and `complexity`
+0.3662–0.3839 — both flat to ±1.5% — while the cut swings 50.75–136.72 as `k`
+moves between 4 and 11. Φ tracks the cut and nothing else.
+
+### The margin that decides deployment
+
+Seed 46 of the same run fails without dropping anywhere:
+
+```
+1.962 1.914 2.163 1.500 2.077 2.102 1.987 2.051 1.716 1.724
+bar = 0.8 × max(first half) = 1.730      final = 1.724      margin −0.006
+```
+
+**A 0.35% shortfall is the entire difference between DEPLOYABLE and BLOCKED**, and
+moving the checkpoint grid one step later flips it (bar 1.700, final 1.728).
+Across six one-step ruler positions seed 46 reads PASS/FAIL/FAIL/PASS/PASS/PASS.
+
+### It is not randomness at this scale
+
+`PhiIIT(seed=...)` is dead for `compute()` — `bench_v2.py:99-103` overwrites
+`self._rng` from the input hash before any shuffle, so four different seeds on one
+fixed tensor return 0.126492 identically. At 32 rows the pair set is exhaustive
+(496 = 32·31/2), and the jitter sd at seed 44's step-700 checkpoint is 0.004.
+
+**Φ here is a deterministic function of the state that is discontinuous in it.**
+The 0.845 is the exact value of a quantity that jumps, not a noisy reading. (At
+256 cells, where pairs are resampled, a second and different mechanism appears:
+sd 0.7–2.3.)
+
+### Three overshoot figures, reported with their conditions
+
+| who | n | construction | sign / true |
+|---|---|---|---|
+| this doc | 12 | `BenchEngine(12,32,64,32,4)`, seed 42 | 1.82–2.76× (mean 2.14) |
+| persistence audit | 12 | real engine MI matrices | 3.0–3.4× |
+| pairfield audit | 12 / 32 | — / 32 cells | 3–7× / 5.4–11.5× |
+
+Same direction, different magnitude. The overshoot depends on how close the
+population sits to a tie, so the spread is the construction, not a disagreement —
+recorded as a range with conditions attached rather than collapsed to one number.
+
+One caveat on the sweep: it matched exhaustive on 4 of 6 steps here and missed
+slightly on two (7.085 vs 6.610; 6.657 vs 6.251). The persistence audit reported
+6/6 exact. **The sweep is a very good approximation, not provably the minimum** —
+a weaker claim than "the sweep is the true minimum", which the measurements do
+not support.
