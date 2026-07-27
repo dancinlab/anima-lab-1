@@ -1189,3 +1189,23 @@ This is the discipline the rest of this session applied to Φ (maximal at collap
 → replaced) and to `EmpathyEthics` (two values both clearing their own bar →
 flagged): **a measurement pointing the opposite way from its own name is retired,
 not tuned.**
+
+## The deployed entry point runs the one engine that fails the gate
+
+`anima_unified.py:322-326` prefers `ConsciousnessEngine` and falls back to
+`MitosisEngine` only if the import fails. Measured against the gate at 32 cells:
+
+| engine | gate | role in `anima_unified.py` |
+|---|---|---|
+| **ConsciousnessEngine** | **0/5** | **first choice** (line 323) |
+| MitosisEngine | **5/5** | fallback (line 342) |
+
+The production path takes the engine that does not differentiate, and the one
+that passes every condition sits behind it as a fallback. Before this session
+that inversion was invisible: `ConsciousnessEngine` scored 4/7 on a gate that
+could not fail, and its 4 rested on 148 splits produced entirely by a hardcoded
+`cell_tension = 0.5`.
+
+**Not changed.** Which engine a deployment runs is not a measurement question,
+and swapping it changes what the running system is. The fact is recorded so the
+choice is made knowingly.
