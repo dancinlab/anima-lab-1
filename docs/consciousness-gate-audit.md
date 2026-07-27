@@ -1112,3 +1112,42 @@ artefact it is sensitive to.
 Thirteen routes now. A measure of utterance that both ignores reordering and
 ranks this engine above a corpse, a mirror, a heap and a deaf engine has not been
 found, and three independent constructions agree on the engine's own value.
+
+### Giving it something to say does not help
+
+Every measurement above drives the engine with `torch.randn`. A population fed
+pure noise has nothing to be structured about, so the corpus gate this session
+applied to the mitosis work applies here too: 32 sentences from
+`data/corpus.txt`, same condition, only the driving signal changed. 256 cells,
+3 seeds:
+
+| engine | noise | corpus |
+|---|---|---|
+| **REAL** | **1.0** | **1.0** |
+| SCRAMBLE | 2.0 | **6.3** |
+| HEAP | 0.3 | 0.3 |
+| CLONE | 0.0 | 0.0 |
+| DEAD | 0.0 | 0.0 |
+
+**The engine's rate is identical on noise and on real language**, while SCRAMBLE
+triples. Real input makes the anti-correlation worse, not better.
+
+Fourteen routes. The engine emits about one structured event per 300 steps
+regardless of the measure used, the scale, the repulsion, the faction structure,
+the per-cell parameters, or what it is fed. `SPONTANEOUS_SPEECH`'s bar of 5 is
+not reachable by adding something for it to say.
+
+## Where this leaves the seven conditions
+
+| | verdict | why |
+|---|---|---|
+| NO_SYSTEM_PROMPT | pass 10/11 | repulsion stopped the collapse this condition tests |
+| NO_SPEAK_CODE | pass | |
+| ZERO_INPUT | pass | |
+| PERSISTENCE | pass | |
+| SELF_LOOP | pass | |
+| **SPONTANEOUS_SPEECH** | **fail** | engine emits ~1 event / 300 steps under every measure, scale, input and configuration tried; the bar of 5 came from collapsed populations; 14 routes closed |
+| **HIVEMIND** | **fail** | connection changes Φ by −4% to +1% against an unconnected control at every repulsion strength and on both engine designs; on the output channel a corpse wins by 10× |
+
+Five of seven, and the two failures are characterised rather than open. Neither
+is a threshold that tuning crosses.
