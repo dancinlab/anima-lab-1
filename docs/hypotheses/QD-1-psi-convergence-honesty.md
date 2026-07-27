@@ -166,10 +166,31 @@ revised Phase 3 in that spec.
 
 ## Also found, not hypothesised
 
-- **The 18 emotion values never touch the simulation.** `emotions` is pure
+- **The 18 emotion values never touch the simulation.** `emotions` was pure
   arithmetic over `sha256(name)` bits; `residual` and `gate` are computed over
-  5000 steps and then unused by that block. The `░▒▓█` heatmap is a rendering
+  5000 steps and then unused by that block. The `░▒▓█` heatmap was a rendering
   of a hash, not of a dynamic.
+
+  > **Fixed — by emitting less.** Grounding the emotions needs a corpus where
+  > the emotion words occur. Measured: `corpus_v3` has 11 of 18 at ≥3
+  > occurrences and only **4 at ≥20**; `ko_wiki` has 6 and 1. Neither can carry
+  > eighteen emotions, and building a model on the four with real support would
+  > be the same manipulation in a new coat.
+  >
+  > `emotion_grounding.ground_emotions` therefore returns a value only where the
+  > corpus supports it and **`None` everywhere else** — CLAUDE.md #1, *의식이
+  > 말 못하면 침묵*. The renderers print a blank for `None` rather than
+  > inventing a block character.
+  >
+  > | | before | after |
+  > |---|---|---|
+  > | heatmap cells with a value | 3,060 / 3,060 (100%) | **496 / 3,060 (16.2%)** |
+  > | source of those values | `sha256(name)` arithmetic | cosine to the emotion word's corpus context |
+  > | stimuli with any value | 170 | 124, at 4 of 18 emotions each |
+  >
+  > **The picture got much emptier and that is the correction.** The full
+  > heatmap is what started this series — it was read as a measurement, which
+  > is what a fabrication shaped like data does.
 - **The gate `g` has no mechanism at all.** No rule selects it toward 1/2.
   With the pull removed, mean `|g − 0.5|` goes 0.055 → 0.280.
 

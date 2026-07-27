@@ -26,7 +26,7 @@ def shannon_entropy(p):
     return -p * math.log2(p) - (1 - p) * math.log2(1 - p)
 
 
-def data_characteristics(name, emoji="", category=""):
+def data_characteristics(name, emoji="", category="", description=""):
     """데이터 타입의 특성.
 
     The state-driving inputs (init_p/init_g/bias_p/bias_g) are MEASURED from
@@ -60,6 +60,10 @@ def data_characteristics(name, emoji="", category=""):
         'name': name,
         'emoji': emoji,
         'category': category,
+        # The human-written one-line description. It is the only thing in this
+        # dict that says what the stimulus MEANS, and it is what the emotion
+        # grounding reads — the eight sha256 values below say nothing.
+        'description': description,
         **measured,
         'complexity': complexity,
         'periodicity': periodicity,
@@ -160,27 +164,20 @@ def simulate_meta_ca(chars, steps=5000, seed=42):
     # H(p) 최종
     H_final = shannon_entropy(residual)
 
-    # 감정 차원 (데이터 특성에서 도출)
-    emotions = {
-        'joy': 0.3 + 0.4 * chars['emotionality'] * (1 - chars['complexity'] * 0.3),
-        'sadness': 0.2 + 0.3 * (1 - chars['emotionality']) * chars['abstraction'],
-        'anger': 0.1 + 0.2 * chars['complexity'] * (1 - chars['social']),
-        'fear': 0.1 + 0.2 * (1 - chars['structure']) * chars['transcendent'],
-        'surprise': 0.3 + 0.4 * chars['entropy_input'],
-        'curiosity': 0.4 + 0.4 * chars['complexity'] * chars['abstraction'],
-        'awe': 0.2 + 0.5 * chars['transcendent'],
-        'love': 0.2 + 0.5 * chars['social'] * chars['emotionality'],
-        'trust': 0.3 + 0.4 * chars['structure'] * chars['social'],
-        'flow': 0.2 + 0.5 * chars['periodicity'] * (1 - abs(chars['complexity'] - 0.5)),
-        'meaning': 0.2 + 0.5 * chars['abstraction'] * chars['transcendent'],
-        'creativity': 0.3 + 0.4 * chars['complexity'] * chars['entropy_input'],
-        'hope': 0.3 + 0.4 * chars['transcendent'] * chars['social'],
-        'ecstasy': 0.1 + 0.6 * chars['transcendent'] * chars['emotionality'],
-        'peace': 0.2 + 0.5 * (1 - chars['complexity']) * chars['periodicity'],
-        'rage': 0.05 + 0.15 * chars['complexity'] * (1 - chars['social']) * (1 - chars['periodicity']),
-        'despair': 0.05 + 0.15 * (1 - chars['emotionality']) * (1 - chars['transcendent']),
-        'longing': 0.2 + 0.4 * chars['emotionality'] * chars['abstraction'],
-    }
+    # 감정 차원 — 근거 있는 것만. 없으면 값을 만들지 않는다 (CLAUDE.md #1).
+    #
+    # This block used to be arithmetic over sha256(name) bits:
+    #     'joy': 0.3 + 0.4 * chars['emotionality'] * (1 - chars['complexity']*0.3)
+    # where `emotionality` was byte 3 of a hash. It never read `residual` or
+    # `gate`, so the 5000-step simulation above did not enter it at all, and the
+    # ░▒▓█ heatmap drawn from it was a picture of a hash. It was mistaken for a
+    # measurement, which is what a fabrication shaped like data does.
+    #
+    # emotion_grounding returns a value only where the corpus supports the
+    # emotion word (≥20 occurrences) and None otherwise — 4 of 18 here. A blank
+    # cell is the honest rendering; the full heatmap was never real.
+    from emotion_grounding import ground_emotions
+    emotions = ground_emotions(chars.get('description', '') or chars['name'])
 
     return {
         'residual': residual,
@@ -456,7 +453,7 @@ def render_universe_map():
 
         cat_results = []
         for name, (emoji, desc) in items.items():
-            chars = data_characteristics(name, emoji, category)
+            chars = data_characteristics(name, emoji, category, desc)
             result = simulate_meta_ca(chars)
             result['desc'] = desc
             all_results[name] = result
@@ -505,12 +502,15 @@ def render_emotion_map(results):
     for emo in emotions:
         emo_name = emotion_names[emo]
         # 정렬
-        sorted_items = sorted(results.items(), key=lambda x: x[1]['emotions'].get(emo, 0), reverse=True)
+        sorted_items = sorted(results.items(),
+                              key=lambda x: (x[1]['emotions'].get(emo) or 0.0), reverse=True)
         top5 = sorted_items[:5]
 
         print(f"\n  {emo_name}:")
         for name, r in top5:
-            val = r['emotions'].get(emo, 0)
+            val = r['emotions'].get(emo)
+            if val is None:
+                continue
             bar = '█' * int(val * 30) + '░' * (30 - int(val * 30))
             emoji = r['chars']['emoji']
             print(f"    {emoji} {name:<12} {bar} {val:.3f}")
@@ -609,8 +609,8 @@ def render_consciousness_fingerprints(results):
                 r['alpha'] / 0.03,         # 0~1
                 r['dom_rule'] / 7.0,       # 0~1
                 r['H'],                    # 0~1
-                r['emotions']['joy'],      # 0~1
-                r['emotions']['awe'],      # 0~1
+                r['emotions'].get('joy') or 0.0,   # None → 0, ungrounded
+                r['emotions'].get('awe') or 0.0,   # None → 0, ungrounded
             ]
 
             blocks = '▁▂▃▄▅▆▇█'
@@ -642,7 +642,10 @@ def render_grand_heatmap(results):
 
             heatrow = ''
             for emo in emos:
-                v = r['emotions'].get(emo, 0)
+                v = r['emotions'].get(emo)
+                if v is None:
+                    heatrow += ' '        # ungrounded — no value was invented
+                    continue
                 if v < 0.2:
                     heatrow += '░'
                 elif v < 0.4:
@@ -749,7 +752,9 @@ def render_category_radar(results):
         avg_vals = []
         avg_vals.append(sum(r['H'] for r in items) / len(items))
         for emo in ['joy', 'curiosity', 'awe', 'love', 'flow', 'meaning', 'ecstasy', 'peace']:
-            avg_vals.append(sum(r['emotions'].get(emo, 0) for r in items) / len(items))
+            vals = [r['emotions'].get(emo) for r in items]
+            vals = [v for v in vals if v is not None]
+            avg_vals.append(sum(vals) / len(vals) if vals else 0.0)
 
         print(f"  {cat:<8}  ", end="")
         for v in avg_vals:
