@@ -698,3 +698,48 @@ repulsion's strength, not of its form, not of the observation window, and not of
 how a consensus event is defined. Anything further is a change to how factions
 form and re-form, which is a different piece of architecture than the one this
 work touched.
+
+## Factions are not the cause — the shared weights are
+
+Two experiments, both with SCRAMBLE measured alongside.
+
+**Faction count, 2 to 48** (256 cells, 600 steps, 2 seeds):
+
+| factions | 2 | 3 | 4 | 6 | 8 | 12 | 24 | 48 |
+|---|---|---|---|---|---|---|---|---|
+| consensus, real | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 |
+| consensus, SCRAMBLE | 13.0 | 12.5 | 11.5 | 7.0 | 9.5 | 4.0 | 1.0 | 9.0 |
+
+**Exactly 1.0 at every count.** Faction count has no effect on the engine at all.
+
+**Removing factions entirely** (sync and debate terms deleted, variance measured
+across all cells):
+
+| configuration | cosine | consensus, real | consensus, SCRAMBLE |
+|---|---|---|---|
+| current (factions + repulsion) | +0.3863 | 1.0 | **10.0** |
+| factions removed + repulsion | +0.0565 | 1.0 | **1.0** |
+| factions removed, no repulsion | **+0.9562** | 0.0 | 0.0 |
+| debate removed only | +0.0579 | 1.0 | 2.5 |
+| sync removed only | +0.1233 | 1.0 | 1.0 |
+
+Two things fall out. **SCRAMBLE's anomalous score is manufactured by the faction
+structure** — remove factions and it drops from 10.0 to 1.0, because permuting
+rows is what makes a faction *mean* jump. And **collapse happens without factions
+at all** (cosine 0.9562), so faction sync was never its cause.
+
+### The root: one set of weights for every cell
+
+`BenchEngine` holds a single `BenchMind` that all cells share; they differ only
+in hidden state. Applying that one function to eight deliberately different
+states, with no factions, no sync, no debate and no repulsion:
+
+| step | 0 | 5 | 20 | 50 | 100 | 200 |
+|---|---|---|---|---|---|---|
+| pairwise cosine | −0.0078 | +0.7271 | +0.7947 | +0.8378 | +0.8507 | **+0.8624** |
+
+The shared map is a contraction: same function, same input, states converge.
+Faction sync only accelerated it. **The repulsion has been compensating in state
+space for the absence of per-cell weights** — which is also why, once cells are
+pushed apart, nothing brings them back: there is no per-cell structure for them
+to reconverge *around*.
