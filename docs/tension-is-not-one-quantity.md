@@ -142,3 +142,31 @@ even the calibrated bar, so that condition still sees 2 cells and one pair;
 Four crashes were removed from the audit path in this pass, all of them mine and
 all scored as FAIL — the same defect `HIVEMIND` had at the start of this session,
 where a 0.3s crash was recorded as a failed condition for eleven engines.
+
+### Under zero input the distribution is degenerate, and no bar can help
+
+`NO_SYSTEM_PROMPT` still reads cosine sd 0.0000, and the reason is not the
+threshold. Tension over 300 steps, same engine, two drives:
+
+| drive | cells | mean | q90 | max | bar |
+|---|---|---|---|---|---|
+| random | 63 | 0.006147 | 0.007469 | 0.008819 | 0.005230 |
+| **zero** | **2** | **0.004871** | **0.004884** | **0.004884** | 0.004884 |
+
+Under zero input the mean, the q90 and the maximum agree to five decimals — the
+tension is effectively constant. A quantile bar then sits at the maximum, the
+mean sits below it, and nothing ever splits. `mitosis.py`'s own docstring
+anticipated the shape of this ("a bar that only the maximum reaches is never
+exceeded") and chose a quantile to avoid it, but a quantile cannot separate high
+from low in a distribution with no spread.
+
+**So the verdict stands and it is about the engine, not the measurement.**
+`NO_SYSTEM_PROMPT` asks whether identity emerges from cell dynamics alone with no
+external input. Under zero input this engine's cells produce identical tension,
+stay at two, and give one pair with sd 0. The condition is reporting exactly
+that: identity does not emerge. Every measurement artefact between the engine and
+that verdict has now been removed — four crashes, a hardcoded driver, an
+order-dependent quantity, an unreachable bar and an unsatisfiable conjunction.
+
+`ConsciousnessEngine` is 0/5, and for the first time the number means what it
+says.
