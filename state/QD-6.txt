@@ -1,0 +1,26 @@
+# verdict QD-6
+# cmd: .venv/bin/python bench_mitosis_calibration.py
+# tier: FAIL  exit=1  at 2026-07-27T02:33:30.312Z
+# ── captured stdout+stderr (verbatim) ──
+
+  QD-6 · 34 stimuli × 3 seeds × 600 steps
+  arm A threshold derived from measurement: median 0.0197 + 2.0·sd 0.0100 = 0.0397  (default 0.3)
+
+  arm         threshold   cells   settled  retained
+  control        0.3000     2.0     100%     0.409
+  absolute       0.0397     3.1      96%     0.377
+  relative      z>2.0sd     2.0     100%     0.409
+
+  ── scale invariance (every input × 10) ────────────────────────
+  absolute   cells   3.1 →  31.8   drift 932.5%
+  relative   cells   2.0 →   2.0   drift   0.0%
+
+  ── pre-registered hypotheses ──────────────────────────────────────────
+  H21  a population forms (control stays 2)   formed=['absolute'] control=2.0   PASS
+  H22  and does not pin to the ceiling (32)   absolute=3.1      PASS
+  H23  relative scale-invariant, absolute not  R drift 0.0% · A drift 932.5%  PASS
+  H24  retention ≥ 0.5 while settled          absolute=0.377    FAIL
+
+  verdict: FAIL (3/4)
+
+

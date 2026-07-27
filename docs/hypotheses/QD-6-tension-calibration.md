@@ -110,3 +110,93 @@ question QD-5 could not ask.
   is a real one: `docs/qualia-decoder-spec.md` Phase 3 retires.
 
 Evidence via `sidecar verdict record` either way.
+
+---
+
+# Results
+
+`.venv/bin/python bench_mitosis_calibration.py` — 34 stimuli × 3 seeds × 600
+steps. Verdict 🔴 **FAIL (3/4)**, evidence in `state/QD-6.txt`.
+
+| arm | threshold | cells | settled | stimulus retained |
+|---|---|---|---|---|
+| C control | 0.3000 (default) | 2.0 | 100% | 0.409 |
+| **A absolute** | **0.0397** (derived) | **3.1** | 96% | 0.377 |
+| R relative | z > 2.0 sd | 2.0 | 100% | 0.409 |
+
+Scale invariance, every input × 10:
+
+| arm | cells | drift |
+|---|---|---|
+| A absolute | 3.1 → 31.8 | 932% |
+| R relative | 2.0 → 2.0 | 0% |
+
+**H21 PASS · H22 PASS · H23 PASS (vacuously — see below) · H24 FAIL.**
+
+## The threshold was mis-set, and fixing it is not enough
+
+Deriving the bar from the tension the engine actually produces gives **0.0397
+against a shipped default of 0.3 — 7.6× too high**. With the derived value a
+population forms (3.1 cells) and does not saturate. So the calibration defect
+QD-5 named is real and now has a number.
+
+It buys nothing. Retention goes 0.409 → **0.377**: three cells hold the
+stimulus slightly *worse* than two.
+
+## Population size does not move retention at all
+
+| population | stimulus retained |
+|---|---|
+| 2.0 cells (control) | 0.409 |
+| 3.1 cells (derived threshold) | 0.377 |
+| **31.8 cells** (derived threshold, input × 10) | **0.403** |
+
+Sixteen times the population, the same answer. Every value sits in a band of
+0.38–0.41, and the bar was 0.50. **This is the question QD-5 went looking for
+and could not ask, now asked and answered: a population does not hold the
+stimulus any better than two cells do.**
+
+## H23 passed vacuously — a flaw in this pre-registration
+
+H23 was written to separate "the constant was mis-set" from "the constant was
+the wrong idea", by checking that the relative rule is scale-invariant while
+the absolute one is not. Arm R drifted 0% and arm A drifted 932%, so it reads
+PASS.
+
+But **arm R never split at any scale** — 2.0 cells at ×1 and at ×10. A rule
+that never fires is trivially invariant. The hypothesis as written cannot tell
+invariance from inertness, and its pass here means nothing. Recorded rather
+than quietly banked.
+
+Why R never fires: the z-score gate needs tension `k` sd above a cell's own
+running mean for `split_patience` consecutive steps. Under a fixed stimulus the
+tension series is nearly flat, so its sd is tiny and its mean tracks the current
+value — the z-score has no room to reach 2.0. The relative idea is not refuted;
+this particular estimator of it is unusable on a stationary input, and a rule
+that does refute it would have to be pre-registered fresh.
+
+## Consequence — the pre-registered rule fires
+
+QD-6's decision rules said: *H24 fails for every arm that passes H21 → a
+population forms and still does not hold the stimulus. That is the answer QD-5
+went looking for, and it is a real one: Phase 3 retires.*
+
+That condition is met. Seven mechanisms across the toy, plus the real engine
+with a working population at three sizes, and the pattern half of the claim
+does not hold anywhere. **`docs/qualia-decoder-spec.md` Phase 3 is retired**,
+not deferred.
+
+What stands, unchanged and well-supported: the equilibrium. Ψ = 1/2 is a real
+attractor produced by `argmax H(p)` with no hardcoded pull (QD-1: 93.4% vs a
+9.4% control; pure-entropy fixed point 0.4998), and it is the same equilibrium
+for every stimulus (QD-2/QD-3: Ψ sd 0.0000–0.0047 across 170 stimuli).
+
+**Same equilibrium: yes. Different pattern: no.**
+
+## Landed separately
+
+The calibration finding is independent of the retired phase and outlives it:
+`split_threshold` ships at 0.3 while the engine produces a median tension of
+about 0.005 and the derived bar is 0.0397. Threshold-driven mitosis has never
+fired on any path in this repo. That is a `MitosisEngine` defect worth fixing
+on its own terms, and it is recorded here rather than in the decoder spec.

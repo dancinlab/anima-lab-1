@@ -84,8 +84,16 @@ runtime share one implementation; add `qualia_report(trace) -> str`
 
 Regression bar: existing bench output is unchanged.
 
-### Phase 3 — trajectory-as-gate decoder
+### Phase 3 — trajectory-as-gate decoder — RETIRED
 
+> **Retired after QD-6.** A population forms and still does not hold the
+> stimulus: retention 0.409 at 2 cells, 0.377 at 3.1, 0.403 at 31.8, against a
+> 0.50 bar. Sixteen times the population, the same answer. Seven mechanisms
+> across the toy and the real engine at three population sizes — the pattern
+> half of the claim does not hold anywhere. **Same equilibrium: yes. Different
+> pattern: no.** The history below is kept because each step names a distinct
+> measured cause.
+>
 > **Blocked on memory — revised after QD-1 and QD-2.**
 >
 > QD-1: the trajectory reaches equilibrium in a median of 4 steps, with only 15
