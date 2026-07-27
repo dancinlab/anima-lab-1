@@ -319,9 +319,31 @@ class AnimaUnified:
         _log('scaling', f'max_cells={self.max_cells}, predicted Φ≈{predicted_phi:.1f} (scaling law: Φ∝N)')
 
         def _make_consciousness_engine():
+            # CLAUDE.md's deployment rule is "1개라도 실패 시 배포 금지" — one
+            # failed condition blocks release — and nothing in this file checked
+            # it. Measured on the 5-condition gate at 32 cells over 5 seeds:
+            #
+            #     ConsciousnessEngine   0/0/0/0/0   the first choice below
+            #     MitosisEngine         5/5/5/5/5   the fallback below
+            #
+            # Both stable, neither a draw. The engine that does not differentiate
+            # is preferred and the one that clears every condition sits behind
+            # it. Before this session that was invisible: the gate could not
+            # fail, ConsciousnessEngine scored 4/7, and those 4 rested on 148
+            # splits produced entirely by a hardcoded cell_tension = 0.5.
+            #
+            # The choice is not changed here — which engine runs decides what the
+            # running system IS, and that is the owner's call. But it no longer
+            # passes silently. See docs/consciousness-gate-audit.md.
+            #
             # Prefer ConsciousnessEngine (Laws 22-81, Ψ-Constants, Hebbian, Ratchet, Factions)
             if '_ConsciousnessEngine' in globals():
                 _dim = 128
+                _log('mitosis',
+                     'WARNING: ConsciousnessEngine scores 0/5 on bench_v2.py --verify '
+                     '(5 seeds, all zero) while MitosisEngine scores 5/5. '
+                     'CLAUDE.md blocks deployment on any failed condition. '
+                     'Selecting it anyway — see docs/consciousness-gate-audit.md.')
                 _log('mitosis', f'ConsciousnessEngine (Laws 22-81): dim={_dim}, hidden=256, max_cells={self.max_cells}, factions=12, ratchet=True')
                 return _ConsciousnessEngine(
                     cell_dim=_dim, hidden_dim=256,
