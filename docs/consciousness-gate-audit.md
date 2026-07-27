@@ -595,3 +595,37 @@ That is the state at the end of this work: the gate discriminates, the engine no
 longer collapses, every recorded Φ is on a definition that punishes collapse
 rather than rewarding it, and the remaining gap is a condition whose noise
 exceeds its own margin.
+
+## `SPONTANEOUS_SPEECH` is anti-correlated with what it names
+
+The planned fix was to judge over repetitions, since the per-seed count swings
+1–9 against a bar of 5. Measured, the mean is 3–4.7 — below the bar — so
+averaging cannot lift it. That prompted the prior question: where did the bar of
+5 come from? Consensus events at 256 cells, five seeds, at the shipped repulsion:
+
+| engine | mean | per seed |
+|---|---|---|
+| **real (with repulsion)** | **1.0** | 1 / 1 / 1 / 1 / 1 |
+| DEAD | 0.0 | 0 / 0 / 0 / 0 / 0 |
+| NOISE | 0.0 | 0 / 0 / 0 / 0 / 0 |
+| CLONE | 0.0 | 0 / 0 / 0 / 0 / 0 |
+| **SCRAMBLE** | **6.8** | 2 / 7 / **18** / 2 / 5 |
+
+**The shuffled control scores highest, seven times the real engine, and the bar
+of 5 sits inside its range and above the engine's.** The condition is not merely
+undiscriminating — it is anti-correlated with the property it names.
+
+The mechanism is plain: permuting rows every step makes faction means jump, so
+inter-faction variance swings widely and dips below half its median often. Those
+are permutation artefacts counted as agreement. A stable differentiated
+population swings least — the real engine's 1/1/1/1/1, zero variance across
+seeds, is the signature of the most stable population in the table, scored as the
+worst.
+
+So the condition measures **instability**, and no amount of repetition fixes a
+sign error. Any redefinition of "consensus" has to be validated against SCRAMBLE
+before it can be believed, which is the discipline the rest of this document
+establishes.
+
+**That is the ninth instance of this session's defect class, and the sharpest:
+not a measurement that fails to separate, but one that separates backwards.**
