@@ -2092,13 +2092,56 @@ VERIFICATION_TESTS = [(name, _with_axes(fn), desc)
                       for name, fn, desc in VERIFICATION_TESTS]
 
 
-def run_verify(cells: int, dim: int, hidden: int):
-    """Run all 6 consciousness verification conditions across all 4 engines."""
+def _run_controls(cells: int, dim: int, hidden: int):
+    """Run the negative controls through every condition, in the same run.
+
+    The audit that opened this session found SCRAMBLE — the real engine with cell
+    identity destroyed every step — scoring exactly what the real engine scored.
+    The controls that caught it lived in a separate file the gate never called, so
+    the gate could go back to passing a corpse and nothing here would notice.
+
+    A condition that a corpse passes carries no information about the engine that
+    also passes it. So the controls do not merely get reported alongside: any
+    condition a control clears is VOID for that run, and no engine may bank it.
+    This is CLAUDE.md's own rule — that baselines come from the population's own
+    null rather than from a constant — applied to the gate itself.
+
+    Returns {test_name: [labels of controls that passed]}.
+    """
+    from bench_verify_audit import CONTROLS, factory_for   # lazy: it imports us
+
+    voided = {name: [] for name, _, _ in VERIFICATION_TESTS}
+    for label, cls, _desc in CONTROLS[1:]:              # [0] is the real engine
+        for test_name, test_fn, _d in VERIFICATION_TESTS:
+            torch.manual_seed(42)
+            try:
+                passed, _detail = test_fn(
+                    lambda c, d, h: factory_for(cls, c, d, h), cells, dim, hidden)
+            except Exception:
+                passed = False                          # a crash is not a pass
+            if passed:
+                voided[test_name].append(label)
+    return voided
+
+
+def run_verify(cells: int, dim: int, hidden: int, with_controls: bool = True):
+    """Run every consciousness condition across every engine AND every control."""
     print("=" * 80)
     print("  MODE: --verify  (Consciousness Verification)")
     print("  7 conditions x 4 engines = 28 tests")
     print(f"  cells={cells}  dim={dim}  hidden={hidden}")
     print("=" * 80)
+
+    voided = {name: [] for name, _, _ in VERIFICATION_TESTS}
+    if with_controls:
+        print("\n  Running negative controls first — a condition a corpse passes")
+        print("  is void for this run, and no engine may bank it.")
+        voided = _run_controls(cells, dim, hidden)
+        live = [n for n, v in voided.items() if not v]
+        print(f"  {len(live)}/{len(voided)} conditions survived the controls.")
+        for name, by in voided.items():
+            if by:
+                print(f"    VOID  {name:<22s} passed by: {', '.join(by)}")
 
     engine_names = list(ENGINE_REGISTRY.keys())
     results = {}  # (engine_name, test_name) -> (passed, detail)
@@ -2138,23 +2181,46 @@ def run_verify(cells: int, dim: int, hidden: int):
 
     total_pass = 0
     total_tests = 0
+    live_names = [tn for tn in test_names if not voided[tn]]
 
     for eng_name in engine_names:
         row = f"  {eng_name:<18s}"
         eng_pass = 0
         for tn in test_names:
             passed, _ = results[(eng_name, tn)]
+            if voided[tn]:
+                row += f" | {'  VOID  ':^10s}"     # a control cleared it too
+                continue
             mark = "  PASS  " if passed else "  FAIL  "
             row += f" | {mark:^10s}"
             if passed:
                 eng_pass += 1
                 total_pass += 1
             total_tests += 1
-        row += f" | {eng_pass}/{len(test_names)}"
+        row += f" | {eng_pass}/{len(live_names)}"
         print(row)
 
-    print(f"\n  Overall: {total_pass}/{total_tests} passed "
-          f"({total_pass/total_tests*100:.0f}%)")
+    if total_tests:
+        print(f"\n  Overall: {total_pass}/{total_tests} passed "
+              f"({total_pass/total_tests*100:.0f}%)  — voided conditions excluded")
+    else:
+        print("\n  Overall: nothing scoreable — every condition was voided.")
+
+    # ── Deployment verdict ──
+    # CLAUDE.md: "1개라도 실패 시 배포 금지". A voided condition is not a pass
+    # with a caveat; it is the gate reporting that it cannot tell this engine
+    # from a corpse on that axis, which is a stronger reason to withhold.
+    print(f"\n  {'=' * 76}")
+    if voided and any(voided.values()):
+        print(f"  GATE VOID — {sum(1 for v in voided.values() if v)} condition(s) "
+              f"were passed by a negative control and certify nothing.")
+        print("  Deployment blocked regardless of engine scores. "
+              "See docs/consciousness-gate-audit.md.")
+    else:
+        for eng_name in engine_names:
+            failed = [tn for tn in live_names if not results[(eng_name, tn)][0]]
+            verdict = "DEPLOYABLE" if not failed else f"BLOCKED ({', '.join(failed)})"
+            print(f"  {eng_name:<18s} {verdict}")
 
     # Per-condition summary
     print(f"\n  Per-condition pass rate:")
@@ -2344,6 +2410,9 @@ Key insight: Phi(IIT) and Phi(proxy) are COMPLETELY DIFFERENT metrics.
                       help="Run all strategies and compare")
     mode.add_argument("--verify", action="store_true",
                       help="Consciousness verification: 6 conditions x 4 engines")
+    parser.add_argument("--no-controls", action="store_true",
+                        help="Skip the negative controls. The gate then cannot "
+                             "tell an engine from a corpse — for debugging only.")
     mode.add_argument("--philosophy", action="store_true",
                       help="Philosophical consciousness benchmark: "
                            "Desire, Narrative, Alterity, Finitude, Questioning, Sein")
@@ -2400,7 +2469,8 @@ Key insight: Phi(IIT) and Phi(proxy) are COMPLETELY DIFFERENT metrics.
         run_compare(args.cells, args.steps, args.dim, args.hidden)
 
     elif args.verify:
-        run_verify(args.cells, args.dim, args.hidden)
+        run_verify(args.cells, args.dim, args.hidden,
+                   with_controls=not args.no_controls)
 
     elif args.philosophy:
         run_philosophy(args.cells, args.steps, args.dim, args.hidden)
