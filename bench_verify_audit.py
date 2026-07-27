@@ -148,6 +148,67 @@ def phi_sanity(cells=64, hidden=128, reps=8):
     return inverted
 
 
+def phi_candidate(cells=32, hidden=128):
+    """A Φ whose direction is right, measured beside the one that ships.
+
+    The shipped `Φ = (total_mi − min_cut) / (n − 1)` keeps the MI that stays
+    INSIDE the parts, which is redundancy, and so is maximal at total collapse.
+    Integration needs something to cut AND something to join: N identical copies
+    have nothing to cut, N independent cells have nothing to join, and the
+    maximum belongs between them.
+
+        candidate = (min_cut / (n − 1)) × (1 − mean pairwise cosine)
+                     ^ what the best cut destroys   ^ differentiation
+
+    This is not landed. It is here so the direction can be compared against the
+    shipped measure on identical inputs, which is what the owner decision needs.
+    """
+    from bench_v2 import PhiIIT
+
+    calc = PhiIIT(n_bins=16)
+    torch.manual_seed(0)
+    base = torch.randn(1, hidden) * 0.1
+    cases = [
+        ("완전 동일", base.repeat(cells, 1)),
+        ("거의 동일", base.repeat(cells, 1) + torch.randn(cells, hidden) * 0.001),
+        ("약간 분화", base.repeat(cells, 1) + torch.randn(cells, hidden) * 0.02),
+        ("중간 분화", base.repeat(cells, 1) + torch.randn(cells, hidden) * 0.06),
+        ("충분히 분화", base.repeat(cells, 1) + torch.randn(cells, hidden) * 0.15),
+        ("완전 독립", torch.randn(cells, hidden) * 0.1),
+    ]
+
+    print(f"\n  Φ 후보 — 방향 비교 ({cells} 세포)")
+    print("  통합은 자를 것과 이을 것이 둘 다 있어야 한다\n")
+    print(f"  {'상태':>16} {'코사인':>9} {'현재 Φ':>9} {'후보 Φ':>9}")
+
+    shipped, cand = [], []
+    for name, H in cases:
+        n = H.shape[0]
+        rows = [H[i].numpy() for i in range(n)]
+        mi = np.zeros((n, n))
+        for i in range(n):
+            for j in range(i + 1, n):
+                v = calc._mutual_information(rows[i], rows[j])
+                mi[i, j] = mi[j, i] = v
+        total = mi.sum() / 2
+        cut = calc._minimum_partition(n, mi)
+        hn = H / torch.clamp(H.norm(dim=1, keepdim=True), min=1e-9)
+        cos = float(((hn @ hn.T).sum() - n) / (n * (n - 1)))
+
+        cur = max(0.0, (total - cut) / (n - 1))
+        new = (cut / (n - 1)) * max(0.0, 1.0 - cos)
+        shipped.append(cur)
+        cand.append(new)
+        print(f"  {name:>16} {cos:>+9.4f} {cur:>9.2f} {new:>9.3f}")
+
+    print()
+    print(f"  현재 Φ 최대: {cases[int(np.argmax(shipped))][0]}"
+          f"   후보 Φ 최대: {cases[int(np.argmax(cand))][0]}")
+    print("  후보는 양끝에서 0 이 되지는 않는다 — 무작위 신호끼리도 유한 표본에서")
+    print("  상호정보 추정치가 양으로 치우치기 때문. 최대가 안쪽에 있다는 것이 요점이다.\n")
+    return shipped, cand
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cells", type=int, default=CELLS)
@@ -155,10 +216,16 @@ def main():
     ap.add_argument("--hidden", type=int, default=HIDDEN)
     ap.add_argument("--phi-sanity", action="store_true",
                     help="only check whether Phi punishes or rewards collapse")
+    ap.add_argument("--phi-candidate", action="store_true",
+                    help="compare the shipped Phi against a direction-correct candidate")
     args = ap.parse_args()
 
     if args.phi_sanity:
         phi_sanity(cells=args.cells, hidden=args.hidden)
+        return
+
+    if args.phi_candidate:
+        phi_candidate(cells=args.cells, hidden=args.hidden)
         return
 
     names = [t[0] for t in VERIFICATION_TESTS]
