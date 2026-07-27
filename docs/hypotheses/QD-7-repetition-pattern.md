@@ -147,13 +147,32 @@ eight measurements — `jamo_density` 0.667 vs 0.778, `final_ratio` 0.000 vs
 
 ## The saturation point is my own hardcode
 
-`qualia_sense.sense()` computes `length = min(n / 16.0, 1.0)`. That **16 is a
-magic number I wrote in Phase 0**, and it is what sets the ceiling: past 16
-characters `length` cannot move, leaving only `bigram_repeat`, which itself
-asymptotes to 1.
+`qualia_sense.sense()` computed `length = min(n / 16.0, 1.0)`. That **16 was a
+magic number written in Phase 0**, and it set the ceiling: past 16 characters
+`length` could not move, leaving only `bigram_repeat`, which itself asymptotes
+to 1.
 
-By this session's own standard — CLAUDE.md #1, and the same class of defect
-QD-1 was opened to remove — that is a hardcoded constant deciding a behavioural
-boundary. It is flagged here rather than quietly changed, because "how much
-repetition is still the same experience" is a real design question and picking
-a new constant would only move the magic number.
+> **Fixed.** The measurement that decided it: over the 170 real stimuli the cap
+> **never fires at all** — the longest name is 6 characters, so 0 of 170 reach
+> 16. It did no work where the module is actually used, and did all its damage
+> on the repetition probe. Replaced with `n/(1+n)`, which has no free parameter
+> and is strictly increasing.
+>
+> | | N=1 | N=8 | N=50 | N=199 |
+> |---|---|---|---|---|
+> | distance `w×N` ↔ `w×(N+1)`, before | 0.3560 | 0.0157 | 0.0004 | **0.0000** |
+> | after | 0.3590 | 0.0169 | 0.0004 | **0.0000<sub>3</sub>** |
+>
+> Two-word distance over N ≥ 50 now varies with sd 2.7e-06 against the old
+> 1.0e-09 — about 2600× more, and no longer bit-frozen.
+>
+> **Honest limit: this is not "repetition counting now works".** 0.00003 is
+> frozen for any practical purpose. What changed is that the constant is gone
+> and the feature never reaches exactly zero. Diminishing increments are
+> inherent to bounding an unbounded quantity in [0,1]; reaching exactly zero
+> was not, and that part was mine.
+>
+> Regression: `qualia_sense`'s stem-kin structure moves 0.66 → 0.61 (slightly
+> better), monotonicity and identity retention hold at 4/4, and
+> `TensionSense`'s path is unaffected since `text_vector` does not use this
+> feature.

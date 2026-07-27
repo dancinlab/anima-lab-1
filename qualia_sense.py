@@ -119,8 +119,19 @@ def sense(name: str) -> Qualia:
     chars = list(s)
     n = len(chars)
 
-    # length — saturating, so a long title does not dominate every other feature
-    length = min(n / 16.0, 1.0)
+    # length — compressed so a long title does not dominate the other seven
+    # features, with no constant to pick. `min(n/16, 1)` was a magic number
+    # written in Phase 0, and measurably the wrong kind: over the 170 real
+    # stimuli (max length 6) it NEVER fires, so it did no work at all there,
+    # while on repeated input it pinned the feature at exactly 1.0 and froze
+    # the repetition signature (QD-7). `n/(1+n)` has no free parameter and is
+    # strictly increasing, so the increments shrink but never reach zero —
+    #     n:        2      10      16      20     100     200
+    #     old:  0.1250  0.6250  1.0000  1.0000  1.0000  1.0000   ← flat from 16
+    #     new:  0.6667  0.9091  0.9412  0.9524  0.9901  0.9950
+    # Diminishing increments are inherent to bounding an unbounded quantity in
+    # [0,1]; reaching exactly zero was not.
+    length = n / (1.0 + n)
 
     # jamo_density / final_ratio / vowel_position — Korean phonological structure
     jamo_total = 0
