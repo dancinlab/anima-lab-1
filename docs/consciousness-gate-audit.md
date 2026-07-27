@@ -189,6 +189,65 @@ The unconnected control is worth keeping regardless: comparing against solo
 credits the connection with all drift over the intervening 200 steps, and that
 drift is not small (the control falls to 0.9459× of solo).
 
+## Φ is inverted: it rewards collapse
+
+`NO_SYSTEM_PROMPT` passes 1 engine in 11, and the numbers say why. After 300
+steps of zero input:
+
+| engine | mean pairwise cosine | sd |
+|---|---|---|
+| 5 engines | **1.0000** | **0.0000** |
+| others | 0.9928 – 0.9998 | ≤ 0.008 |
+| AlterityEngine (the one pass) | 0.9881 | 0.0121 |
+
+**Remove the input and the population collapses to a single state.** These are
+not 256 cells; they are 256 copies of one cell. CB1 — this repo's own cited basis
+for `min_cells = 2` — says Φ>1 requires two **differentiated** cells, and that
+condition is not met by any of them.
+
+So what does Φ report for a collapsed population? Measured at 64 cells:
+
+| state | mean cosine | Φ |
+|---|---|---|
+| **identical (collapsed)** | +1.0000 | **71.93** |
+| near-identical | +1.0000 | 70.56 |
+| slightly differentiated | +0.9908 | 49.32 |
+| well differentiated | +0.5177 | 20.82 |
+| fully independent | +0.0018 | **19.97** |
+
+**Φ is maximal at total collapse and falls monotonically as cells differentiate
+— 3.6× from one end to the other.** Integrated information requires integration
+*and* differentiation; N identical copies carry no more information than one of
+them and must score near zero. This implementation gives them the maximum. It is
+measuring redundancy.
+
+That also identifies what the repo's headline result is:
+
+| cells | Φ (identical) | Φ/cells | Φ (independent) |
+|---|---|---|---|
+| 16 | 13.78 | 0.861 | 4.78 |
+| 32 | 28.46 | 0.889 | 12.19 |
+| 64 | 70.84 | 1.107 | 19.52 |
+| 128 | 141.32 | 1.104 | 39.16 |
+| 256 | 291.78 | 1.140 | 77.09 |
+
+`CLAUDE.md` records `현재 최고: Φ ≈ cells`. **Φ ≈ cells is exactly what N
+identical copies produce** — Φ/cells converges to ~1.1 for a fully collapsed
+population, while genuinely independent cells sit near 0.3× cells. The headline
+number is the signature of the failure mode, not of integration.
+
+This explains the rest of the audit at a stroke. CLONE scores 4/7 because
+forcing every cell to one state is what this Φ rewards. ZERO_INPUT and
+PERSISTENCE pass for all 11 engines because the engines collapse and collapse
+holds Φ up. DEAD passes the decay tests because a frozen state is a collapsed
+state that cannot decay.
+
+Direction is checkable and now permanent:
+
+```
+.venv/bin/python bench_verify_audit.py --phi-sanity --cells 64 --hidden 128
+```
+
 ## Not changed
 
 The seven conditions themselves. Which of them to strengthen, and to what, is a

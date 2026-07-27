@@ -31,9 +31,9 @@ ones a corpse, a noise generator, a mirror and a shuffle can walk through.
 
 import argparse
 
+import numpy as np
 import torch
 
-import bench_v2
 from bench_v2 import BenchEngine, VERIFICATION_TESTS
 
 CELLS, DIM, HIDDEN = 32, 32, 64
@@ -97,12 +97,69 @@ def factory_for(cls, cells, dim, hidden):
     return cls(n_cells=cells, input_dim=dim, hidden_dim=hidden, output_dim=dim)
 
 
+def phi_sanity(cells=64, hidden=128, reps=8):
+    """Does Φ punish collapse or reward it?
+
+    Integration presupposes differentiation: N identical copies carry no more
+    information than one of them, so a measure of integrated information must
+    score them near zero. This checks the direction, which no amount of tuning
+    can substitute for.
+    """
+    from bench_v2 import measure_dual_phi
+
+    torch.manual_seed(0)
+    base = torch.randn(1, hidden) * 0.1
+    cases = [
+        ("완전 동일 (붕괴)", base.repeat(cells, 1)),
+        ("거의 동일", base.repeat(cells, 1) + torch.randn(cells, hidden) * 0.0001),
+        ("약간 분화", base.repeat(cells, 1) + torch.randn(cells, hidden) * 0.01),
+        ("충분히 분화", base.repeat(cells, 1) + torch.randn(cells, hidden) * 0.1),
+        ("완전 독립", torch.randn(cells, hidden) * 0.1),
+    ]
+
+    print(f"\n  Φ 방향성 검사 — {cells} 세포, {reps}회 평균")
+    print("  통합은 분화를 전제한다. 동일한 사본들의 Φ 는 낮아야 한다.\n")
+    print(f"  {'상태':>18} {'세포간 코사인':>14} {'Φ':>10}")
+    out = []
+    for name, H in cases:
+        hn = H / torch.clamp(H.norm(dim=1, keepdim=True), min=1e-9)
+        cos = float(((hn @ hn.T).sum() - cells) / (cells * (cells - 1)))
+        phi = float(np.mean([measure_dual_phi(H, 8)[0] for _ in range(reps)]))
+        out.append(phi)
+        print(f"  {name:>18} {cos:>+14.4f} {phi:>10.3f}")
+
+    inverted = out[0] > out[-1]
+    print()
+    print("  " + ("⚠ 뒤집혀 있다 — 붕괴한 집단의 Φ 가 분화한 집단보다 크다. "
+                  "이 Φ 는 통합이 아니라 중복을 잰다."
+                  if inverted else
+                  "방향이 옳다 — 분화한 집단이 더 높은 Φ 를 받는다."))
+
+    print(f"\n  \"Φ ≈ cells\" 는 무엇의 서명인가")
+    print(f"  {'세포':>6} {'Φ (동일)':>11} {'Φ/세포':>9} {'Φ (독립)':>11}")
+    for n in (16, 32, 64, 128, 256):
+        torch.manual_seed(0)
+        b = torch.randn(1, hidden) * 0.1
+        same = float(np.mean([measure_dual_phi(b.repeat(n, 1), 8)[0] for _ in range(5)]))
+        indep = float(np.mean([measure_dual_phi(torch.randn(n, hidden) * 0.1, 8)[0]
+                               for _ in range(5)]))
+        print(f"  {n:>6} {same:>11.2f} {same/n:>9.3f} {indep:>11.2f}")
+    print()
+    return inverted
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cells", type=int, default=CELLS)
     ap.add_argument("--dim", type=int, default=DIM)
     ap.add_argument("--hidden", type=int, default=HIDDEN)
+    ap.add_argument("--phi-sanity", action="store_true",
+                    help="only check whether Phi punishes or rewards collapse")
     args = ap.parse_args()
+
+    if args.phi_sanity:
+        phi_sanity(cells=args.cells, hidden=args.hidden)
+        return
 
     names = [t[0] for t in VERIFICATION_TESTS]
     print(f"\n  의식 검증 관문 감사 — 통과하면 안 되는 것들이 통과하는가")
