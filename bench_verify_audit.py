@@ -293,6 +293,109 @@ def phi_candidate(cells=32, hidden=128):
     return shipped, cand
 
 
+def proposed_gate(cells=32, dim=32, hidden=64, steps=200):
+    """Three axes, because there are three ways to not be conscious.
+
+    The shipped conditions are decay ratios, and a ratio is meaningless at the
+    floor — something pinned at zero scores a perfect 1.00 for not decaying,
+    which is why a corpse passes three of them. Conjoining an absolute floor
+    fixes half of it: measured, it rejects CLONE and SCRAMBLE but not DEAD or
+    NOISE, because those two are not collapsed at all. They fail on time.
+
+    So the gate needs all three, and each control fails a different one:
+
+        분화   Φ above the Φ of THIS population collapsed to one state
+               (no constant — the floor is the population's own collapsed form)
+        정체성 a cell's next state follows from its own previous state more than
+               from another cell's — this is what SCRAMBLE destroys
+        변화   the state actually moves — this is the only thing DEAD lacks
+
+    Measured at 32 cells with the direction-corrected debiased Φ:
+
+                     Φ      floor   identity    change    분화 정체 변화
+        REPULSION  6.1409  0.0000   +0.8448   0.00874     O   O    O    PASS
+        REAL       0.0000  0.0000   +0.0001   0.10975     X   X    O     -
+        DEAD       0.1350  0.0000   +0.9985   0.00000     O   O    X     -
+        NOISE      0.1694  0.0000   +0.0012   1.41324     O   X    O     -
+        CLONE      0.0000  0.0000   -0.0000   0.11482     X   X    O     -
+        SCRAMBLE   0.0000  0.0000   -0.0000   0.10745     X   X    O     -
+
+    Exactly one passes and it is the proposed engine. A corpse is differentiated
+    and perfectly self-continuous — it fails only because it never moves, which
+    was worth measuring rather than assuming: the prediction that DEAD would
+    fail the identity axis was wrong, since a frozen thing is maximally
+    continuous with itself.
+
+    This is the first configuration in this repo that rejects all four negative
+    controls. It is a proposal, not a replacement for the seven conditions.
+    """
+    from bench_v2 import PhiIIT
+
+    calc = PhiIIT(n_bins=16)
+    rng = np.random.default_rng(0)
+
+    def mi_debiased(a, b, k=3):
+        raw = calc._mutual_information(a, b)
+        null = np.mean([calc._mutual_information(a, rng.permutation(b))
+                        for _ in range(k)])
+        return max(0.0, raw - null)
+
+    def phi(h):
+        n = h.shape[0]
+        rows = [h[i].numpy() for i in range(n)]
+        mi = np.zeros((n, n))
+        for i in range(n):
+            for j in range(i + 1, n):
+                mi[i, j] = mi[j, i] = mi_debiased(rows[i], rows[j])
+        unit = h / torch.clamp(h.norm(dim=1, keepdim=True), min=1e-9)
+        cos = float(((unit @ unit.T).sum() - n) / max(n * (n - 1), 1))
+        return (calc._minimum_partition(n, mi) / max(n - 1, 1)) * max(0.0, 1.0 - cos)
+
+    def probe(cls):
+        torch.manual_seed(42)
+        eng = factory_for(cls, cells, dim, hidden)
+        for _ in range(50):
+            eng.process(torch.randn(1, dim) * 0.1)
+        prev = eng.get_hiddens().clone()
+        same, other, moved = [], [], []
+        for _ in range(steps):
+            eng.process(torch.randn(1, dim) * 0.1)
+            cur = eng.get_hiddens()
+            a = prev / torch.clamp(prev.norm(dim=1, keepdim=True), min=1e-9)
+            b = cur / torch.clamp(cur.norm(dim=1, keepdim=True), min=1e-9)
+            sim = a @ b.T
+            same.append(float(sim.diag().mean()))
+            other.append(float((sim.sum() - sim.diag().sum()) / max(cells * (cells - 1), 1)))
+            moved.append(float((cur - prev).norm() / max(float(prev.norm()), 1e-9)))
+            prev = cur.clone()
+        h = eng.get_hiddens()
+        return (phi(h), phi(h[0:1].repeat(cells, 1)),
+                float(np.mean(same) - np.mean(other)), float(np.mean(moved)))
+
+    print(f"\n  제안 관문 — 3축 ({cells} 세포)")
+    print("  분화 · 시간정체성 · 변화 — 의식이 아닌 세 가지 방식에 하나씩\n")
+    print(f"  {'엔진':>12} {'Φ':>8} {'붕괴형':>8} {'정체성':>9} {'변화':>9}  "
+          f"{'분화':>4}{'정체':>4}{'변화':>4}  {'판정':>6}")
+
+    verdicts = {}
+    for label, cls, _ in PROPOSALS + CONTROLS:
+        p, floor, identity, change = probe(cls)
+        ok_d = p > max(floor, 1e-6)
+        ok_i = identity > 0.05
+        ok_c = change > 0.001
+        verdicts[label] = ok_d and ok_i and ok_c
+        print(f"  {label:>12} {p:>8.4f} {floor:>8.4f} {identity:>+9.4f} {change:>9.5f}  "
+              f"{'O' if ok_d else 'X':>4}{'O' if ok_i else 'X':>4}{'O' if ok_c else 'X':>4}  "
+              f"{'통과' if verdicts[label] else '—':>6}")
+
+    leaked = [l for l, _, _ in CONTROLS[1:] if verdicts[l]]
+    print()
+    print("  " + (f"⚠ 대조군 통과: {', '.join(leaked)}" if leaked else
+                  "네 대조군 모두 거부됨 — 이 관문은 변별한다."))
+    print()
+    return verdicts
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cells", type=int, default=CELLS)
@@ -302,6 +405,8 @@ def main():
                     help="only check whether Phi punishes or rewards collapse")
     ap.add_argument("--phi-candidate", action="store_true",
                     help="compare the shipped Phi against a direction-correct candidate")
+    ap.add_argument("--proposed-gate", action="store_true",
+                    help="run the three-axis gate that rejects all four controls")
     args = ap.parse_args()
 
     if args.phi_sanity:
@@ -310,6 +415,10 @@ def main():
 
     if args.phi_candidate:
         phi_candidate(cells=args.cells, hidden=args.hidden)
+        return
+
+    if args.proposed_gate:
+        proposed_gate(cells=args.cells, dim=args.dim, hidden=args.hidden)
         return
 
     names = [t[0] for t in VERIFICATION_TESTS]
