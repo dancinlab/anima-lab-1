@@ -2224,3 +2224,45 @@ it should not, then the thing to change is what tension measures, not what the
 encoder divides by. That is a change to what tension *means*, which
 `docs/mitosis-calibration.md` already flagged as the one repair in this area that
 genuinely requires redefining something.
+
+### Correction: not blind to content — content falls below the engine's own noise floor
+
+The section above concluded from the unit-vector arm that division is *blind* to
+content. That is too strong, and testing the claim directly rather than asserting
+it is what showed the difference. 200 messages rescaled to one common norm, so
+content varies and magnitude cannot:
+
+| drive | tension spread (std/mean) | cells per seed |
+|---|---|---|
+| content varies, magnitude **fixed** | **0.065** | 2, 2, 31 |
+| content varies, magnitude free | 0.595 | 32, 32, 2 |
+
+```
+tension spread by what is allowed to vary
+
+content only    ██                       0.065
+content + size  ███████████████████      0.595
+
+                ┊ 0.100 — the engine's own degeneracy guard
+```
+
+**Content does move tension — about one ninth as much as magnitude does.** The
+sharper fact is where 0.065 sits: below `std/mean < 0.1`, which is the engine's
+own test for a degenerate sample. Its calibrator classifies a content-only signal
+as no signal and refuses to derive a bar from it, which is precisely the
+`calibration deferred` line the gate prints.
+
+So the honest statement is not that the engine cannot see content. It is that the
+variation content produces is smaller than the engine's own threshold for
+counting something as variation at all.
+
+Two things this arm does **not** establish, and the earlier section should not be
+read as if it did:
+
+- The cell counts are seed-dependent in both conditions — 2/2/31 against 32/32/2.
+  The clean 2/2/2 versus 32/32/32 in the previous table came from drives at
+  different absolute scales (unit norm versus the message's own norm), so that
+  separation is about scale as well as about which half of the signal survives.
+- "Magnitude alone is sufficient" still holds — the flat-vector arm reached the
+  ceiling on all three seeds. "Direction alone is insufficient" is weakened to
+  *insufficient at unit scale, and below the degeneracy guard at message scale*.

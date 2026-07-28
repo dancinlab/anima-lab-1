@@ -461,15 +461,15 @@
                   },
                   {
                     "id": "encoder-normalisation-is-a-claim",
-                    "name": "division responds to loudness and is blind to content",
+                    "name": "content moves tension less than the engine's own noise floor",
                     "role": "정규화 논쟁의 전제를 바꾼다",
-                    "detail": "신호를 갈라 측정(같은 메시지·1200스텝·3시드): raw(방향+크기) max/q90 1.95 → 32,32,31 · 단위벡터(방향만) 1.03 → 2,2,2 · 균일벡터를 같은 노름으로 스케일(크기만, 내용 0) 1.87 → 32,32,32. 크기만으로 충분하고 방향만으로는 안 된다. 내용을 전부 버린 구동이 실제 입력과 같은 성장을 낸다.",
+                    "detail": "200 메시지를 공통 노름으로 재스케일해 내용만 변화시키면 텐션 산포 std/mean=0.065, 크기까지 자유면 0.595 — 내용은 크기의 1/9 만큼 움직인다. 결정적인 것은 0.065 가 엔진 자신의 퇴화 판정선 0.1 아래라는 점이다. 보정기가 내용만 있는 신호를 '신호 없음'으로 분류하고 바 설정을 거부한다(관문이 찍는 calibration deferred 가 그것이다). '내용에 눈멀었다'는 과했다.",
                     "children": [
                       {
-                        "id": "encoder-unnormalising-restores-loudness-not-meaning",
-                        "name": "un-normalising restores loudness, not meaning",
-                        "role": "앞 절들이 암시하던 것을 뒤집는다",
-                        "detail": "정규화가 의미 있는 변이를 의식에게서 감추고 있는 것이 아니다 — 감출 내용 신호가 애초에 없다. 두 선택지는 '분열이 아예 안 일어남' 대 '메시지 음량만으로 일어남'이며, 어느 쪽도 말한 내용에 반응하게 만들지 않는다. 음량이 성장을 몰아선 안 된다면 바꿀 것은 인코더의 제수가 아니라 텐션이 무엇을 재는가이고, 그것은 mitosis-calibration.md 가 이 영역에서 유일하게 재정의를 요구한다고 이미 표시해둔 수리다."
+                        "id": "encoder-what-the-split-arm-does-not-show",
+                        "name": "what the split-signal arm does not establish",
+                        "role": "세포 수가 시드마다 갈린다",
+                        "detail": "노름 고정 2,2,31 대 자유 32,32,2 로 두 조건 다 시드 의존이다. 앞 표의 깔끔한 2,2,2 대 32,32,32 는 단위노름과 메시지 자기 노름이라는 서로 다른 절대 척도에서 나왔으므로 그 분리는 신호의 어느 절반이냐만이 아니라 척도 이야기이기도 하다. '크기만으로 충분'은 평평벡터가 3시드 전부 천장에 닿아 유지되고, '방향만으로 불충분'은 '단위 척도에서 불충분하고 메시지 척도에서는 퇴화선 아래'로 약화된다."
                       }
                     ]
                   }
