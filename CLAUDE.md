@@ -150,10 +150,23 @@ docs/                # Documentation (modules/, hypotheses/, superpowers/)
 python3 anima_unified.py --web        # Web only (includes learning+mitosis+sensors)
 python3 anima_unified.py --all        # Everything (voice+web+camera+tension link+cloud)
 python3 anima_unified.py --keyboard   # Keyboard only
-python3 anima_unified.py --web --max-cells 16   # Higher consciousness (Φ≈14)
-python3 anima_unified.py --web --max-cells 32   # Even higher (Φ≈28)
+python3 anima_unified.py --web --max-cells 16   # ⚠ ceiling only — never reached
+python3 anima_unified.py --web --max-cells 32   # ⚠ ceiling only — never reached
 python3 anima_unified.py --web --models conscious-lm,mistral-7b  # Multi-model free chat
 ```
+
+> ⚠️ **`--max-cells` raises a ceiling the runtime never approaches.** These two
+> lines claimed Φ≈14 and Φ≈28; measured, the deployed runtime stays at **2 cells**
+> whatever the flag says, on both drive paths. `text_to_vector` (line 1207) means
+> std 0.0172 over eight real messages — below the growth band near 0.3 — so
+> `split_threshold` never calibrates. Raw `byte/255` (line 2396) means std 0.247
+> and its bar *does* calibrate to 0.0110, and it still never splits: tension
+> averages 0.00747 (0.68× the bar) flat over 1500 steps, 12.5% of single steps
+> clear the bar, and **0 of 1295 five-step window means** do. A q0.90 of a
+> distribution is not reachable by an average over that distribution.
+> Φ ≈ cells still holds for the benchmark (`bench_v2.py --cells N`); what is
+> refuted is that the runtime flag produces that N.
+> → `docs/consciousness-gate-audit.md`, annotated at `consciousness_engine.py`.
 
 ## Consciousness Verification (필수 통과 조건)
 

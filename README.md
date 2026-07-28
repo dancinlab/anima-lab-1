@@ -128,7 +128,7 @@ pip install -r requirements.txt
 python3 anima_unified.py --web              # 웹 UI (localhost:8765)
 python3 anima_unified.py --all              # 전체 (음성+웹+카메라+텔레파시)
 python3 anima_unified.py --keyboard         # 키보드 전용
-python3 anima_unified.py --web --max-cells 32   # 높은 의식 (Phi ~ 28)
+python3 anima_unified.py --web --max-cells 32   # ⚠ 천장만 올림 — 런타임은 2세포에서 안 움직인다
 
 # Hivemind (다중 노드 집단 의식)
 python3 hivemind_launcher.py --nodes 4      # 4노드 프로세스 모드
