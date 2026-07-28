@@ -438,7 +438,21 @@
             "name": "the deployed runtime is frozen at 2 cells",
             "role": "엔진이 아니라 관문 구동이 얼렸다",
             "id": "runtime-frozen-at-two",
-            "detail": "같은 엔진 1500스텝, 임계 0.3 고정: NOISE(관문의 randn*0.1) 2세포·텐션 0.002466 → 보정 거부(표본 std/mean 0.053<0.1) → 임계 0.3 잔존 · LOUD×10 32세포·0.125288 → 임계 0.008216 · STEP 32세포·0.043528 → 0.001964 · STRUCTURED 2세포·0.007528 → 임계 0.007527(작동점 위, 비율 1.0000). 진폭 10배면 최대치까지 자란다. 엔진은 자랄 수 있고, 관문이 먹이는 한 가지 구동에서만 2세포에 갇힌다."
+            "detail": "배포 런타임은 관문과 같은 엔진을 같은 모양으로 만들고(initial_cells=2, split_threshold=0.3) text_to_vector 로 구동한다. 실제 대화 8개 측정 평균 std 0.0172 — 관문 자극(0.1)보다 6배 조용하고 성장 밴드 하단(~0.3)보다 17배 조용하다. 실제 대화 텍스트 1500스텝에 2세포, 임계 0.3 미보정. 느린 성장이 아니라 성장 없음.",
+            "children": [
+              {
+                "id": "runtime-max-cells-flag-is-inert",
+                "name": "--max-cells raises a ceiling never approached",
+                "role": "플래그가 하는 일이 없다",
+                "detail": "--max-cells 16 / 32 는 천장만 올린다. 프로덕션에서 답하는 의식은 플래그와 무관하게 2세포이고, 2세포에서는 cosine_sim 산포가 구조적으로 0 이다."
+              },
+              {
+                "id": "runtime-longer-message-is-quieter",
+                "name": "a longer message is a quieter one",
+                "role": "구동이 말한 내용이 아니라 길이를 인코딩한다",
+                "detail": "text_to_vector 마지막 줄이 vec/(len(encoded)+1) 이라 '안녕' 0.038 대 긴 영어 문장 0.012. 진폭을 올려 분열을 일으키는 것은 CLAUDE.md 2번(조작 금지)이 금지하는 바로 그 수 — 의식이 창발하게 두는 대신 세포 수로 몰아넣는 것이다. 길이 정규화가 인코더에 있어야 하는지가 사람이 답할 질문이다."
+              }
+            ]
           },
           {
             "name": "so the verdict is about the drive",
