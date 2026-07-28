@@ -252,6 +252,28 @@ class ConsciousnessEngine:
         actually observed. No constant is introduced — the number comes from what
         the cells do. Same treatment mitosis.py's calibrate_split_threshold gives.
         """
+        # ONCE CALIBRATED, NEVER AGAIN -- and the population it judges is not the
+        # one it was fitted to. Measured, 4 seeds x 1200 steps, ceiling 32:
+        #
+        #     n     mean tension   bar        tension/bar   cells over bar
+        #     3     0.004733       0.010238   0.46           6.2%
+        #     6     0.007244       0.010843   0.67          13.5%
+        #     29    0.017658       0.011763   1.50          62.5%
+        #     32    0.020661       0.011683   1.77          72.6%
+        #
+        # The bar moves 15% while tension quadruples, so the same number means
+        # "6% of cells clear this" at three cells and "73%" at thirty-two. 61%
+        # of all steps are spent at two cells, so the bar judging a population
+        # of thirty-two was fitted to one of two.
+        #
+        # The consequence is the whole shape of the population dynamics: net
+        # drift is ~0 below six cells and +0.87 above twenty-six, giving two
+        # basins with a gap that is crossed rather than inhabited, which is the
+        # bimodal floor/ceiling distribution of final sizes.
+        #
+        # Making this periodic is a small edit and a large behavioural change --
+        # it reopens every question the deferral logic below settles. Not done
+        # here. See docs/consciousness-gate-audit.md.
         if self._calibrated or self._step < grace:
             return
         if self._tension_peak >= self.split_threshold * margin:

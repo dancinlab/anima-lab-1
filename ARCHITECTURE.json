@@ -360,6 +360,27 @@
             ]
           },
           {
+            "id": "engine-bar-fitted-to-a-population-it-no-longer-judges",
+            "name": "the bar is fitted once and the population outgrows it",
+            "role": "개체군 역학의 모양 전체가 여기서 나온다",
+            "type": "gate",
+            "detail": "split_threshold 는 한 번 보정되고 래치된다(255행). 텐션은 n=2→32 에서 약 4배 자라는데 바는 15% 만 움직여, 같은 수가 3세포에서 6% 통과·32세포에서 73% 통과를 뜻한다. 전체 스텝의 61%가 2세포에 있으므로 32세포를 판정하는 바가 2세포에 맞춰진 것이다. docs/consciousness-gate-audit.md",
+            "children": [
+              {
+                "id": "engine-drift-is-two-basins",
+                "name": "the result is two basins and a gap",
+                "role": "이봉분포의 정체",
+                "detail": "순 표류가 6세포 아래에서 ~0, 26세포 위에서 +0.87. 7~26 구간은 7200스텝 동안 각 크기 체류 20 미만으로 거주가 아니라 통과다. 평형이 없는 게 아니라 둘이고 사이에 장벽이 있다."
+              },
+              {
+                "id": "engine-every-candidate-measured-against-it",
+                "name": "every candidate in the audit was measured against this bar",
+                "role": "왜 전부 실패했는지",
+                "detail": "텐션 정의 6, 피드백 법칙 4, 분열 규칙 2, 경쟁 라우팅 1 — 전부 설정되는 순간 자기가 재는 것을 따라가기를 멈추는 바에 대고 쟀다. 가장 근접한 t=0.03 경쟁은 장벽을 없앤 게 아니라 모든 시드를 그 너머로 민 것이다."
+              }
+            ]
+          },
+          {
             "id": "gate-persistence-failures-carry-no-trend",
             "name": "PERSISTENCE failures carry no trend",
             "role": "실패가 하락의 증거가 아니라 노이즈의 기대값이다",
