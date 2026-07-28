@@ -302,23 +302,29 @@
                 "detail": "NO_SPEAK_CODE 단독은 256세포에서 HEAP·CLONE·SCRAMBLE 을 다섯 시드 전부 통과시킨다 — 이번 세션이 닫은 무효가 축으로 닫혔고 자기 규칙은 전과 똑같이 완전히 뚫려 있다. PERSISTENCE 단독은 이 규모에서도 DEAD·CLONE 5/5 로, 부록 D 숫자가 관문 자체 하네스 안에서 재현됐다."
               },
               {
-                "id": "gate-ce-grows-only-under-a-rising-drive",
-                "name": "ConsciousnessEngine grows only under a rising drive",
-                "role": "0/5 는 분화 불능이 아니라 여기서 안 자란다는 뜻이다",
+                "id": "gate-ce-growth-lives-in-a-band",
+                "name": "growth lives inside a band of drive amplitude",
+                "role": "0/5 는 분화 불능이 아니라 관문이 밴드 아래에서 구동한다는 뜻이다",
                 "type": "gate",
-                "detail": "cosine_sim std=0.0000 은 두 세포의 서명 — 쌍이 하나라 산포가 구조적으로 0. 천장 256에 실제 2세포로 관문 전체를 돌았다. 측정 전 선언 후 7가지 구동: 상수 x0.1/x3.0/x30, 회전 기저, 교대 자극 전부 2세포. 오르는 램프 0.05→3.05 만 256 도달. 같은 진폭을 역순으로 내리는 램프는 2세포 — 크기도 변화도 아니고 상승이다. bench_ce_growth.py",
+                "detail": "cosine_sim std=0.0000 은 두 세포의 서명. 천장 256에 실제 2세포로 관문 전체를 돌았다. 천장 32·1500스텝: x0.1(관문) 2 · x0.3 31 · x0.5 31 · x1.0 31 · x3.0 32 · x10 2 · x30 2. 너무 조용해도 너무 시끄러워도 안 자란다. bench_ce_growth.py",
                 "children": [
                   {
-                    "id": "gate-ce-threshold-fits-past-applies-to-future",
-                    "name": "the threshold is fitted to the past",
+                    "id": "gate-ce-calibration-window-decides",
+                    "name": "only the calibration window has a say",
                     "role": "기전",
-                    "detail": "split_threshold 는 200스텝까지의 텐션 q0.90 에 한 번 맞춰지고 고정된다. 그래서 미래가 과거를 넘는 곳에서만 발화한다. 정상 상태 세계는 아무리 시끄러워도 그것을 넘지 않는다."
+                    "detail": "split_threshold 는 200스텝까지의 텐션 q0.90 에 한 번 맞춰지고 고정된다. 그 창의 표본이 퇴화하면(std/mean<0.1) 보정을 거부하고 — 퇴화 표본의 어떤 분위수든 작동점에 앉으니 옳은 거부다 — 임계는 도달 불가능한 기본값 0.3 에 남는다. 200스텝 이후 무엇도 그것을 되돌리지 못한다. 표본은 양쪽 끝에서 퇴화한다: 조용하면 전 세포가 똑같이 0 근처, 시끄러우면 전 세포가 똑같이 포화."
                   },
                   {
                     "id": "gate-ce-asymmetric-construction",
                     "name": "one engine earns its cells, eleven are handed theirs",
                     "role": "판정을 바꾸지 않지만 같은 열에 인쇄되어선 안 된다",
-                    "detail": "어댑터는 CE(initial_cells=2, max_cells=nc) 로 만들고 나머지 열한 엔진은 nc 세포로 구성된다. 한 엔진은 성장으로 채점되고 열한 엔진은 아무것도 요구받지 않는데 결과는 한 열에 나온다. 관문의 정상 상태 구동은 정당한 검사이고 엔진의 답도 실재하는 성질이다 — 정당하지 않은 것은 그 둘을 같은 숫자로 보고하는 것이다."
+                    "detail": "어댑터는 CE(initial_cells=2, max_cells=nc) 로 만들고 나머지 열한 엔진은 nc 세포로 구성된다. 한 엔진은 성장으로 채점되고 열한 엔진은 아무것도 요구받지 않는데 결과는 한 열에 나온다."
+                  },
+                  {
+                    "id": "gate-ce-two-retractions",
+                    "name": "two retractions on the way here",
+                    "role": "둘 다 창을 잘못 잡아서 나왔다",
+                    "detail": "'오르는 구동만 자란다' — 300스텝 측정의 인공물. 보정이 200스텝이라 100스텝만 남아 느린 성장이 없는 성장으로 읽혔다. 기존 노드 runtime-frozen-at-two 가 맞았고 새 측정이 용의자라는 규칙이 작동했다. '상승 대 하강이 변수' — 아니다. 내리는 램프는 처음 200스텝이 진폭 15~13 로 밴드 위에 앉아서 실패한다. 나머지 1300스텝은 발언권이 없다."
                   }
                 ]
               }

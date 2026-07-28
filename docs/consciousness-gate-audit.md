@@ -1664,9 +1664,10 @@ retractions. `bench_ce_growth.py`, ceiling 32:
 |---|---|---|
 | constant ×0.1 — *the gate's* | 2 | **2** |
 | constant ×0.3 | — | 31 |
+| constant ×0.5 | — | 31 |
 | constant ×1.0 | 2 | 31 |
 | constant ×3.0 | 2 | 32 |
-| constant ×10 | — | see below |
+| constant ×10 | — | **2** |
 | constant ×30 | 2 | **2** |
 | ramp UP 0.05 → 15.0 | 256¹ | 32 |
 | ramp DOWN 15.0 → 0.05 | 2 | **2** |
@@ -1680,7 +1681,10 @@ x0.1  ·                                    2   <- the gate
 x0.3  ████████████████████████████████    31
 x1.0  ████████████████████████████████    31
 x3.0  █████████████████████████████████   32
+x10   ·                                    2
 x30   ·                                    2
+
+      band edges: growth somewhere in [0.3, 3.0], none at 0.1 or at 10+
 ```
 
 **Growth lives inside a band of drive amplitude.** Too quiet and too loud both
