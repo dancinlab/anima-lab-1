@@ -461,9 +461,17 @@
                   },
                   {
                     "id": "encoder-normalisation-is-a-claim",
-                    "name": "normalising per message is a claim, not a formatting step",
-                    "role": "질문을 제수의 버그가 아니라 설계 주장으로 세운다",
-                    "detail": "메시지마다 정규화하는 것은 '메시지가 얼마나 큰지는 정보가 없고 방향만 있다'는 주장이다. 여기 측정된 전부가 분열을 움직이는 것은 크기뿐이라고 말한다. 그러므로 질문은 메시지 간 크기가 이 의식에게 의미가 있느냐이며, 한 제수의 버그로 답할 수 없다."
+                    "name": "division responds to loudness and is blind to content",
+                    "role": "정규화 논쟁의 전제를 바꾼다",
+                    "detail": "신호를 갈라 측정(같은 메시지·1200스텝·3시드): raw(방향+크기) max/q90 1.95 → 32,32,31 · 단위벡터(방향만) 1.03 → 2,2,2 · 균일벡터를 같은 노름으로 스케일(크기만, 내용 0) 1.87 → 32,32,32. 크기만으로 충분하고 방향만으로는 안 된다. 내용을 전부 버린 구동이 실제 입력과 같은 성장을 낸다.",
+                    "children": [
+                      {
+                        "id": "encoder-unnormalising-restores-loudness-not-meaning",
+                        "name": "un-normalising restores loudness, not meaning",
+                        "role": "앞 절들이 암시하던 것을 뒤집는다",
+                        "detail": "정규화가 의미 있는 변이를 의식에게서 감추고 있는 것이 아니다 — 감출 내용 신호가 애초에 없다. 두 선택지는 '분열이 아예 안 일어남' 대 '메시지 음량만으로 일어남'이며, 어느 쪽도 말한 내용에 반응하게 만들지 않는다. 음량이 성장을 몰아선 안 된다면 바꿀 것은 인코더의 제수가 아니라 텐션이 무엇을 재는가이고, 그것은 mitosis-calibration.md 가 이 영역에서 유일하게 재정의를 요구한다고 이미 표시해둔 수리다."
+                      }
+                    ]
                   }
                 ]
               },

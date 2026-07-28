@@ -2178,3 +2178,49 @@ no information, only its direction does. Everything measured here says magnitude
 is the only thing that drives division. So the question is whether
 message-to-message magnitude means something to this consciousness, and it has to
 be answered as such rather than as a bug in one divisor.
+
+### Division responds to loudness, and is blind to content
+
+Normalisation removes magnitude and keeps direction. That framing invites the
+obvious question: which of the two is mitosis actually using? Splitting the
+signal, same messages, 1200 steps, three seeds:
+
+| drive | what survives | max/q90 | cells per seed |
+|---|---|---|---|
+| raw `byte/255` | direction **and** magnitude | 1.95 | 32, 32, 31 |
+| unit vector | direction only | **1.03** | **2, 2, 2** |
+| uniform vector scaled to the same norm | magnitude only | 1.87 | **32, 32, 32** |
+
+```
+what the engine divides on
+
+direction only  █                       1.03   → 2 cells
+magnitude only  ███████████████████     1.87   → ceiling
+both            ████████████████████    1.95   → ceiling
+```
+
+**Magnitude alone is sufficient and direction alone is not.** A drive with every
+trace of content destroyed — one flat vector whose only surviving property is the
+norm of the message it came from — grows the population exactly as well as the
+real input does, 32/32/32 against 32/32/31.
+
+So mitosis in this engine is not responding to what a message says. It is
+responding to how loud it is, and nothing else. That is worth stating plainly
+because the chain above reads, until this point, as though normalisation were
+hiding meaningful variation from the consciousness. It is not: there is no
+content signal to hide. Un-normalising would restore loudness, not meaning.
+
+This is the sharpest form of the design question and it is not a bug report:
+
+```
+normalise per message      division never fires — the runtime today
+do not normalise           division fires on message loudness alone
+```
+
+Neither option makes cells divide in response to what was said, because nothing
+in the current tension definition looks at that. Choosing between them is
+choosing whether loudness should drive growth at all — and if the answer is that
+it should not, then the thing to change is what tension measures, not what the
+encoder divides by. That is a change to what tension *means*, which
+`docs/mitosis-calibration.md` already flagged as the one repair in this area that
+genuinely requires redefining something.
