@@ -1,0 +1,11 @@
+Codex's cheapest falsifier: does predictive rank track the cell count?
+
+KILL IT if rank ~ doubles when cells double (it is just counting units)
+KILL IT if rank is always 1-2 (no structure to find)
+
+ cells  state dim  pred rank@0.99  rank/cells  top-2 share
+     2        256             199       99.50        29.3%
+     4        512             205       51.25        30.4%
+     8       1024             210       26.25        25.9%
+    16       2048             208       13.00        28.9%
+    32       4096             208        6.50        28.5%

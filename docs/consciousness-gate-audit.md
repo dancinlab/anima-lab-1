@@ -2731,3 +2731,78 @@ has reached, and it belongs to whoever owns the architecture.
 
 Also flagged in passing, at `consciousness_engine.py:397`: `h_proj` is computed
 inside the coupling loop and never read. Dead work in the hot path.
+
+### Two frontier models on the same question, and one of their negative results does not hold
+
+`sidecar lab full` put the architecture question to two models reading the code
+fresh. Both raw answers are in `state/gate-audit-2026-07-28/`. They converged
+independently on the broadcast finding above — and then diverged usefully.
+
+**Codex proposed predictive-mode fission**: control the number of causally
+distinct, future-predictive modes and let cell count follow. Its own kill
+condition was that the selected rank must not track the representation size.
+Tested, SVD of the past→future cross-covariance, lag 5, 300 steps:
+
+| cells | state dim | predictive rank @0.99 | rank/cells |
+|---|---|---|---|
+| 2 | 256 | 199 | 99.50 |
+| 4 | 512 | 205 | 51.25 |
+| 8 | 1024 | 210 | 26.25 |
+| 16 | 2048 | 208 | 13.00 |
+| 32 | 4096 | 208 | 6.50 |
+
+The rank is flat while cells go 2 → 32 and state dimension 256 → 4096, so it
+passes the kill condition. **But the number itself is not established.** Varying
+the run length:
+
+| steps | samples | rank | rank/samples |
+|---|---|---|---|
+| 200 | 190 | 152 | 0.800 |
+| 300 | 290 | 210 | 0.724 |
+| 600 | 590 | 292 | 0.495 |
+| 1000 | 990 | 325 | 0.328 |
+
+`rank/samples` falls, so it is not purely a sample-count artefact — a noise
+process would hold near 1.0. But the rank is still climbing at 1000 steps and has
+not converged, so "≈205" is what 290 samples produce, not a property of the
+system. The flatness across cell counts survives; the value does not.
+
+**Fable proposed and then refuted competitive routing**, reporting a negative
+result against its own recommendation: give each cell the input scaled by its
+softmax responsibility, and the arm came back numerically identical. Its
+conclusion — *responsibility requires differentiation and differentiation
+requires responsibility, so soft gating cannot bootstrap either* — is the sharper
+claim, so it got checked.
+
+**My first check was a no-op and would have confirmed it by construction.** I set
+`e._compete_gain = g`, an attribute the engine does not read. The gains varied
+0.80–1.12 and were never applied, so identical output was guaranteed rather than
+measured. Applying the gain inside each cell's `forward`:
+
+| arm | mean tension | max/q90 | mean pairwise cosine | gain range |
+|---|---|---|---|---|
+| no competition | 0.015609 | 1.530 | −0.0113 | — |
+| COMPETE, t=1.0 | 0.016817 | 1.468 | −0.0123 | 0.85–1.10 |
+| COMPETE, t=0.3 | 0.018694 | 1.655 | −0.0214 | 0.65–1.27 |
+| **COMPETE, t=0.1** | **0.025756** | **1.723** | **−0.0271** | 0.01–2.50 |
+
+```
+tail headroom vs competition sharpness   (viability bar 1.30)
+
+none      ███████████████         1.530
+t=1.0     ██████████████          1.468
+t=0.3     █████████████████       1.655
+t=0.1     ███████████████████     1.723
+```
+
+**The negative result is temperature-dependent.** At t=1.0 the effect is small,
+which is consistent with what Fable reported. At t=0.1 tail headroom reaches
+1.723 and cells differentiate 2.4× more than the no-competition arm. Soft gating
+on the population's current state *can* move differentiation — it just cannot do
+it gently.
+
+Stated against the finding: at t=0.1 the gain spread is 0.01–2.50, a factor of
+250, which is most of the way to winner-take-all. Whether routing that sharp is
+structure or manipulation is exactly the judgement `CLAUDE.md`'s second rule
+governs, and it is not mine to make. What is established is that the mechanism is
+not inert, and the earlier report that it is came from a gentler setting.

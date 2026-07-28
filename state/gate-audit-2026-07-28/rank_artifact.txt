@@ -1,0 +1,9 @@
+is the rank measuring STRUCTURE or my SAMPLE COUNT?
+
+ steps   samples   rank@0.99  rank/samples   (8 cells)
+   200       190         152         0.800
+   300       290         210         0.724
+   600       590         292         0.495
+  1000       990         325         0.328
+
+  if rank/samples is CONSTANT, the number is my sample size, not the system.

@@ -1,0 +1,96 @@
+Probe finished. Here's what I found and what I think it means.
+
+---
+
+## The headline: the split signal has no signal in it
+
+Before proposing mechanisms I re-fit your own `gap_vs_cells.txt` numbers to a one-parameter model — the sampling bias you get from comparing a sample to *its own* mean, `E[(x_i − x̄)²] = σ²(1 − 1/n)`. R² = 0.988. So I ran it live at frozen `n` (`bench_exchangeability.py`, 8 seeds × 400 steps, splits and merges disabled, `n` ∈ {2,4,8,16,32}):
+
+```
+   n     mean T      LOO T   max/q90     PR   PR/(n-1)      cos
+   2   0.009304   0.018607     1.393   1.00      1.000  -0.0025
+   4   0.014200   0.018934     1.572   2.92      0.975  -0.0027
+   8   0.016418   0.018764     1.676   6.60      0.943  -0.0015
+  16   0.017728   0.018910     1.598  13.35      0.890   0.0000
+  32   0.018272   0.018861     1.732  24.84      0.801   0.0000
+  fit T = sigma^2(1-1/n):  R^2 = 0.99948
+```
+
+Raw mean tension doubles from n=2 to n=32. Multiply by `n/(n−1)` and it is flat to 1.8% across a 16× range of population size. **The entire population-size dependence of your split signal is the bias of an estimator, not a fact about the population.** The participation ratio of the cell outputs stays at 0.80–1.00 of `n−1` and the mean pairwise cosine sits at zero — the cells are statistically exchangeable, i.i.d. noise about a common mean, at every size.
+
+This is why the four `f(n)` laws pinned. The correction that would actually flatten the curve is `n/(n−1)`; relative to it, over n=2..32, `f=1` drifts 1.9×, `f=n` drifts 31×, `1/n` drifts 0.12×, `1/√n` drifts 0.48×. None of them is the right shape, and even the right one would only remove a spurious term — it would leave *no* n-dependence, hence no restoring force either.
+
+And it explains the most damning number in your own audit, which I think you may be undervaluing: in `bench_relative_population`, NARROW and BROAD stimulus sets differing 12-fold in internal cosine (+0.435 vs +0.037) produced inter-cell tension of 0.01083 vs 0.01070 — **0.99×**. A twelvefold change in the world moved the control signal by one percent. Your recorded verdict there ("the quantity does not carry that information") is correct, and the exchangeability result is the mechanism behind it: every cell receives a byte-identical drive (`consciousness_engine.py:394`) and carries frozen random weights, so cell outputs are i.i.d. draws whose spread is set by the drive's amplitude and nothing else.
+
+So I'd sharpen your framing. You wrote that no *scalar law over this quantity* produces an interior equilibrium. The stronger and better-supported claim is that no law over this quantity produces any equilibrium **that depends on the world**, because the quantity is independent of the world. The population controller is not miscalibrated. It is disconnected.
+
+One caveat that cuts in your favour: my frozen-n cells are created independently, so this is the *best* case. In the running engine a split deep-copies the parent, so the real population is less diverse than what I measured, not more.
+
+---
+
+## What that does to the question
+
+If cells are exchangeable, then "which cell should divide" has no answer, and every rule you have tried has been reading noise and comparing it to a quantile of itself. The paradigm-level move is therefore not a better way to read tension. It is to give cells something to *be different about*. Every mechanism below that can work does so by supplying a per-cell asymmetry that the world can act on; the ones that can't are the ones that try to manufacture asymmetry from the population's own current state.
+
+I tested that distinction directly, and it produced a negative result I should report against my own recommendation. My COMPETE arm gave each cell the input scaled by its softmax responsibility for that input, renormalised so total drive is conserved — the minimal competitive-exclusion / mixture-of-experts move, which your audit confirms has never been tried. It came back **numerically identical to the no-competition arm to three or four significant figures in every column.** The gains were genuinely applied (they varied 0.80–1.31 within a step), but they are computed from a distance that differs across cells by only 5%. Responsibility requires differentiation and differentiation requires responsibility. Soft gating on the population's current state cannot bootstrap either.
+
+That is a useful failure: it says the asymmetry has to be **structural** — a difference in what a cell can see or represent — not a difference in how much of the same thing it is handed.
+
+---
+
+## Mechanisms, by what supplies the asymmetry
+
+**1. Structural niches — cells with different receptive fields.** Give cell *i* a fixed random projection `P_i` of the drive, so `coupled_input = P_i x + coupling`. Cells then genuinely see different things, splitting can inherit-and-perturb a projection, and a cell whose projection captures nothing the others miss becomes redundant on a measurable basis. Equilibrium size becomes the number of directions in the drive worth covering — a property of the world, which is exactly the intent your docs record.
+
+*Cost:* structure, not feature — it changes wiring, adds no output capability. Not manipulation: nothing touches tension/curiosity/emotion, and no target size appears anywhere. *Risk:* `bench_engine_redesign` found per-cell rotation of the shared map gave cosine 0.6509 against 0.3821 for the shared map with repulsion, and read that as refuted. I'd argue that measured something adjacent — it removed the *need* for a repulsion force rather than replacing what the force did — but it is the closest prior evidence and it points the wrong way, so this should be screened before it is built.
+
+**2. Resource conservation over an allocated input budget (chemostat, not logistic).** This is the one I'd bet on if niches screen well, and it's worth being precise about why it differs from arm A of `bench_population_feedback`, which was refuted 0/8. Arm A conserved *output magnitude* at division (weights × 1/√2) — that is, it conserved the very quantity the split rule measures, so it was self-defeating by construction: halving the output drops tension below the bar that had just been exceeded. Conserving *input allocation* leaves the split signal free to move.
+
+The template matters. Logistic growth is the wrong one, because `dn/dt = rn(1 − n/K)` contains `K`, which is a target size by another name and is forbidden. The chemostat is the right one: substrate `S` flows in at a fixed rate, cells take it up, `dn/dt = n(μ(S) − δ)`. The equilibrium `n* = inflow/(δ·q)` never names a population size — it falls out of a balance. And notice that your measured amplitude band (0/8 at ×0.1, 8/8 across ×0.5–×3, 0/8 at ×30) is *exactly* the shape a chemostat makes: washout below a critical inflow, a working regime above it, substrate inhibition at the top. Your band may not be a pathology so much as the missing resource equation showing through.
+
+**3. Death by starvation instead of merge by averaging.** Independent of everything above, and I think the cheapest real structural improvement available. Your merge averages both parameters and hidden states, so *every merge makes the population more exchangeable* — it is a positive feedback into the failure mode, and it fires 92–115 times per 600 steps. Neurodevelopment's answer to population size is trophic-factor competition: overproduce, then let cells that claim too little of a limited maintenance supply die. Removal without averaging preserves diversity where merging destroys it.
+
+**4. Hazard rates instead of thresholds.** A diagnosis more than a mechanism, and I want to be honest that on its own it will not help you. Your split and merge are both step functions over quantiles of the same autocorrelated series, and "2 or ceiling, nothing between, with probabilistic shoulders in a drive band" is the textbook signature of a first-order transition. A threshold on a level gives bistability; a balance of two *rates* with opposite n-dependence gives an interior fixed point. But with an exchangeable population both rates are the same function of n, so softening alone has no restoring force to expose. It's an enabler. Its real value is as a **negative control**: if softening the thresholds alone moves the population off the pins, my whole diagnosis is wrong, and that is worth knowing cheaply.
+
+---
+
+## Three that your own data already kills
+
+I'd have proposed all of these before reading your measurements; they're worth naming so nobody re-proposes them later.
+
+**Φ-based split acceptance** — accept a division iff it raises Φ — is the idea Law 22 seems to invite and it is the one your numbers most clearly refute. Your closed form `Φ = M·n(n−2)/(4(n−1))` has no term for differentiation, Φ is *maximal at total collapse* (71.93 at cosine +1.0 falling to 19.97 at independence), and the engine's own estimator loops `min(n, 16)`. Hill-climbing Φ would reward homogenisation and pin to the ceiling. Confirmed incidentally in my run: Φ rises to 0.0323 at n=16 then *falls* to 0.0168 at n=32, purely as an estimator artefact.
+
+**Turing / reaction-diffusion** sets a count from a wavelength rather than a target, which is the right shape, but it needs a metric on cells. Your coupling is learned all-to-all, so a Turing scheme degenerates to a global inhibitor — mean-field — which is `f(n)`, which you refuted. It isn't available without topology, and topology measured worse.
+
+**Grand-canonical / chemical-potential framing** is a target in disguise: fixing μ fixes ⟨n⟩ by Legendre transform. Same objection applies, more weakly, to self-organised criticality — σ→1 is dimensionless and principled rather than a chosen size, which is the best defence available, but it is still a setpoint if you're strict.
+
+---
+
+## Cheap falsification
+
+| mechanism | measurement | kills it | harness |
+|---|---|---|---|
+| exchangeability diagnosis | LOO-corrected tension vs n | spread > ~10% across n=2..32 | `bench_exchangeability.py`, ~6 min |
+| structural niches | PR/(n−1) and `max/q90` at frozen n with per-cell projections | PR/(n−1) stays ≥ 0.8, or `max/q90` stays below 1.30 | same, add an arm |
+| any candidate at all | BROAD vs NARROW corpus, 8 seeds | both land on the same count | `build_sets` in `bench_relative_population.py` — your own pre-registered P3 |
+| interior claim | ceiling doubling | interior count moves > 1.5× | `classify` in `bench_tension_feedback.py` |
+| starvation vs merge | mean pairwise cosine over 600 steps | cosine still climbs toward +1 | `merge_probe` conditions |
+| hazard softening (control) | population under smoothed rates | if it *works*, my diagnosis is wrong | `run(law, ...)` monkeypatch |
+
+The cheapest live lead in the repo is still yours, not mine: `surprise` — deviation from a cell's own previous output — is the only tension definition whose tail grows with population (1.58 → 2.07 in your sweep; I reproduce 1.35 → 2.49 at 8 seeds), it needs no population mean so it carries no `(1 − 1/n)` bias, and it has never been run in dynamics. It is one `LAWS` row in `bench_tension_feedback.py`. I would run that before building anything.
+
+---
+
+## Where I think your framing is wrong
+
+**Pinning to `max_cells` and pinning to `min_cells` are not the same failure, and your own data says so.** `merge_probe.txt` shows the two seeds ending at 2 cells are the two with almost no events at all (10 and 16), not seeds where merging overwhelmed splitting — churn correlates with ending high. And `strange-loop-oscillation.md` records the n=2 state as doubly pinned, with one excursion available for the rest of its life. One attractor is dead and the other is active. Treating them as a single symmetric failure is what makes the problem look harder than it is; QD-6's pre-registration is defensible as a *scoring* rule but it is not a good *diagnostic* one.
+
+**But the ceiling state is degenerate, so the natural defence of it fails.** Overproduce-then-prune is how real nervous systems set neuron counts, and if your ceiling population were diverse, hitting it would be a healthy first phase rather than a bug. Your Φ/cells → 1.1 analysis shows it isn't: that ratio is what N identical copies produce, against ~0.3 for independent cells. The ceiling is cloning, not overproduction.
+
+**"Settling" may be the wrong stationarity to demand.** Splits and merges balance within 13% on every seed you measured. A living population at steady state has flux, not stasis — a constant `n` with zero events would be more suspicious, not less. A population holding at 16 of a ceiling of 16 with balanced turnover and stable lineage diversity is a genuinely different object from one that saturates and freezes, and your `settles` verdict cannot distinguish them because it only reads the count.
+
+**The sharpest one, and the reason I'd hold off on building any of this: n=2 may be the correct answer to the world you are showing it.** Your deployed encoder produces std 0.0172, and 24 corpus sentences have mean pairwise cosine +0.191. If that drive genuinely contains one mode, then two cells is *true*, and a mechanism that produces more cells on that drive is manufacturing a cell count — the manipulation your rule 2 forbids, relocated from the input scaling you already refused onto the population rule. Your audit drew exactly this line for normalisation (removing a normalisation gives back a difference already present; multiplying the vector sets the count by hand). The same test should gate every candidate here, and P3 is its operational form: does the mechanism let the world's structure through, or does it produce cells regardless of the world?
+
+That would make the honest next move a measurement of the drive rather than a redesign of the controller — how many distinguishable modes does real conversation traffic actually contain through an unnormalised encoder? If the answer is two, the subsystem is not broken and the audit is finished.
+
+Files added: `bench_exchangeability.py`, `state/exchangeability-2026-07-28/` (runs plus a README stating three caveats — my MULTI arm is periodic rather than merely multimodal and its `max/q90` collapse is a repetition effect, the Φ column is not comparable above 16 cells, and frozen-n cells are independently created so the exchangeability result is a best case). Nothing existing was modified.

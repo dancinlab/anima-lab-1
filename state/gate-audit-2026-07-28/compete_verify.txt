@@ -1,0 +1,5 @@
+Fable claims soft competitive routing changes NOTHING. verifying at 8 cells.
+
+arm               mean tension   max/q90  mean pair cos         gain range
+no competition        0.015609     1.530        -0.0113                n/a
+COMPETE               0.015609     1.530        -0.0113          0.80-1.12
