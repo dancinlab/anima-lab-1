@@ -2266,3 +2266,51 @@ read as if it did:
 - "Magnitude alone is sufficient" still holds — the flat-vector arm reached the
   ceiling on all three seeds. "Direction alone is insufficient" is weakened to
   *insufficient at unit scale, and below the degeneracy guard at message scale*.
+
+### Retraction: the split-signal experiment separated two scales, not two halves of the signal
+
+The two sections above built to "magnitude is sufficient, direction is not", then
+softened it to "content moves tension less than the noise floor". Both readings
+came from three seeds. At eight:
+
+| condition | cells per seed | reached ceiling |
+|---|---|---|
+| content varies, magnitude **fixed** at norm 3.63 | 2, 2, 31, 2, 32, 31, 32, 32 | **5/8** |
+| content varies, magnitude free | 32, 32, 2, 32, 31, 32, 32, 30 | 7/8 |
+
+```
+reached ceiling, 8 seeds
+
+magnitude fixed  ██████████████████         5/8
+magnitude free   █████████████████████████  7/8
+```
+
+5 of 8 against 7 of 8 is inside binomial noise. **Content-only variation grows the
+population most of the time.** The earlier 2/2/31 and 32/32/2 were both noise, one
+on each side, and I read the pair as a separation.
+
+What actually differs between the arms that looked decisive:
+
+```
+unit vector          norm 1.00    content only   0 of 3 grew
+"magnitude fixed"    norm 3.63    content only   5 of 8 grew
+```
+
+Those are the same construction — unit vectors, rescaled. The only difference is
+the constant they were multiplied by. So the experiment separated **absolute
+input scale**, not magnitude from direction, and the framing built on it does not
+stand.
+
+This collapses back into the finding that was already established and needed no
+new mechanism: **growth lives inside a band of drive amplitude.** Normalisation
+matters because it moves the input out of that band, not because it removes a
+signal the engine was using. Unit-normalising lands at 1.00 and below the band;
+rescaling to the messages' own average norm lands inside it. Nothing here
+required magnitude and direction to play different roles, and the measurement
+does not support that they do.
+
+Retracted: "division responds to loudness and is blind to content", and its
+softened form "content moves tension less than the engine's own noise floor". The
+0.065 versus 0.595 tension-spread numbers are real, but a spread below the
+degeneracy guard evidently does not prevent growth 5 times in 8, so the spread
+does not carry the conclusion drawn from it.
