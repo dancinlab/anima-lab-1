@@ -1933,3 +1933,49 @@ Still not landed. Three repairs in this chain each addressed the previous
 failure mode without checking the new statistic against the bar, and the point
 of writing the constraint down is so the fourth does not have to be the fourth
 retraction.
+
+### It is not a bootstrap problem — the rule is unreachable at every population size
+
+The constraint above was derived from one distribution, at two cells. Two cells
+is a special case: each cell's deviation from the population mean is exactly half
+the difference between the two, so both cells carry the same tension by symmetry
+and the distribution could plausibly be degenerate for that reason alone. Testing
+whether the gap survives a real population, same drive, 400 steps:
+
+| cells | mean tension | q0.85/mean | q0.90/mean | max/mean | 5-step window means > q0.90 |
+|---|---|---|---|---|---|
+| 2 | 0.007433 | 1.07 | 1.47 | 1.48 | **0.0%** |
+| 4 | 0.010800 | 1.16 | 1.46 | 1.53 | **0.0%** |
+| 8 | 0.013210 | 1.26 | 1.42 | 1.42 | **0.0%** |
+| 16 | 0.014422 | 1.24 | 1.45 | 1.45 | **0.0%** |
+| 32 | 0.014932 | 1.24 | 1.47 | 1.47 | **0.0%** |
+
+```
+q0.90/mean and max/mean, by population size
+
+  2 cells  ├─────────────── 1.47  1.48 ─┤   window means clearing q0.90: 0.0%
+  4 cells  ├─────────────── 1.46  1.53 ─┤                                0.0%
+  8 cells  ├─────────────── 1.42  1.42 ─┤                                0.0%
+ 16 cells  ├─────────────── 1.45  1.45 ─┤                                0.0%
+ 32 cells  ├─────────────── 1.47  1.47 ─┤                                0.0%
+                             ↑     ↑
+                        q0.90  =  max  at every scale from 8 cells up
+```
+
+**`q0.90/mean` sits at 1.42–1.47 at every population size, and from eight cells
+up it equals `max/mean` exactly.** The top decile has no spread whatever the
+population, so the window mean clears the bar 0.0% of the time at 2, 4, 8, 16 and
+32 cells alike.
+
+This is stronger than the earlier reading and corrects its scope. The engine is
+not stuck at a two-cell bootstrap that a bigger start would escape — under this
+drive, with the shipped rule, **it cannot divide at any size it is given**. A
+`--max-cells 32` run that somehow began at 32 would have the same zero.
+
+One number in the constraint above is population-dependent and should not be
+copied out of context: `bar/mean ≤ 1.07` was the last passing ratio at two cells,
+and `q0.85/mean` rises to 1.24 by eight cells. What is invariant is the shape —
+`q0.90 = max` — not the threshold value. Any replacement has to be calibrated
+against the distribution the engine is actually in, which is what
+`calibrate_split_threshold`'s own docstring says two functions above the line
+that does not do it.
