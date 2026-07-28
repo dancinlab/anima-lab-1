@@ -1872,3 +1872,64 @@ so itself two functions up.
 `max/mean`. If they are equal, the top decile has no spread and no average over
 a window can clear the bar, whatever the window length. Both sites now carry
 this at the line.
+
+### The diagnostic predicts where the cliff is
+
+`docs/mitosis-calibration.md` already records this cliff for `mitosis.py` and is
+honest about it — quantile 0.75 reaches 31 cells, 0.80 and above stay at 2, and
+the doc says in its own words that this *"moved the failure rather than fixing
+it"*. What was not established there is **why the cliff sits where it does**. The
+reason offered was that tension has no dependence on population size, which
+explains saturation at the ceiling but not the floor.
+
+If the `q90/mean` vs `max/mean` diagnostic is a real mechanism rather than a
+restatement, it has to predict the cliff's location. Sweeping the bar across
+quantiles of one fixed tension distribution, `consciousness_engine` at 2 cells,
+400 steps of conversation-byte input:
+
+| quantile | bar | bar/mean | single steps > bar | 5-step window means > bar |
+|---|---|---|---|---|
+| 0.50 | 0.007514 | 1.01 | 49.8% | 61.3% |
+| 0.60 | 0.007532 | 1.01 | 39.8% | 49.4% |
+| 0.65 | 0.007710 | 1.04 | 34.8% | 45.3% |
+| 0.70 | 0.007717 | 1.04 | 29.8% | 35.9% |
+| 0.75 | 0.007779 | 1.05 | 24.8% | 24.6% |
+| 0.80 | 0.007954 | 1.07 | 19.8% | 24.6% |
+| 0.85 | 0.007962 | 1.07 | 14.8% | 24.6% |
+| **0.90** | **0.010955** | **1.47** | 9.8% | **0.0%** |
+
+```
+the bar's own jump, and the window mean's response
+
+bar/mean  1.01 1.01 1.04 1.04 1.05 1.07 1.07      1.47
+          ────────────────────────────────  gap  ─────
+q          .50  .60  .65  .70  .75  .80  .85       .90
+
+window
+mean>bar  61%  49%  45%  36%  25%  25%  25%        0%
+          ████ ███  ███  ██   ██   ██   ██          ·
+```
+
+**The bar jumps 38% between the 85th and 90th percentile and the pass rate goes
+to exactly zero.** The distribution is ~85% of its mass packed within 7% of the
+mean, then a gap, then a sparse tail near 0.011. A window mean tracks the packed
+part; the moment the bar crosses the gap, nothing can reach it.
+
+That is a prediction, not a description: the cliff is where the bar leaves the
+cluster, and it is at a different quantile in each engine because the gap is at a
+different quantile — 0.75→0.80 for `mitosis.py` under its rotation drive, 0.85→0.90
+here. A fixed quantile cannot be the right calibration target for a window-mean
+rule, because the quantile does not know where the gap is.
+
+The constraint that falls out, for whoever decides what replaces the mean:
+
+```
+for a window-mean rule, the bar must sit BELOW the distribution's gap
+    measured here:  bar/mean <= 1.07  passes, 1.47 never does
+    a fixed quantile does not locate the gap; a multiple of the mean does
+```
+
+Still not landed. Three repairs in this chain each addressed the previous
+failure mode without checking the new statistic against the bar, and the point
+of writing the constraint down is so the fourth does not have to be the fourth
+retraction.
