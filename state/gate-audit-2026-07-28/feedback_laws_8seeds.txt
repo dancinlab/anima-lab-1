@@ -1,0 +1,27 @@
+population feedback laws, 8 seeds x 600 steps, ceilings [8, 16]
+
+law                                           @8               @16   verdict
+--------------------------------------------------------------------------------
+f(n) = 1        (ships)         2/8int ris1 [2, 2, 3, 7, 8, 8, 8, 8]  2/8int ris1 [2, 2, 3, 13, 16, 16, 16, 16]   pins
+f(n) = n        (per-capita)    0/8int ris2 [2, 2, 2, 8, 8, 8, 8, 8]  0/8int ris2 [2, 2, 2, 2, 16, 16, 16, 16]   pins
+f(n) = 1/n      (relief)        0/8int ris3 [2, 2, 2, 8, 8, 8, 8, 8]  2/8int ris2 [2, 2, 3, 15, 16, 16, 16, 16]   pins
+f(n) = 1/sqrt(n) (weak relief)  1/8int ris3 [2, 7, 8, 8, 8, 8, 8, 8]  4/8int ris2 [2, 4, 12, 14, 15, 16, 16, 16]   pins
+
+  'int' = seeds landing strictly between 2 and the ceiling · 'ris' = seeds
+  still CLIMBING in the last tenth of the run · then every final size, sorted.
+
+  Two things the smoke run forced into this table. An interior count on a
+  truncated run cannot be told from a population still climbing, so `ris` is
+  reported and a majority of climbers blocks `settles` -- the shipped law read
+  2/2 interior at 400 steps only because it had not reached 32 YET. And the mean
+  is not printed at all: `f(n)=n` came out 0/2 interior with mean 17.0, which is
+  finals of 2 and 32. A mean over a bimodal outcome names a population that
+  never occurred.
+
+  The ceiling-doubling clause is the one that bites: a law reaching 30 of 32 and
+  60 of 64 is pinned and hiding it behind an interior count, which is why the
+  drift between ceilings must stay within 1.5x for `settles`.
+
+  Nothing is landed. This measures what a feedback law WOULD do; whether the
+  engine should have one is a design decision, and QD-6 already pre-registered
+  that pinning to max_cells is the same failure as pinning to min_cells.

@@ -2508,3 +2508,58 @@ different experiment, and until then this row says nothing either way.
 Nothing is landed. Changing what tension means changes what the engine is, and the
 two `dead` rows are the useful part: they close two designs that look reasonable
 before anyone spends a session on them.
+
+### And a population-dependent tension does not fix the cliff either
+
+The six-definition table could not see what `per-capita` is for, and said so:
+multiplying by n is a constant factor within a step. What it is for is feedback —
+splitting relieves tension, so a grown population stops dividing. That needs the
+dynamics, not the distribution. `bench_tension_feedback.py`, 8 seeds, 600 steps,
+ceilings 8 and 16 so the doubling clause holds:
+
+| f(n) | @8 finals | @16 finals | verdict |
+|---|---|---|---|
+| `1` — ships | 2, 2, 3, 7, 8, 8, 8, 8 | 2, 2, 3, 13, 16, 16, 16, 16 | pins |
+| `n` — per-capita | 2, 2, 2, 8, 8, 8, 8, 8 | 2, 2, 2, 2, 16, 16, 16, 16 | pins |
+| `1/n` — relief | 2, 2, 2, 8, 8, 8, 8, 8 | 2, 2, 3, 15, 16, 16, 16, 16 | pins |
+| `1/√n` — weak relief | 2, 7, 8, 8, 8, 8, 8, 8 | 2, 4, 12, 14, 15, 16, 16, 16 | pins |
+
+```
+where seeds land, ceiling 16
+
+floor (2)   ████████                    f=1
+interior    ██                          f=1
+ceiling     ████████████████            f=1
+
+floor (2)   ████████████████            f=n
+ceiling     ████████████████            f=n     nothing between
+
+floor (2)   ████                        f=1/sqrt(n)
+interior    ████████                    f=1/sqrt(n)   the only law with a middle
+ceiling     ████████████                f=1/sqrt(n)
+```
+
+**All four pin.** Every law puts most seeds on the floor or the ceiling, which is
+the cliff `docs/mitosis-calibration.md` already recorded — and none of the three
+feedback laws removes it. The one that comes closest, `1/√n`, still fails the
+doubling clause: 4 of 8 interior at ceiling 16 against 1 of 8 at ceiling 8, and
+its interior values move with the ceiling (7 → 12, 14, 15).
+
+That last point is the finding. **The seeds that do land inside are not landing at
+a size — they are landing at a fraction of whatever ceiling they were given.**
+`f=1` puts one seed at 7 of 8 and the same seed at 13 of 16; `1/n` at 8 of 8 and
+15 of 16. A population that tracks `max_cells` has not chosen a size, and reading
+its interior count as "settles" is the trap the doubling clause exists to catch.
+
+So the population-size dependence `mitosis-calibration.md` asked for is necessary
+and not sufficient: adding it changes which seeds pin where, and does not produce
+an interior equilibrium at either ceiling.
+
+Two limits on this arm, both stated rather than found later:
+
+- Ceilings 8 and 16, not 32 and 64. The full-scale run is roughly three hours and
+  would not have finished; the doubling clause is preserved at the smaller pair.
+- `ris` is 1–3 of 8 on every row, so some seeds were still moving at 600 steps.
+  That weakens `pins` for those seeds specifically — but a seed sitting exactly on
+  the ceiling cannot rise further, and the ceiling counts are what the verdict
+  rests on.

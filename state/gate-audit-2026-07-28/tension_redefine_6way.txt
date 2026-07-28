@@ -1,0 +1,22 @@
+six tension definitions, one drive, 3 seeds x 400 steps
+
+definition                        max/q90 @2  max/q90 @32  verdict
+------------------------------------------------------------------------
+current  (dev from mean)                1.35         1.30  viable
+absolute (magnitude)                    1.37         1.32  viable
+standardised (dev / mean dev)           1.00         1.08  dead
+nearest neighbour                       1.16         1.14  dead
+per-capita (dev x n)                    1.35         1.30  viable
+surprise (dev from own past)            1.58         2.07  viable
+
+  bar = 1.3 from the measured separation, not from preference: 1.26 was the
+  loudest drive that never grew and 1.48 the quietest that did.
+
+  A `dead` row cannot fire whatever the window length or the quantile, because
+  its top decile has no spread for an average to reach. A `fragile` row would
+  change behaviour with population size, which is a property to choose
+  deliberately rather than discover in production.
+
+  Nothing here is landed. Changing what tension MEANS changes what the engine
+  is, and docs/mitosis-calibration.md flags it as the one repair in this area
+  that genuinely requires redefining something.
