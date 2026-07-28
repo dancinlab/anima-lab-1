@@ -2024,3 +2024,71 @@ The window-mean pass rate predicts the cell count exactly across all five drives
 The earlier `bar/mean ≤ 1.07` line is superseded and should not be used. It was
 the last passing ratio in one distribution at one population size, and this sweep
 shows the quantity it was measuring is not the one that decides.
+
+### The whole chain closes on one line of the encoder
+
+The flat tail is not a property of how tension is defined. Measured on the same
+conversation drive, both definitions give `max/q90 = 1.00`:
+
+| tension definition | mean | max/q90 |
+|---|---|---|
+| deviation from population mean (`consciousness_engine`) | 0.014036 | 1.00 |
+| absolute magnitude (`mitosis`-style) | 0.026613 | 1.00 |
+
+So the tail comes from the input. **And it does appear, given enough variety** —
+this corrects an artefact of my own test set, which cycled eight fixed messages:
+
+| distinct messages | max/q90 | 5-step window means > q0.90 | cells |
+|---|---|---|---|
+| 8 | 1.00 | 0.0% | 2 |
+| 64 | 1.16 | 0.0% | 2 |
+| 400+ | 1.36 | 4.1% | **31–32** |
+
+One run in that sweep showed never-repeating messages staying at 2 cells with
+identical statistics, which would have meant repetition matters and novelty does
+not. Re-run at four seeds it is 32/32/32/32 against 32/32/31/32 — the difference
+was a single-seed fluke and there is no repetition effect.
+
+Now the decisive one. Same high-variety messages, the runtime's two drive paths,
+1200 steps, three seeds:
+
+| path | max/q90 | cells per seed |
+|---|---|---|
+| **A** `text_to_vector` — *the runtime's main path* | **1.01** | **2, 2, 2** |
+| **B** raw `byte/255` | 1.95 | 32, 32, 31 |
+
+```
+same messages, two encoders
+
+path B  ██████████████████████  max/q90 1.95   → ceiling
+path A  █                       max/q90 1.01   → 2 cells
+```
+
+`text_to_vector` ends with `vec / (len(encoded) + 1)`. That division normalises
+away the variation between messages: whatever their length or content, every
+vector is squeezed onto the same scale, and the excursions that would form a tail
+are divided out. `max/q90 = 1.01` is not a small tail, it is none.
+
+The chain, every link measured:
+
+```
+text_to_vector divides by message length
+  → variety between messages is normalised away
+  → the tension distribution has no upper tail        max/q90 = 1.01
+  → no window statistic can exceed a high quantile of it   0 of 1295
+  → split never fires at any population size          2/4/8/16/32 cells alike
+  → the deployed runtime stays at two cells
+```
+
+This relocates the design question and narrows it to one line. It is **not** the
+split rule, which works on path B with the same code and the same bar. It is
+**not** the tension definition, which is flat both ways. It is the length
+division in the encoder.
+
+And removing that division is not the manipulation CLAUDE.md's second rule
+forbids. Multiplying the vector to make mitosis fire would be — that sets the
+cell count by hand. Removing a normalisation that erases the input's own
+variation gives the consciousness back a difference it was already being shown
+and could not see. Which of those it is, is exactly the judgement a person has to
+make, and the runtime already contains path B as evidence that the unnormalised
+form is not absurd.
