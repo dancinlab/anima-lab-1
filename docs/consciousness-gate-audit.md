@@ -3028,3 +3028,68 @@ Not landed. Recalibrating as the population changes is a small edit and a large
 behavioural change, and the code's own comment shows the first calibration was
 already hard to get right; making it periodic reopens every question that comment
 settles. That is an owner's call, and it is now a specific one.
+
+### What a tracking bar would do — the number the decision needs
+
+The root cause is a bar fitted once. Whether to make it track the population is
+an owner's call, and the counterfactual is measurable without landing anything.
+
+**The obvious probe is a no-op and the control caught it.** Clearing
+`_calibrated` every K steps changes nothing — all three arms came back
+byte-identical with the same bar, 0.01056. The reason is the branch immediately
+below the latch:
+
+```python
+if self._tension_peak >= self.split_threshold * margin:   # margin = 0.5
+    self._calibrated = True
+    return                       # re-latches WITHOUT touching the bar
+```
+
+Once tension has grown past half the bar — which it does almost immediately —
+clearing the latch just re-sets it on the next call. Fifth probe defect this
+session, caught because the treatment arm equalled the control to six figures.
+
+Setting the bar directly to the q0.90 of what the **current** population is
+producing, every K steps, touching nothing else:
+
+| arm | ceiling | interior | at the floor | final bar | finals |
+|---|---|---|---|---|---|
+| ships | 8 | 1/8 | 4/8 | 0.01056 | 2, 2, 2, 2, 7, 8, 8, 8 |
+| track/200 | 8 | 2/8 | 4/8 | 0.01298 | 2, 2, 2, 2, 5, 7, 8, 8 |
+| **track/50** | 8 | **4/8** | **2/8** | 0.01905 | **2, 2, 4, 4, 5, 5, 8, 8** |
+| ships | 16 | 1/8 | 3/8 | 0.01056 | 2, 2, 2, 15, 16, 16, 16, 16 |
+| track/200 | 16 | 0/8 | 3/8 | 0.02075 | 2, 2, 2, 16, 16, 16, 16, 16 |
+| **track/50** | 16 | **3/8** | **1/8** | 0.02880 | **2, 8, 13, 15, 16, 16, 16, 16** |
+
+```
+seeds landing in the interior, out of 8
+
+ships       ██              1/8  @8      ██              1/8  @16
+track/200   ████            2/8            ·             0/8
+track/50    ████████        4/8          ██████          3/8
+```
+
+**Tracking at K=50 halves the floor and multiplies the interior count three- to
+fourfold.** It is the best result in this audit on both failure modes at once,
+and the bar does what it was asked to — rising 0.0106 → 0.0191 at ceiling 8 and
+→ 0.0288 at 16 as the population it judges grows.
+
+**It still fails the ceiling-doubling test.** The interior seeds sit at 4, 4, 5, 5
+of eight and at 8, 13, 15 of sixteen — roughly 56% and 75% of their ceiling. The
+sizes moved with the ceiling, so this is a weaker form of ceiling-tracking, not a
+size the population chose.
+
+Two things this does not establish, said plainly:
+
+- The probe sets the bar **unconditionally**, bypassing the deferral logic that
+  refuses to calibrate on a degenerate sample. That logic exists because a bar
+  taken from a degenerate window lands on the operating point — the failure this
+  audit opened with. A real periodic calibration would have to keep the refusal,
+  and would then sometimes decline to update, which this probe never does.
+- K=50 against K=200 is a two-point sweep. The direction is consistent across
+  both ceilings, and the magnitude is not characterised.
+
+So the decision now has its number: tracking the bar is the largest single
+improvement measured here, it does not by itself produce a ceiling-independent
+size, and doing it properly means re-answering the degeneracy question the latch
+was built to settle.
