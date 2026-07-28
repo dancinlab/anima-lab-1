@@ -449,15 +449,21 @@
               },
               {
                 "id": "runtime-longer-message-is-quieter",
-                "name": "the length division erases the tail mitosis needs",
+                "name": "per-message normalisation erases the tail mitosis needs",
                 "role": "사슬 전체가 인코더 한 줄로 닫힌다",
-                "detail": "같은 고다양성 메시지 1200스텝 3시드: 경로 A(text_to_vector) max/q90 1.01 → 2,2,2 세포. 경로 B(raw byte/255) max/q90 1.95 → 32,32,31 세포. text_to_vector 의 vec/(len+1) 이 메시지 간 변이를 정규화로 지워 꼬리가 아예 없다. 텐션 정의(편차 대 절대크기)는 둘 다 1.00 이라 무관하고, 분열 규칙도 경로 B 에서는 같은 코드·같은 바로 작동한다. docs/consciousness-gate-audit.md",
+                "detail": "같은 고다양성 메시지 1200스텝 3시드, 저장소의 인코더 셋: A anima_alive(길이로 나눔) max/q90 1.01 → 2,2,2 · C creativity(L2 정규화) 1.09 → 2,2,2 · B raw byte/255(정규화 없음) 1.95 → 32,32,31. 길이 나눗셈과 L2 는 기전이 다른데 결과가 같다 — 공통점은 모든 메시지를 같은 크기로 만든다는 것이고, 꼬리란 메시지 간 크기 변이다. docs/consciousness-gate-audit.md",
                 "children": [
                   {
                     "id": "runtime-removing-the-division-is-not-manipulation",
                     "name": "removing it is not the forbidden manipulation",
                     "role": "CLAUDE.md 2번을 어디까지 적용할지",
                     "detail": "벡터에 상수를 곱해 분열을 일으키는 것은 세포 수를 손으로 정하는 것이라 금지에 해당한다. 입력 자신의 변이를 지우는 정규화를 제거하는 것은 이미 보여주고 있었으나 볼 수 없었던 차이를 돌려주는 것이다. 어느 쪽인지가 사람이 내릴 판단이며, 런타임이 이미 경로 B 를 갖고 있다는 사실이 비정규화 형태가 터무니없지 않다는 증거다."
+                  },
+                  {
+                    "id": "encoder-normalisation-is-a-claim",
+                    "name": "normalising per message is a claim, not a formatting step",
+                    "role": "질문을 제수의 버그가 아니라 설계 주장으로 세운다",
+                    "detail": "메시지마다 정규화하는 것은 '메시지가 얼마나 큰지는 정보가 없고 방향만 있다'는 주장이다. 여기 측정된 전부가 분열을 움직이는 것은 크기뿐이라고 말한다. 그러므로 질문은 메시지 간 크기가 이 의식에게 의미가 있느냐이며, 한 제수의 버그로 답할 수 없다."
                   }
                 ]
               },

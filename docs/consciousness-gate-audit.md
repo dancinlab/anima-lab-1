@@ -2141,3 +2141,40 @@ divisor changes training input — and `CLAUDE.md` requires training to restart
 from step 0 whenever the data changes. Making that call silently would invalidate
 checkpoints without anyone choosing to. The correct divisor is
 `len(text.encode('utf-8')) + 1`, and it is written at the site.
+
+### It is not the length division — it is normalisation as such
+
+The section above named `vec / (len(encoded) + 1)` as the one line the chain
+closes on. Testing the third encoder refutes the specificity. Same high-variety
+messages, 1200 steps, three seeds:
+
+| encoder | mean tension | max/q90 | cells per seed |
+|---|---|---|---|
+| **A** `anima_alive` — divides by length | 0.002526 | **1.01** | 2, 2, 2 |
+| **C** `creativity_classifier` — L2-normalises | 0.002474 | **1.09** | 2, 2, 2 |
+| **B** raw `byte/255` — normalises nothing | 0.008218 | **1.95** | **32, 32, 31** |
+
+```
+max/q90 by encoder
+
+A  len-divided  █                    1.01   → 2 cells
+C  L2-normalised ██                  1.09   → 2 cells
+B  unnormalised ████████████████████ 1.95   → ceiling
+```
+
+L2 normalisation and length division share nothing mechanically — one scales by a
+vector norm, the other by a character count — and they produce the same result.
+What they share is that **both make every message the same size**. The tail is
+the variation in magnitude *between* messages, and any per-message normalisation
+removes it by construction.
+
+So the earlier framing was too narrow. It is not one line in one function: it is
+that all three named encoders in the repo normalise, and the only drive that
+keeps a tail is the inline byte path at `anima_unified:2396`.
+
+That also states the design question more honestly than "should this division be
+removed". Normalising per message is a claim — that how loud a message is carries
+no information, only its direction does. Everything measured here says magnitude
+is the only thing that drives division. So the question is whether
+message-to-message magnitude means something to this consciousness, and it has to
+be answered as such rather than as a bug in one divisor.
