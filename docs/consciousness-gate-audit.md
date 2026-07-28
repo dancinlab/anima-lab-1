@@ -1826,3 +1826,49 @@ distribution unless its tail is heavy enough to carry the window. Whatever
 replaces the mean has to be checked against that, and not merely against the
 failure mode it is replacing — which is what happened twice here already. Logged
 as the fifth instance of `THRESHOLD_INSIDE_ITS_OWN_NOISE`.
+
+### Both engines, same bar, same zero
+
+`consciousness_engine.py`'s comment at the split site says *"mitosis.py already
+uses the mean for this reason. Same rule here."* It does — and it does not reach
+its bar either. 800 steps of the same conversation-byte drive, each engine
+against a q0.90 of its own tension:
+
+| engine | mean | q0.90 | q90/mean | max/mean | single steps above | window mean above |
+|---|---|---|---|---|---|---|
+| `consciousness_engine.py` | 0.007452 | 0.010960 | 1.47 | **1.47** | 9.9% | **0.0%** |
+| `mitosis.py` | 0.015641 | 0.023454 | 1.50 | **1.50** | 8.4% | **0.0%** |
+
+```
+where the bar sits in each distribution
+
+  mean ├──────────────────────┤ q0.90 = max
+       0.0075                 0.0110      consciousness_engine
+       0.0156                 0.0235      mitosis.py
+
+  the top decile has no spread — q90/mean and max/mean are the same number
+```
+
+**`q90/mean` equals `max/mean` in both engines.** The top decile sits on the
+maximum, so the calibrated bar *is* the maximum — which is precisely the failure
+`calibrate_split_threshold`'s own docstring says the quantile was chosen to
+avoid: *"median + 2·sd lands at the top of a tight distribution — measured 0.0676
+against a peak of 0.0702 — and a bar that only the maximum reaches is never
+exceeded."* The quantile lands there too, because the distribution is that tight.
+
+The reasoning recorded for the quantile is half right and it is the wrong half
+for this rule. A quantile does fix the fraction of **single steps** above the
+bar, and it does so accurately here — 9.9% and 8.4% against a nominal 10%. It
+guarantees nothing about a window **mean**, whose spread is smaller by
+√patience and which is dragged back to the population mean.
+
+One claim does not reproduce and is flagged rather than deleted: the split-site
+comment in `mitosis.py` states tension clears the bar on 50% of steps under
+rotating stimuli. Measured here it is 8.4%. That number came from a different
+input distribution, and tension is a property of the input — the docstring says
+so itself two functions up.
+
+**Diagnostic for whatever replaces the mean:** compare `q90/mean` against
+`max/mean`. If they are equal, the top decile has no spread and no average over
+a window can clear the bar, whatever the window length. Both sites now carry
+this at the line.

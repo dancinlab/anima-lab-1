@@ -477,6 +477,35 @@ class MitosisEngine:
             # division. The mean keeps "sustained" and drops "uninterrupted", and
             # matches Cell.avg_tension, which already averages its recent window.
             # See docs/mitosis-calibration.md.
+            #
+            # AND THE MEAN DOES NOT REACH THE BAR EITHER, on conversation-byte
+            # input. 800 steps of real chat text, this engine beside
+            # consciousness_engine, each against its own q0.90:
+            #
+            #                       q90/mean  max/mean  single steps  window mean
+            #     mitosis.py            1.50      1.50         8.4%         0.0%
+            #     consciousness_engine  1.47      1.47         9.9%         0.0%
+            #
+            # `q90/mean` EQUALS `max/mean` in both. The top decile sits on the
+            # maximum, so the bar IS the maximum -- which is the exact failure
+            # calibrate_split_threshold's docstring says the quantile avoids
+            # ("median + 2*sd lands at the top of a tight distribution"). The
+            # quantile lands there too when the distribution is this tight.
+            #
+            # A quantile fixes the fraction of SINGLE STEPS above the bar, and it
+            # does that correctly here -- 8.4% and 9.9% against a nominal 10%. It
+            # guarantees nothing about a window MEAN, whose spread is smaller by
+            # sqrt(patience) and which is pulled to the population mean.
+            #
+            # The comment above says tension clears the bar on 50% of steps with
+            # rotating stimuli. That does not reproduce on this drive; it was
+            # measured on a different input distribution, and tension is a
+            # property of the input.
+            #
+            # Diagnostic for whatever replaces this: compare q90/mean against
+            # max/mean. If they are equal the top decile has no spread, and no
+            # average over a window can clear the bar.
+            # See docs/consciousness-gate-audit.md.
             if sum(recent) / len(recent) > effective_threshold:
                 cells_to_split.append(cell)
 
