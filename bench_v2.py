@@ -1638,6 +1638,60 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
     # Added as a CONJUNCT rather than a replacement: it cannot make anything
     # that currently fails start passing, and no engine loses anything, since
     # the closest engine clears the bar by six standard errors.
+    # NEAREST PREDECESSOR -- for each cell, is the closest state one step back
+    # ITSELF? Absence is then chance matching at 1/n: arithmetic from population
+    # size, not a permutation of the data, so SCRAMBLE stops being the null by
+    # construction. That is the defect the derangement floor above cannot escape.
+    #
+    # WHAT IT MEASURES IS UNDISTURBEDNESS, NOT IDENTITY, and the name matters
+    # because a corpse maximises it: DEAD reads 1.0000, the largest value the
+    # statistic can return, and HEAP outranks every engine (0.60-0.96 against
+    # 0.48-0.59 at 32 cells). The shipped identity floor has the same inversion
+    # already -- DEAD +0.984 against a live engine's +0.352 -- so this does not
+    # introduce it, but neither does it repair the axis. It closes one hole.
+    #
+    # BAR = 4/n = chance + 3sd, not a round multiple. Self-matches under random
+    # assignment are Binomial(n, 1/n), so the rate has mean 1/n and sd ~= 1/n:
+    #     n=32   chance 0.031250  sd 0.030758  chance+3sd 0.123524  4/n 0.125000
+    #     n=256  chance 0.003906  sd 0.003899  chance+3sd 0.015602  4/n 0.015625
+    # n is the ACTUAL row count, never the requested one -- ConsciousnessEngine
+    # holds 2 rows, so its chance rate is 0.5, above both bars, and a
+    # requested-n bar would pass it trivially on arithmetic.
+    #
+    # Out of sample on seeds 62-71, 12 engines plus SCRAMBLE, 32 and 256 cells,
+    # ages 0/300/1000: zero rule violations. At 256c age 1000 the weakest engine
+    # reads 0.0388 against SCRAMBLE's 0.0056 -- 6.9x -- and the corpse never
+    # reaches the bar. Reproduced independently by a second session implementing
+    # from this description rather than the code, on disjoint seeds 72-76.
+    #
+    # NOT `change` re-derived, which is how an earlier candidate died: r =
+    # -0.4707 over 15 systems x 3 ages, +0.4024 on engines alone, and a second
+    # session measured -0.563 over 36 pairs. The sign FLIPS between subsets, so
+    # the two are not one quantity. Excluding DEAD and HEAP lowers |r| rather
+    # than raising it, so the conclusion does not rest on those outliers.
+    #
+    # The conjunction's load is measured on both sides rather than assumed:
+    # `change` rejects DEAD (0.000000 at every age) and `integration` rejects
+    # HEAP (0.000000 at ages 0/300/1000, while a real engine reads 0.024-0.027).
+    #
+    # AND IT DOES NOT MAKE NO_SPEAK_CODE WORK. That condition's own rule passes
+    # SCRAMBLE on all ten runs at both scales -- autocorr 0.64-0.86 against a 0.3
+    # bar, var 0.29-0.76 against 0.001, cos 0.955-0.998 against 0.5. This makes
+    # the AXES reject what the condition never could. "No longer VOID" is a true
+    # sentence that will be read as "works", and it does not.
+    #
+    # docs/identity-lag-contrast.md carries the tables.
+    nearest_rate, nearest_bar = 0.0, 0.0
+    if len(window) >= 2:
+        a_t, b_t = window[-1], window[-2]
+        m = min(a_t.shape[0], b_t.shape[0])
+        if m >= 2:
+            u = F.normalize(a_t[:m], dim=1)
+            v = F.normalize(b_t[:m], dim=1)
+            nearest = (u @ v.T).argmax(dim=1)
+            nearest_rate = float((nearest == torch.arange(m)).sum()) / m
+            nearest_bar = 4.0 / m
+
     lag_contrast = 0.0
     if len(window) >= _LAG + 1:
         def _ident(a_t, b_t):
@@ -1773,11 +1827,15 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
     # See docs/identity-lag-contrast.md.
 
     return (integration > 0.001 and response > 1.5,
-            identity > max(identity_floor, 1e-6),
+            # Conjunct. An unmeasured test decides nothing: with fewer than
+            # two rows the rate is not computed and the bar stays 0, so the
+            # comparison cannot remove a pass it never evaluated.
+            identity > max(identity_floor, 1e-6)
+            and (nearest_bar <= 0.0 or nearest_rate >= nearest_bar),
             change > 0.001,
             f"integration={integration:.5f} response={response:.2f} "
             f"identity={identity:+.4f}>floor={identity_floor:+.4f} "
-            f"lag={lag_contrast:+.5f} change={change:.5f} "
+            f"lag={lag_contrast:+.5f} undisturbed={nearest_rate:.4f}>bar={nearest_bar:.4f} change={change:.5f} "
             f"[Φ={phi_now:.4f} floor={phi_floor:.4f}]")
 
 
