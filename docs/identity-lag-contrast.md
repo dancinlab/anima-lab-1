@@ -282,8 +282,12 @@ population is a defect found in the same session.
       └── 1000 ──── 2000 ──── 4000
 ```
 
-Mitosis is flat to 4000; Narrative is flat over the same span. The statistic does
-not decay when run long — PairField's reading does.
+**RETRACTED.** A second session's means on disjoint seeds RISE over the same
+span — PairField 0.0488 → 0.0586 → 0.0664 — where my minima fall. Minimum versus
+mean explains a level difference, not a direction flip. The decay is not robust
+to which seeds are drawn, so nothing about PairField rests on it.
+
+What follows is kept as the measurement that was made, not as a finding.
 
 **These are MINIMA over seeds, and that limits the claim.** A second session
 reports PairField's MEAN at age 1000 as 0.0617 ± 0.013 over disjoint seeds. My
@@ -298,9 +302,12 @@ this measured minima.** It needs the mean at ages 2000 and 4000 before it stands
 If the mean is flat, the finding shrinks to "PairField's weakest seed wanders and
 Mitosis's does not", which is a much smaller thing.
 
-PairField is the only engine in the registry whose cells are pushed every step by
-a repulsion field between two populations, so there is a mechanism to look at
-rather than a mystery — but the measurement does not yet reach the claim.
+PairField is the only engine whose cells are pushed every step by a repulsion
+field between two populations, which makes the mechanism testable: at
+`strength = 0` the sides never interact, so if repulsion is what erodes identity,
+that configuration must not decay. **Naming a mechanism and not running its
+control is how a plausible story becomes a recorded fact** — the sweep is running
+in the other session and the claim stays withdrawn until it lands.
 
 ## Status: not landed
 
