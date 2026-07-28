@@ -1,0 +1,7 @@
+split rule: mean(window)>bar  vs  all(window)>bar -- what population results?
+
+rule      ceiling  interior  still rising  finals
+mean            8      1/8            2/8  [2, 2, 2, 2, 7, 8, 8, 8]
+all             8      0/8            0/8  [2, 2, 2, 2, 2, 2, 2, 2]
+mean           16      1/8            3/8  [2, 2, 2, 15, 16, 16, 16, 16]
+all            16      0/8            0/8  [2, 2, 2, 2, 2, 2, 2, 2]

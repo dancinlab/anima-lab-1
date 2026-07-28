@@ -2623,3 +2623,41 @@ This also qualifies my own earlier reading. I measured `mean(5) > q90` at **0 of
 messages. Here it is 2.05% at 8 cells under varied messages. Both numbers are
 right for their regime, and the regime is the cell count and the message variety
 — neither of which the rule knows about.
+
+### The wrong reason produced the right change
+
+The 270× finding invites an obvious hypothesis: `all(5)` fires 7.6 times more
+rarely than the mean, and everything measured so far pins to a ceiling, so a
+rarer split rule might let merges balance the population into an interior size.
+That would have been the first candidate all session capable of an equilibrium.
+
+Refuted, 8 seeds, 600 steps, both ceilings:
+
+| split rule | ceiling | interior | still rising | finals |
+|---|---|---|---|---|
+| `mean(w) > bar` — ships | 8 | 1/8 | 2/8 | 2, 2, 2, 2, 7, 8, 8, 8 |
+| **`all(w) > bar`** | 8 | **0/8** | 0/8 | **2, 2, 2, 2, 2, 2, 2, 2** |
+| `mean(w) > bar` — ships | 16 | 1/8 | 3/8 | 2, 2, 2, 15, 16, 16, 16, 16 |
+| **`all(w) > bar`** | 16 | **0/8** | 0/8 | **2, 2, 2, 2, 2, 2, 2, 2** |
+
+```
+where the population lands
+
+mean @16   ███ floor          █ interior      ████ ceiling
+all  @16   ████████ floor     · interior      · ceiling      every seed, both ceilings
+```
+
+`all` does not balance against merges — it never divides at all. Sixteen runs,
+zero seeds above the floor, zero still moving at the end.
+
+**So the swap to the mean was the right change made for a wrong reason, and both
+halves are now measured.** The arithmetic in the code is off by 270× and should
+not be reasoned from; the decision it produced is the only thing standing between
+this engine and a permanent two cells. That is a more useful state for the code
+to be in than either "correct comment, unexamined decision" or the reverse, and
+it is why the wrong arithmetic is annotated in place rather than deleted.
+
+The `all` arm is an emulation, not a reimplementation: the recent window is
+zeroed for cells that fail the conjunction, the engine's own split check runs,
+and the history is restored immediately after. It changes which cells the check
+admits and nothing else.
