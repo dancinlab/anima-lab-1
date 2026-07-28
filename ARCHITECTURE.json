@@ -108,6 +108,13 @@
         "value": "To isolate a conjunct, patch the function it calls -- not the wrapper that adds it.",
         "threshold": "bench_condition_alone set out to separate each gate condition's own rule from the four axes by stripping the `_with_axes` decorator. Three of the five conditions call `_three_axes` inside their own body and conjoin it themselves (bench_v2 1954/1995/2026), so the axes kept running in three of five rows and their work was reported as the conditions'. The grid read as ZERO_INPUT/PERSISTENCE/SELF_LOOP rejecting every corpse unaided. Caught only because it contradicted a measurement already in the repo -- appendix D has `recovers` alone clearing DEAD and CLONE 100 percent at both scales -- so the two readings could not both stand.",
         "fix": "Patch `_three_axes` itself for the isolated pass; it reaches the wrapper and the internal calls together. General rule: when a new measurement disagrees with one already recorded, the new one is wrong until its own instrument is checked."
+      },
+      {
+        "id": "THREE_SEEDS_CANNOT_SEPARATE_A_BINARY_OUTCOME",
+        "state": "pos-conv",
+        "value": "For a binary per-seed outcome (grew / did not), a clean N=3 sweep is the EXPECTED result for anything that mostly works and carries almost no information. Never read two 3-seed arms sweeping opposite ways as a separation.",
+        "threshold": "Three retractions in one stretch, all the same shape. 'Only a rising drive grows it' died to a 300-step window; 'repetition beats novelty' was one seed and reversed at four; 'magnitude is sufficient, direction is not' was three seeds and reversed at eight, where the two arms came out 5/8 and 7/8 -- inside binomial noise. The arithmetic: P(clean sweep) at N=3 is 12.5% at a true rate of 0.50, 24.4% at 0.625, 42.2% at 0.75 and 67.0% at 0.875. So a system that grows 7 times in 8 produces a spotless 3/3 two runs out of three. Two arms sweeping opposite ways at N=3 is 0.244 x 0.244 = 6.0%, which is not rare.",
+        "fix": "Binary outcomes need N>=7 before a clean sweep is under 5% likely against a true rate of 0.625, and N>=23 against 0.875. Run 8 as the floor for any grew/did-not claim, and state the count with the result. When an effect is a difference in RATE rather than presence/absence, report the rate and its interval, not the sweep."
       }
     ]
   },

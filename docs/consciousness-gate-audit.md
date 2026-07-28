@@ -2314,3 +2314,48 @@ softened form "content moves tension less than the engine's own noise floor". Th
 0.065 versus 0.595 tension-spread numbers are real, but a spread below the
 degeneracy guard evidently does not prevent growth 5 times in 8, so the spread
 does not carry the conclusion drawn from it.
+
+### Why three retractions in a row, and the number that prevents the fourth
+
+Three claims died in this stretch and they died the same way. "Only a rising
+drive grows it" was a 300-step window against a step-200 calibration.
+"Repetition beats novelty" was one seed and reversed at four. "Magnitude is
+sufficient, direction is not" was three seeds and reversed at eight, where the
+arms came out 5/8 and 7/8.
+
+The last two are the same arithmetic error. For a binary per-seed outcome — grew
+or did not — the chance of a spotless sweep at N seeds:
+
+| true rate | N=3 | N=5 | N=8 | N=12 | N=20 |
+|---|---|---|---|---|---|
+| 0.500 | 12.5% | 3.1% | 0.4% | 0.0% | 0.0% |
+| 0.625 | **24.4%** | 9.5% | 2.3% | 0.4% | 0.0% |
+| 0.750 | 42.2% | 23.7% | 10.0% | 3.2% | 0.3% |
+| 0.875 | **67.0%** | 51.3% | 34.4% | 20.1% | 6.9% |
+
+```
+P(clean 3/3 sweep) by the system's true growth rate
+
+p=0.50  ████                       12.5%
+p=0.625 ████████                   24.4%
+p=0.75  ██████████████             42.2%
+p=0.875 ██████████████████████     67.0%
+```
+
+**A system that grows seven times in eight hands you a spotless 3/3 in two runs
+out of three.** A clean three-seed sweep is what "mostly works" looks like, not
+what "always works" looks like, and the two are indistinguishable at that N. Two
+arms sweeping in opposite directions at N=3 has probability 0.244 × 0.244 = 6.0%
+— common enough to see once an afternoon.
+
+The number that prevents the fourth retraction:
+
+```
+clean sweep under 5% likely against a true rate of 0.625   N >= 7
+                                              against 0.875   N >= 23
+```
+
+Eight is the floor for any grew/did-not claim in this repo from here, and the
+count goes in the result. When the effect is a difference in *rate* rather than
+in presence or absence, the rate and its interval are the finding — the sweep is
+not.
