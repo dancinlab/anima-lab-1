@@ -21,12 +21,13 @@ undo it.
 
 A sample goes degenerate at BOTH ends. Too quiet and every cell's tension is
 equally near zero; too loud and every cell saturates equally. So growth happens
-inside a band of drive amplitude and nowhere else, and the gate's drive
-(`randn * 0.1`) sits below the band's lower edge.
+inside a band of drive amplitude and nowhere else. The band has a clean core and
+probabilistic shoulders rather than edges, and the gate's drive (`randn * 0.1`)
+is a clean 0/8 below it.
 
-    python3 bench_ce_growth.py --steps 1500
+    python3 bench_ce_growth.py
 
-TWO RETRACTIONS, both from running this file:
+THREE RETRACTIONS, all from running this file:
 
   1. "Only a rising drive grows it." Measured at 300 steps, where constant
      drives showed 2 cells. They grow at 1500 -- constant x1.0 reaches 31 and
@@ -55,6 +56,7 @@ import bench_v2 as B
 DRIVES = [
     ("constant x0.1  (the gate)", lambda t, d: torch.randn(1, d) * 0.1),
     ("constant x0.3",             lambda t, d: torch.randn(1, d) * 0.3),
+    ("constant x0.5",             lambda t, d: torch.randn(1, d) * 0.5),
     ("constant x1.0",             lambda t, d: torch.randn(1, d) * 1.0),
     ("constant x3.0",             lambda t, d: torch.randn(1, d) * 3.0),
     ("constant x10",              lambda t, d: torch.randn(1, d) * 10.0),
