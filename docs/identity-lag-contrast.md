@@ -1,4 +1,4 @@
-# Identity without a permutation — the lag contrast
+# Identity without a permutation — six candidates
 
 ## Purpose and hypothesis
 
@@ -186,3 +186,117 @@ nothing.
 > matter how many seeds are drawn.**
 
 Logged as convergence `CONTROL_THAT_CANNOT_FAIL`.
+
+---
+
+# Candidate 6 — nearest predecessor
+
+## The statistic
+
+For each cell at time t, find the nearest cell state at t−1. If identity holds,
+that is the cell itself. If cells swap, it is somebody else, at the chance rate
+`1/n`.
+
+**The null is arithmetic from population size, not a permutation of the data**, so
+`SCRAMBLE` stops being the null by construction — the defect that killed
+candidate 1.
+
+## The bar is derived, not chosen
+
+Self-matches under random assignment are `Binomial(n, 1/n)`, so the rate has mean
+`1/n` and standard deviation `sqrt(p(1-p)/n) ≈ 1/n`:
+
+| n | chance | sd | chance+3sd | 4/n |
+|---:|---:|---:|---:|---:|
+| 32 | 0.031250 | 0.030758 | **0.123524** | 0.125000 |
+| 256 | 0.003906 | 0.003899 | **0.015602** | 0.015625 |
+
+`4/n` IS `chance + 3sd`. The round number is algebra.
+
+The bar must use the **actual** row count from `get_hiddens().shape[0]`, not the
+requested one. `ConsciousnessEngine` holds 2 rows, so its chance rate is 0.5 —
+four times the 32c bar and thirty-two times the 256c bar. It passes trivially and
+its numbers are arithmetic, not evidence.
+
+## Evidence
+
+Out-of-sample at 32 cells, seeds 62–71 disjoint from the design set: engines
+0.476–1.000 across ages 0/300/1000, `SCRAMBLE` 0.033–0.043, bar 0.125.
+
+At 256 cells, the scale where `NO_SPEAK_CODE` is VOID:
+
+| system | age 0 | age 300 | age 1000 |
+|---|---:|---:|---:|
+| **SCRAMBLE** | 0.0043 | 0.0051 | 0.0049 |
+| chance (1/256) | 0.0039 | 0.0039 | 0.0039 |
+| engines (8 measured) | 0.14–0.29 | 0.056–0.37 | 0.039–0.42 |
+
+**Independently reproduced** by a second session that implemented it from this
+spec rather than the code, on seeds 72–76, never routing rows through
+`_three_axes`: 32c engines 0.48–0.59, `SCRAMBLE`/`CLONE`/`NOISE` 0 of 15; 256c
+`SCRAMBLE` 0.0031–0.0047, 0 of 15.
+
+## What it actually measures
+
+| system | 32c | 256c |
+|---|---:|---:|
+| **DEAD** | 1.0000 | 1.0000 |
+| **HEAP** | 0.62–0.96 | 0.60–0.75 |
+| engines | 0.48–0.59 | 0.056–0.066 |
+| SCRAMBLE / CLONE / NOISE | at chance | at chance |
+
+**`DEAD` scores the maximum the statistic can return, and `HEAP` outranks every
+engine.** The more frozen or disconnected a population, the more perfectly each
+cell is its own predecessor. So it measures **undisturbedness**, not identity —
+the `NO_SPEAK_CODE` shape, a name describing something the test does not do.
+
+The shipped axis already has this inversion: `DEAD` +0.984 against a live
+engine's +0.352. Candidate 6 reproduces it while fixing `SCRAMBLE`. The claim is
+**no worse on `DEAD`, strictly better on `SCRAMBLE`** — not a clean repair.
+
+## The conjunction's load, measured on both sides
+
+Landing it as a conjunct rests on other axes catching what it passes. Measured,
+not assumed:
+
+| corpse | rejected by | ages 0/300/1000 |
+|---|---|---|
+| `DEAD` | `change` | 0.000000, 0 of 3 — verified on two independent paths agreeing to six decimals |
+| `HEAP` | `integration` | 0.000000, 0 of 3 — same run, `REAL` reads 0.0242–0.0266 and clears 3 of 3 |
+
+Row counts checked at 256 → 256 every time, because a probe expanding the
+population is a defect found in the same session.
+
+## The long run belongs to PairField, not to the statistic
+
+| engine | age 1000 | age 2000 | age 4000 |
+|---|---:|---:|---:|
+| **PairField** | 0.0373 | 0.0285 | **0.0240** |
+| MitosisEngine | 0.0617 | 0.0609 | **0.0625** |
+
+```
+ rate │ Mitosis ────────────────────  flat at 4.0x the bar
+      │
+      │ PairField ╲___
+ bar  ├──────────────────────────────  0.0156
+      └── 1000 ──── 2000 ──── 4000
+```
+
+Mitosis is flat to 4000; Narrative is flat over the same span. **The statistic
+does not decay when run long — PairField does.** Its cells continue into their
+own past 1.6× less well at age 4000 than at 1000.
+
+PairField is the only engine in the registry whose cells are pushed every step by
+a repulsion field between two populations. So this is a finding about the engine,
+not a defect in the test — and it answers the margin question: the weakest reading
+belongs to an engine genuinely losing what the axis measures.
+
+## Status: not landed
+
+Three conditions, recorded before any landing:
+
+1. **Conjunct only.** As a replacement, `DEAD` passes identity at 1.000.
+2. **The comment must say undisturbedness, not identity.** Otherwise it is a lie
+   the next reader inherits.
+3. **It closes one hole in a misnamed, corpse-inverted test.** It does not repair
+   the axis, and the text must not claim it does.
