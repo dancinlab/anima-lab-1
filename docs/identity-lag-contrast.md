@@ -142,6 +142,46 @@ and `lag_ok` stays True — an unmeasured test must not decide anything. Folding
 unmeasured value into a verdict is the defect that made a `NameError` read as
 every system scoring 0/5 earlier in the same session.
 
+## Why it does not work at operating ages
+
+The full age sweep, 32 cells, minimum over 5 seeds:
+
+| engine | age 0 | age 300 | age 1000 |
+|---|---:|---:|---:|
+| QuestioningEngine | +0.437381 | +0.001642 | −0.000557 |
+| SeinEngine | +0.420335 | +0.007812 | +0.001463 |
+| MitosisEngine | +0.409685 | +0.000939 | −0.000583 |
+| NarrativeEngine | +0.409411 | +0.000943 | −0.000512 |
+| DesireEngine | +0.403674 | +0.000995 | −0.000392 |
+| AlterityEngine | +0.402546 | +0.001865 | −0.003216 |
+| FinitudeEngine | +0.398567 | +0.002389 | +0.000106 |
+| Trinity | +0.371152 | +0.008428 | +0.004384 |
+| QuantumEngine | +0.365703 | +0.004642 | +0.003229 |
+| OscillatorLaser | +0.307138 | −0.000520 | −0.003643 |
+| PairField | +0.300371 | +0.004021 | +0.000198 |
+| ConsciousnessEngine | −0.019629 | +0.026187 | +0.000079 |
+
+**Seven of twelve go negative at some age the gate uses.**
+
+```
+ contrast │ ████████████████████  age 0     +0.30 … +0.44
+          │ ▌                     age 300   +0.0009 … +0.0084
+        0 ├──────────────────────
+          │ ▏                     age 1000  −0.0036 … +0.0044   ← straddles
+```
+
+Once an engine settles onto its attractor, the state 1 step back and the state
+50 steps back are BOTH on the attractor and therefore similar to each other. The
+contrast decays to zero for a system whose identity is perfectly intact.
+
+**So it measures TRANSIENT, not identity.** This is not a bar that was placed
+wrongly; a stable system reads zero no matter where the bar goes.
+
+Reverted as a conjunct. Cost measured before reverting: NarrativeEngine went
+DEPLOYABLE → BLOCKED (PERSISTENCE) at 32 cells, MitosisEngine picked up
+PERSISTENCE, 44/60 → 42/60. The value is still computed and printed; it decides
+nothing.
+
 ## Key finding
 
 > A measured null is the right principle — CLAUDE.md requires baselines to come
