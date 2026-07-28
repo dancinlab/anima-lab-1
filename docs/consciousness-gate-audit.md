@@ -1979,3 +1979,48 @@ and `q0.85/mean` rises to 1.24 by eight cells. What is invariant is the shape �
 against the distribution the engine is actually in, which is what
 `calibrate_split_threshold`'s own docstring says two functions above the line
 that does not do it.
+
+### What the diagnostic actually is: tail headroom, not bar height
+
+The rule stated above — *compare `q90/mean` against `max/mean`* — is right about
+the degenerate case and wrong about which number carries the prediction. Tested
+across five drives on the same engine, 400 steps for the distribution and 1500
+for the cell count:
+
+| drive | q90/mean | max/mean | **max/q90** | 5-step window means > q0.90 | cells @1500 |
+|---|---|---|---|---|---|
+| conversation bytes | 1.47 | 1.48 | **1.01** | 0.0% | 2 |
+| `randn × 0.1` (the gate) | 1.06 | 1.16 | **1.09** | 2.0% | 2 |
+| `randn × 1.0` | 1.97 | 2.92 | **1.48** | 10.1% | **31** |
+| `randn × 3.0` | 1.85 | 2.79 | **1.51** | 11.6% | **32** |
+| `randn × 30` | 1.23 | 1.55 | **1.26** | 0.0% | 2 |
+
+```
+max/q90 — how much headroom the tail has above the bar
+
+conversation  █                          1.01    ·      2 cells
+randn x0.1    █                          1.09    2.0%   2 cells
+randn x30     ███                        1.26    ·      2 cells
+                                    ─────────── separation ───────
+randn x1.0    ██████                     1.48   10.1%  31 cells
+randn x3.0    ██████                     1.51   11.6%  32 cells
+```
+
+**`q90/mean` alone does not predict.** It is 1.47 on a drive that never grows,
+1.85 on one that reaches the ceiling, and 1.23 on one that never grows — the
+ordering is not even monotone. What separates the two growing drives from the
+three stuck ones is `max/q90`: 1.48 and 1.51 against 1.01, 1.09 and 1.26.
+
+That is the mechanism stated correctly. A window mean clears a high quantile only
+when the tail above that quantile is heavy enough for an occasional large value
+to carry the average over. `q90/mean` measures how high the bar sits; `max/q90`
+measures whether anything lives above it. Only the second one matters for an
+average.
+
+The window-mean pass rate predicts the cell count exactly across all five drives
+— 10.1% and 11.6% grow, 0.0%/2.0%/0.0% do not — so the chain
+`tail headroom → window-mean rate → population` holds end to end.
+
+The earlier `bar/mean ≤ 1.07` line is superseded and should not be used. It was
+the last passing ratio in one distribution at one population size, and this sweep
+shows the quantity it was measuring is not the one that decides.
