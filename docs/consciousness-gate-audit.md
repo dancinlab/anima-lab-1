@@ -2419,15 +2419,31 @@ claims still resting on three seeds or fewer:
 | amplitude band | 1 | **re-run at 8**, two cells corrected, shoulders found |
 | repetition versus novelty | 1 | **retracted at 4** |
 | magnitude versus direction | 3 | **retracted at 8** |
-| runtime path A versus path B | 3 | **re-running at 8** — see below |
+| runtime path A versus path B | 3 → **8** | **confirmed, 0/8 against 8/8** |
 | repulsion strength sweep, 6 values | 3 | pre-existing, outside this chain, left as recorded |
 | inter-engine cosine, 128 cells | 3 | pre-existing, outside this chain, left as recorded |
 
-The one that matters is path A versus path B. Its three-seed result — 2/2/2
-against 32/32/31 — is what the README correction, the `CLAUDE.md` correction and
-an owner-decision item all rest on. Now that the band is known to have 5/8
-shoulders, a clean 2/2/2 is exactly what a shoulder sampled three times looks
-like, so it goes to eight before it stands.
+The one that mattered is path A versus path B — the claim the README correction,
+the `CLAUDE.md` correction and an owner-decision item all rest on. Now that the
+band is known to have 5/8 shoulders, a clean 2/2/2 is exactly what a shoulder
+sampled three times looks like, so it went to eight before standing:
+
+| path | grew | cells per seed |
+|---|---|---|
+| **A** `text_to_vector` — the runtime's main drive | **0/8** | 2, 2, 2, 2, 2, 2, 2, 2 |
+| **B** raw `byte/255` | **8/8** | 32, 32, 31, 32, 32, 32, 32, 32 |
+
+```
+grew, out of 8
+
+path A  ·                          0/8
+path B  ████████████████████████   8/8
+```
+
+**Complete separation, Fisher exact p = 0.000078.** Neither path is on a
+shoulder — one never grows and the other always does, and the three-seed reading
+understated the result rather than inventing it. This is the only claim in the
+chain that came back stronger for being re-checked.
 
 The two pre-existing three-seed rows are flagged rather than re-run: they predate
 this chain, nothing here depends on them, and re-running them is separate work
