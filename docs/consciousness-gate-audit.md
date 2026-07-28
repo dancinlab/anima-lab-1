@@ -1490,8 +1490,45 @@ Two rows are worth reading on their own:
   in the disjunct that replaced it, and it matches appendix D's independent
   measurement of `recovers` at both scales.
 
-One seed at 32 cells. The five-seed run at the shipping default of 256 cells is
-what settles whether the picture changes with scale.
+### 256 cells, 5 seeds — the shipping default
+
+| condition | HEAP | DECOUPLED | DEAD | NOISE | CLONE | SCRAMBLE | LINEAR | total |
+|---|---|---|---|---|---|---|---|---|
+| NO_SYSTEM_PROMPT | 5 | 1 | · | · | · | · | 2 | **8/35** |
+| NO_SPEAK_CODE | 5 | · | · | · | 5 | 5 | · | **15/35** |
+| ZERO_INPUT | 4 | 3 | 5 | 4 | 5 | · | 5 | **26/35** |
+| PERSISTENCE | · | · | 5 | 2 | 5 | 2 | 2 | **16/35** |
+| SELF_LOOP | 4 | 1 | 5 | 4 | 5 | · | 5 | **24/35** |
+| **rule alone** | | | | | | | | **89/175** |
+| **rule + axes** | · | · | · | · | · | · | · | **0/175** |
+
+```
+leak rate of the conditions' own rules
+
+ 32 cells, 1 seed   ████████████████████████████  51.4%   (18/35)
+256 cells, 5 seeds  ████████████████████████████  50.9%   (89/175)
+with the axes on    ·                              0.0%   (0/175)
+```
+
+**Sixteen times the cells and five times the seeds moves the leak rate by half a
+point.** This is not a small-scale artefact; it is what the conditions are.
+
+The rows sharpen rather than soften:
+
+- `NO_SPEAK_CODE` alone clears HEAP, CLONE and SCRAMBLE on **all five seeds**.
+  That is the condition whose VOID this session closed — closed by the axes,
+  with its own rule passing a scramble exactly as completely as before.
+- `ZERO_INPUT` alone clears 26 of 35, taking DEAD, CLONE and LINEAR at 5/5.
+- `PERSISTENCE` alone clears DEAD and CLONE at 5/5 at this scale too, which is
+  appendix D's number reproduced inside the gate's own harness.
+- `SCRAMBLE` is the one control the rules mostly reject (3 of 5 conditions turn
+  it away unaided) — the shuffle destroys enough structure that even the Φ-blind
+  rules notice, everywhere except `NO_SPEAK_CODE`, which averages a permutation
+  away by construction.
+
+Nothing here says the gate is wrong. It says the gate is its axes: with them the
+corpse count is zero at both scales, and the five named conditions have never
+once been the thing that turned a corpse away.
 
 ## `PERSISTENCE` at the shipping default: the failures carry no trend
 
