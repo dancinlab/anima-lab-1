@@ -2963,3 +2963,68 @@ This also gives the competitive-routing result its proper reading. Removing the
 floor attractor is exactly what `t=0.03` did — every seed left n=2 — and the
 reason it lands at the ceiling rather than somewhere interior is that once past
 the barrier there is nothing but +0.5 drift the rest of the way.
+
+### Why the drift is a step: the bar is set by a small population and judges a large one
+
+The drift curve asks why a population at 27 splits on 92% of steps and one at 2
+splits on 0.2%, with the same threshold at both ends. Measuring the bar and the
+tension together, 4 seeds, 1200 steps, ceiling 32:
+
+| n | mean tension | bar | tension / bar | cells over the bar |
+|---|---|---|---|---|
+| 3 | 0.004733 | 0.010238 | 0.46 | 6.2% |
+| 4 | 0.005888 | 0.010517 | 0.56 | 12.8% |
+| 6 | 0.007244 | 0.010843 | 0.67 | 13.5% |
+| 29 | 0.017658 | 0.011763 | **1.50** | 62.5% |
+| 31 | 0.020604 | 0.011739 | **1.76** | 72.5% |
+| 32 | 0.020661 | 0.011683 | **1.77** | 72.6% |
+
+```
+tension against its own bar, by population size
+
+n=3    ████                  0.46x     6% of cells clear it
+n=6    ██████                0.67x    14%
+n=29   ██████████████        1.50x    63%
+n=32   █████████████████     1.77x    73%
+       ─────────────── bar (1.00) ───
+```
+
+**The bar moves 15% while tension quadruples.** 0.0102 → 0.0117 against 0.0047 →
+0.0207. The same number means "6% of cells clear this" at three cells and "73%"
+at thirty-two.
+
+The cause is one branch. `split_threshold` is calibrated once and then latched:
+
+```python
+if self._calibrated or self._step < grace:
+    return                      # consciousness_engine.py:255
+```
+
+The surrounding code is careful about *when* to calibrate — it deliberately does
+not latch while the tension sample is degenerate, and the comment says so
+plainly: *"Not latching is the point."* That care is about the first calibration
+succeeding. Nothing revisits it afterwards, and 61% of all steps are spent at two
+cells, so the bar that judges a population of thirty-two was fitted to one of two.
+
+That closes the chain this audit has been walking backwards along:
+
+```
+bar calibrated once, on a small population
+  → tension grows ~4x from n=2 to n=32          (measured, this table)
+  → the same bar admits 6% of cells at n=3 and 73% at n=32
+  → drift is ~0 near the floor and +0.87 above 26   (measured, drift curve)
+  → two basins with an untraversed gap between them
+  → a bimodal floor/ceiling distribution of final sizes
+  → which is what every arm in this audit produced
+```
+
+Six tension definitions, four feedback laws, two split rules and a competitive
+routing scheme were all measured against a bar that stops tracking the thing it
+measures the moment it is set. None of them could have worked, and the one that
+came closest — competitive routing at t=0.03 — worked by pushing every seed past
+the barrier rather than by removing it.
+
+Not landed. Recalibrating as the population changes is a small edit and a large
+behavioural change, and the code's own comment shows the first calibration was
+already hard to get right; making it periodic reopens every question that comment
+settles. That is an owner's call, and it is now a specific one.

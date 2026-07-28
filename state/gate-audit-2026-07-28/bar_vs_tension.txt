@@ -1,0 +1,15 @@
+the bar is calibrated ONCE at step 200. does tension outgrow it?
+
+   n  mean tension        bar  tension/bar  cells over bar
+   2      0.005611   0.093782         0.06            2.0%
+   3      0.004733   0.010238         0.46            6.2%
+   4      0.005888   0.010517         0.56           12.8%
+   5      0.006096   0.010426         0.58           10.3%
+   6      0.007244   0.010843         0.67           13.5%
+  29      0.017658   0.011763         1.50           62.5%
+  30      0.018810   0.011666         1.61           67.9%
+  31      0.020604   0.011739         1.76           72.5%
+  32      0.020661   0.011683         1.77           72.6%
+
+  calibrated bars across seeds: [0.012442, 0.009822, 0.010938, 0.010606]
+  the bar is set when the population is 2; the population it must judge is 32.
