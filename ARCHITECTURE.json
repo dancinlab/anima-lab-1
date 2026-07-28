@@ -281,7 +281,7 @@
             "role": "관문에서 시체를 막는 절반은 CLAUDE.md 가 이름 붙이지 않은 쪽이다",
             "id": "gate-axes-carry-all-rejection",
             "type": "gate",
-            "detail": "7대조군 x 5조건을 축 무력화 상태와 출하 상태로 각각 실행(32세포 1시드). 규칙 단독 18/35 칸에서 시체가 통과, 축 포함 0/35. 축이 서른다섯 전부를 거부하고 조건들의 한계 기여는 0이다. docs/consciousness-gate-audit.md. 256세포 5시드 실행 중.",
+            "detail": "7대조군 x 5조건을 축 무력화 상태와 출하 상태로 각각 실행. 32세포 1시드 18/35, 256세포 5시드 89/175 — 규모 16배·시드 5배에 누수율 51.4%→50.9%. 축 포함은 두 규모 모두 0. 축이 전부를 거부하고 조건들의 한계 기여는 0이다. docs/consciousness-gate-audit.md",
             "children": [
               {
                 "id": "gate-conditions-are-not-idle",
@@ -294,6 +294,12 @@
                 "name": "the two rows that leak most",
                 "role": "무엇이 새는지가 왜 새는지를 말해준다",
                 "detail": "ZERO_INPUT 단독 6/7 — 시체는 입력 없이 상태를 완벽히 유지하며, 그것이 시체라는 것의 정의다. PERSISTENCE 단독은 정확히 DEAD·CLONE 통과 — final>=0.8*max(첫 다섯)은 상수에 자명하게 참이다. monotonic 을 폐기시킨 병리가 그 자리를 대신한 disjunct 에 그대로 있다."
+              },
+              {
+                "id": "gate-leak-does-not-shrink-with-scale",
+                "name": "the leak does not shrink with scale",
+                "role": "소규모 인공물이 아니라 조건 그 자체다",
+                "detail": "NO_SPEAK_CODE 단독은 256세포에서 HEAP·CLONE·SCRAMBLE 을 다섯 시드 전부 통과시킨다 — 이번 세션이 닫은 무효가 축으로 닫혔고 자기 규칙은 전과 똑같이 완전히 뚫려 있다. PERSISTENCE 단독은 이 규모에서도 DEAD·CLONE 5/5 로, 부록 D 숫자가 관문 자체 하네스 안에서 재현됐다."
               }
             ]
           },
