@@ -287,7 +287,15 @@ span — PairField 0.0488 → 0.0586 → 0.0664 — where my minima fall. Minimu
 mean explains a level difference, not a direction flip. The decay is not robust
 to which seeds are drawn, so nothing about PairField rests on it.
 
-What follows is kept as the measurement that was made, not as a finding.
+**The smaller claim survives and is worth stating exactly.** By minima — the
+statistic the gate actually uses, since it requires every seed — PairField's
+weakest seed wanders (0.0373 → 0.0240) and Mitosis's does not (0.0617 → 0.0625).
+That is true within its range and is not a claim about either engine's
+distribution.
+
+Their caveat, at its own weight: two seeds. Their 5-seed mean at age 1000 was
+0.0617 and their 2-seed mean is 0.0488 — one full sd apart. The means support "no
+downward trend", not "an upward one".
 
 **These are MINIMA over seeds, and that limits the claim.** A second session
 reports PairField's MEAN at age 1000 as 0.0617 ± 0.013 over disjoint seeds. My
