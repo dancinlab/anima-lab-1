@@ -2359,3 +2359,36 @@ Eight is the floor for any grew/did-not claim in this repo from here, and the
 count goes in the result. When the effect is a difference in *rate* rather than
 in presence or absence, the rate and its interval are the finding — the sweep is
 not.
+
+### Applying the rule to my own headline: the band's edge is not an edge
+
+The amplitude-band table — the finding this whole chain rests on — was run at
+**one seed per row**. By the rule just recorded that is not enough, so it goes
+first. Re-run at eight seeds, ceiling 32, 1500 steps:
+
+| drive | 1-seed table said | 8 seeds: grew | cells per seed |
+|---|---|---|---|
+| ×0.1 (the gate) | 2 | **0/8** | 2, 2, 2, 2, 2, 2, 2, 2 |
+| ×0.3 | 31 | **5/8** | 31, 32, 2, 30, 2, 32, 2, 32 |
+
+```
+grew (>16 cells) out of 8
+
+x0.1  ·                          0/8   clean
+x0.3  ██████████████████         5/8   not an edge, a coin
+```
+
+The gate's own drive is a clean zero on all eight — that part of the finding
+holds and is stronger for being checked. **The lower edge is not.** At ×0.3 the
+population reaches the ceiling five times in eight and stays at 2 the other
+three, and 5/8 is exactly the rate that produced the retraction two sections
+above.
+
+So the band has no sharp lower boundary. There is a region where growth is
+probabilistic, and a single-seed sweep necessarily reports it as a hard edge
+because it samples that region once. The `bar/mean ≤ 1.07` and `max/q90` cutoffs
+derived from single-seed rows inherit the same problem: they are estimates of
+where a probability crosses ~0.5, not thresholds.
+
+Remaining amplitudes are re-running at eight seeds; this table is updated in
+place when they land rather than reported as complete now.
