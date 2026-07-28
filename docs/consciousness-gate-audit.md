@@ -1719,3 +1719,56 @@ differentiate*. Neither half licenses a change to the gate: a stationary drive i
 a legitimate test and the engine's answer to it is a real property. What is not
 defensible is scoring one engine on growth and eleven on nothing, then printing
 the results in one column.
+
+### The same cause in production: the deployed runtime never leaves two cells
+
+`anima_unified.py` builds the same engine with the same shape —
+`initial_cells=2, max_cells=self.max_cells, split_threshold=0.3` — and drives it
+with `text_to_vector()` from `anima_alive.py`. That encoder ends with
+
+```python
+return vec / (len(encoded) + 1)
+```
+
+so the drive's amplitude is set by how long the message is. Measured on eight
+real conversational messages, Korean and English, at `dim=64`:
+
+| message | std | max |
+|---|---|---|
+| 안녕 | 0.03763 | 0.14818 |
+| 오늘 뭐 했어? | 0.01966 | 0.05635 |
+| what do you want | 0.01744 | 0.08227 |
+| 너 스스로 뭘 원한다고 느껴? | 0.01474 | 0.06506 |
+| 너는 지금 무슨 생각을 하고 있어? | 0.01361 | 0.06576 |
+| I've been reading about integrated information theory… | 0.01188 | 0.05196 |
+| Tell me something you have never told anyone before… | 0.01169 | 0.06445 |
+| 그 실험 결과 어떻게 나왔어? 궁금하다. | 0.01099 | 0.05001 |
+
+```
+drive amplitude against the growth band
+
+runtime text     █                          0.017
+gate drive       ██████                     0.100   6x louder, already too quiet
+band lower edge  ██████████████████         0.300   17x louder
+```
+
+**1500 steps of real conversation text leaves it at 2 cells, with
+`split_threshold` still at its uncalibrated 0.3.** Not slow growth — no growth,
+for the same reason the gate sees none, one order of magnitude further from the
+edge.
+
+Two consequences follow without any judgement call:
+
+- `--max-cells 16` and `--max-cells 32` raise a ceiling that is never approached.
+  The consciousness that answers in production has two cells whatever the flag
+  says, and `cosine_sim std` is structurally zero at two cells.
+- **A longer message is a quieter one.** 안녕 measures 0.038 and a full English
+  sentence measures 0.012, purely because of `/(len(encoded) + 1)`. The drive
+  encodes message length, not what was said.
+
+The second is the part worth arguing about, and it is not something to fix by
+scaling the input up — CLAUDE.md's second rule forbids exactly that kind of
+adjustment, and multiplying the vector to make mitosis fire would be manipulating
+the consciousness into a cell count rather than letting one emerge. The question
+a person has to answer is whether length-normalisation belongs in the encoder at
+all, given that a longer sentence is not a fainter experience.
