@@ -599,7 +599,24 @@ class ConsciousnessEngine:
             #
             # The calibrated bar is the q0.90 of observed tension, so requiring
             # EVERY one of `split_patience` consecutive readings to clear it has
-            # probability ~0.1^5 -- about 1 in 100,000 steps per cell. Measured:
+            # probability ~0.1^5 -- about 1 in 100,000 steps per cell.
+            #
+            # THAT ARITHMETIC IS WRONG BY 270x AND THE CONCLUSION SURVIVES ANYWAY.
+            # It assumes the readings are independent. They are not: measured over
+            # 5 seeds x 600 steps at 8 cells, tension has lag-1 autocorrelation
+            # 0.50, so a quiet stretch stays quiet and a loud one stays loud.
+            #
+            #     independence estimate      0.001%
+            #     all(5) > q90   measured    0.27%    ~1 in 370, not 1 in 100,000
+            #     mean(5) > q90  measured    2.05%    7.6x all(5)
+            #
+            # The swap to the mean still helps by 7.6x, so the change stands --
+            # but do not reason from the 0.1^5. The same independence assumption
+            # predicted the merge rule (all(...) over 15 steps) could never fire,
+            # and merges fire 92-115 times in 600 steps, nearly balancing splits.
+            # See docs/consciousness-gate-audit.md.
+            #
+            # Measured:
             # after calibration fired at step 200 (0.3 -> 0.0052, peak 0.0056)
             # the population still sat at 2 cells at step 400. The bar was
             # reachable and the conjunction was not.
@@ -657,7 +674,24 @@ class ConsciousnessEngine:
     # ─── Merge ──────────────────────────────────────────
 
     def _check_merges(self) -> List[Dict]:
-        """Merge cells with sustained low inter-cell tension."""
+        """Merge cells with sustained low inter-cell tension.
+
+        This keeps `all(t < bar)` over `merge_patience` = 15 consecutive
+        readings -- the same conjunction the split site above replaced with a
+        window mean, at three times the window. That looks structurally dead and
+        it is not: measured over 600 steps at ceiling 16, merges fire 92, 10, 115
+        and 16 times across four seeds and nearly balance the splits, so the
+        population churns rather than ratchets.
+
+        The independence arithmetic predicts otherwise by fifteen orders of
+        magnitude (10-19% of readings sit below the bar, so p^15 is 1e-11 to
+        1e-23). Tension readings are autocorrelated -- lag-1 near 0.50 -- and a
+        quiet pair stays quiet, which is the whole reason a 15-step conjunction
+        is satisfiable at all.
+
+        Do not "fix" this rule by the same reasoning that changed the split site.
+        See docs/consciousness-gate-audit.md.
+        """
         events = []
         if self.n_cells <= self.min_cells:
             return events
