@@ -56,8 +56,8 @@
         "id": "TAIL_PIPE_HOLDS_UNTIL_TIMEOUT",
         "state": "pos-conv",
         "value": "Never pipe a long-running command to `tail`. Redirect to a file, or filter with `grep`.",
-        "threshold": "`timeout N python ... | tail -M` hangs until the timeout fires: the harness holds the pipe's write end and tail cannot emit before EOF. Measured -- python 0.02s, tail 30.015s under `timeout 30`, grep immediate. That produced every 'slow run' this session, including a Law 31 arm reported as taking 50 minutes (timeout 3000) for work that costs 5.4 seconds. It was explained twice -- as compute cost, then as a delayed notification -- before being measured in ten seconds.",
-        "fix": "Session practice: outputs go to a file under the scratchpad, and waits use `until ! pgrep -f <script>`."
+        "threshold": "`timeout N python ... | tail -M` hangs until the timeout fires: the harness holds the pipe's write end and tail cannot emit before EOF. Measured -- python 0.02s, tail 30.015s under `timeout 30`, grep immediate. That produced every 'slow run' this session, including a Law 31 arm reported as taking 50 minutes (timeout 3000) for work that costs 5.4 seconds. It was explained twice -- as compute cost, then as a delayed notification -- before being measured in ten seconds. Third occurrence, and this time the record did not prevent it: the run was not slow, it was DEAD -- launched with the system interpreter instead of the project one, it died at import torch in under a second and still read as running for fifteen minutes. Two checks said alive (a PID existed, the output file existed) and both were reading the wrapper. A separate duplicate record was written for it before this one was found, which is the same failure one level up.",
+        "fix": "Session practice: outputs go to a FILE under the scratchpad with -u and the project interpreter; waits use `until ! pgrep -f <script>`; and liveness is CPU time on the actual process, never a PID or a file existing. Before adding a convergence record, list the existing ids -- this lesson already had one."
       },
       {
         "id": "THRESHOLD_INSIDE_ITS_OWN_NOISE",
@@ -102,8 +102,11 @@
         "source": "bench_v2.py"
       },
       {
-        "id": "A_DEAD_RUN_THAT_LOOKS_ALIVE",
-        "lesson": "A measurement launched with the wrong interpreter died at `import torch` and still read as running for 15 minutes: `timeout ... 2>&1 | tail -N` keeps the shell holding the pipe, so the traceback never lands and the output file stays 0 bytes -- indistinguishable from a slow start. Two independent checks agreed it was alive (pgrep found a PID, the output file existed) and both were reading the wrapper, not the work. Only `ps` showing no python at nonzero CPU caught it. Long runs go to a FILE with `-u` and the project interpreter (.venv/bin/python, not python3); progress is judged by CPU time on the actual process, never by a PID existing or a file existing."
+        "id": "REMOVING_THE_DECORATOR_DOES_NOT_REMOVE_THE_BEHAVIOUR",
+        "state": "pos-conv",
+        "value": "To isolate a conjunct, patch the function it calls -- not the wrapper that adds it.",
+        "threshold": "bench_condition_alone set out to separate each gate condition's own rule from the four axes by stripping the `_with_axes` decorator. Three of the five conditions call `_three_axes` inside their own body and conjoin it themselves (bench_v2 1954/1995/2026), so the axes kept running in three of five rows and their work was reported as the conditions'. The grid read as ZERO_INPUT/PERSISTENCE/SELF_LOOP rejecting every corpse unaided. Caught only because it contradicted a measurement already in the repo -- appendix D has `recovers` alone clearing DEAD and CLONE 100 percent at both scales -- so the two readings could not both stand.",
+        "fix": "Patch `_three_axes` itself for the isolated pass; it reaches the wrapper and the internal calls together. General rule: when a new measurement disagrees with one already recorded, the new one is wrong until its own instrument is checked."
       }
     ]
   },
