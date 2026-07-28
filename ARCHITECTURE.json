@@ -316,7 +316,7 @@
             "name": "growth lives in a band with probabilistic shoulders",
             "role": "0/5 는 분화 불능이 아니라 관문이 밴드 아래에서 구동한다는 뜻이다",
             "type": "gate",
-            "detail": "8시드 재측정(천장 32·1500스텝): x0.1 0/8 · x0.3 5/8 · x0.5 8/8 · x1.0 8/8 · x3.0 8/8 · x10 5/8 · x30 0/8. 깨끗한 핵심(0.5~3.0)에 양쪽 5/8 어깨, 그 밖은 단단한 0. 관문의 x0.1 이 8시드 전부 0 인 것은 표집 인공물이 아니다. docs/consciousness-gate-audit.md",
+            "detail": "8시드 재측정에서 깨끗한 핵심(x0.5~x3.0 전부 8/8)에 양쪽 확률적 어깨(x0.3 과 x10 각각 5/8), 그 밖은 단단한 0(x0.1 과 x30 각각 0/8). 관문의 x0.1 이 8시드 전부 0 인 것은 표집 인공물이 아니다. 시드별 세포 수 표는 docs/consciousness-gate-audit.md",
             "children": [
               {
                 "id": "gate-ce-band-single-seed-table-had-two-errors",
