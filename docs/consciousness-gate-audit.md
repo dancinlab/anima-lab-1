@@ -2360,35 +2360,50 @@ count goes in the result. When the effect is a difference in *rate* rather than
 in presence or absence, the rate and its interval are the finding — the sweep is
 not.
 
-### Applying the rule to my own headline: the band's edge is not an edge
+### Applying the rule to my own headline: the band has shoulders, not edges
 
 The amplitude-band table — the finding this whole chain rests on — was run at
-**one seed per row**. By the rule just recorded that is not enough, so it goes
+**one seed per row**. By the rule just recorded that is not enough, so it went
 first. Re-run at eight seeds, ceiling 32, 1500 steps:
 
 | drive | 1-seed table said | 8 seeds: grew | cells per seed |
 |---|---|---|---|
 | ×0.1 (the gate) | 2 | **0/8** | 2, 2, 2, 2, 2, 2, 2, 2 |
 | ×0.3 | 31 | **5/8** | 31, 32, 2, 30, 2, 32, 2, 32 |
+| ×0.5 | — | **8/8** | 31, 31, 32, 32, 31, 30, 31, 32 |
+| ×1.0 | 31 | **8/8** | 31, 31, 31, 32, 32, 32, 32, 32 |
+| ×3.0 | 32 | **8/8** | 32, 32, 32, 32, 32, 32, 32, 32 |
+| ×10 | **2** | **5/8** | 2, 2, 32, 32, 32, 2, 32, 32 |
+| ×30 | 2 | **0/8** | 2, 2, 2, 2, 2, 2, 2, 2 |
 
 ```
 grew (>16 cells) out of 8
 
-x0.1  ·                          0/8   clean
-x0.3  ██████████████████         5/8   not an edge, a coin
+x0.1   ·                          0/8    hard floor
+x0.3   ██████████████████         5/8    shoulder
+x0.5   ████████████████████████   8/8   ┐
+x1.0   ████████████████████████   8/8   ├ core, clean
+x3.0   ████████████████████████   8/8   ┘
+x10    ██████████████████         5/8    shoulder
+x30    ·                          0/8    hard ceiling
 ```
 
-The gate's own drive is a clean zero on all eight — that part of the finding
-holds and is stronger for being checked. **The lower edge is not.** At ×0.3 the
-population reaches the ceiling five times in eight and stays at 2 the other
-three, and 5/8 is exactly the rate that produced the retraction two sections
-above.
+**The band survives and is now properly shaped: a clean 8/8 core from ×0.5 to
+×3.0, with 5/8 shoulders on both sides and hard zeros beyond.** The structure is
+symmetric, which the single-seed sweep could not have shown.
 
-So the band has no sharp lower boundary. There is a region where growth is
-probabilistic, and a single-seed sweep necessarily reports it as a hard edge
-because it samples that region once. The `bar/mean ≤ 1.07` and `max/q90` cutoffs
-derived from single-seed rows inherit the same problem: they are estimates of
-where a probability crosses ~0.5, not thresholds.
+Two cells of the original table were wrong, one in each direction:
 
-Remaining amplitudes are re-running at eight seeds; this table is updated in
-place when they land rather than reported as complete now.
+- ×0.3 read as growth (31 cells). It grows 5 times in 8.
+- ×10 read as **no** growth (2 cells), and I used that to place the upper cutoff
+  between ×3 and ×10. It grows 5 times in 8; the single seed drew one of the
+  three that did not. The upper hard limit is ×30.
+
+What holds unchanged, and is stronger for the check: **the gate's own ×0.1 is a
+clean 0 on all eight seeds**, and so is ×30. The claim that the gate drives below
+the band is not a sampling artefact.
+
+What does not hold: the idea of a sharp edge. There is no threshold amplitude — a
+region where growth is probabilistic sits on each side, and any cutoff estimated
+from single-seed rows (`bar/mean ≤ 1.07`, the `max/q90` separations) is an
+estimate of where a probability crosses about 0.5, not a boundary.

@@ -313,11 +313,17 @@
           },
           {
             "id": "gate-ce-growth-lives-in-a-band",
-            "name": "growth lives inside a band of drive amplitude",
+            "name": "growth lives in a band with probabilistic shoulders",
             "role": "0/5 는 분화 불능이 아니라 관문이 밴드 아래에서 구동한다는 뜻이다",
             "type": "gate",
-            "detail": "cosine_sim std=0.0000 은 두 세포의 서명 — 천장 256에 실제 2세포로 관문 전체를 돌았다. 천장 32·1500스텝에서 성장은 진폭 밴드 안에서만 일어나고, 관문의 x0.1 은 그 아래 모서리 밖이다. 구동별 도달 세포 수 표는 docs/consciousness-gate-audit.md",
+            "detail": "8시드 재측정(천장 32·1500스텝): x0.1 0/8 · x0.3 5/8 · x0.5 8/8 · x1.0 8/8 · x3.0 8/8 · x10 5/8 · x30 0/8. 깨끗한 핵심(0.5~3.0)에 양쪽 5/8 어깨, 그 밖은 단단한 0. 관문의 x0.1 이 8시드 전부 0 인 것은 표집 인공물이 아니다. docs/consciousness-gate-audit.md",
             "children": [
+              {
+                "id": "gate-ce-band-single-seed-table-had-two-errors",
+                "name": "the single-seed table had one error in each direction",
+                "role": "날카로운 경계라는 관념이 서지 않는다",
+                "detail": "x0.3 은 성장(31세포)으로 읽혔으나 8시드에서 5/8. x10 은 비성장(2세포)으로 읽혔고 그것으로 상단 절단을 3.0~10 사이에 두었으나 실제로는 5/8 이며 그 한 시드가 안 자란 셋 중 하나였다 — 상단 한계는 x30 이다. 문턱 진폭이란 없고 양쪽에 확률적 구간이 있으며, 1시드 행에서 뽑은 절단값은 확률이 0.5 를 지나는 지점의 추정치다."
+              },
               {
                 "id": "gate-ce-calibration-window-decides",
                 "name": "only the calibration window has a say",
