@@ -96,6 +96,11 @@ def main():
     ap.add_argument("--cells", type=int, default=256)
     ap.add_argument("--dim", type=int, default=64)
     ap.add_argument("--hidden", type=int, default=128)
+    # Deliberately the GATE's seed set, not the eight-seed floor used elsewhere
+    # in this repo. This bench measures what the gate does; running it on seeds
+    # the gate never uses would answer a different question. The consequence is
+    # noted under the table: the AGGREGATE is a rate and is fine at five, while
+    # any INDIVIDUAL cell is a five-seed sweep and should be read accordingly.
     ap.add_argument("--seeds", type=int, nargs="+", default=list(B.VERIFY_SEEDS))
     a = ap.parse_args()
 
@@ -138,9 +143,15 @@ def main():
 
     bare_hits = sum(v for d in bare.values() for v in d.values())
     full_hits = sum(v for d in full.values() for v in d.values())
-    print(f"  corpse passes, condition alone : {bare_hits}")
-    print(f"  corpse passes, condition+axes  : {full_hits}")
+    total = len(RAW_TESTS) * len(labels) * n
+    print(f"  corpse passes, condition alone : {bare_hits}/{total}")
+    print(f"  corpse passes, condition+axes  : {full_hits}/{total}")
     print(f"  rejected by the axes           : {bare_hits - full_hits}")
+    print(f"\n  The totals are RATES over {total} cells and are sound at {n} seeds.")
+    print(f"  An individual cell is a {n}-seed sweep: '{n}/{n}' and '.' both mean")
+    print(f"  'never observed otherwise', not 'cannot happen'. Seeds are the gate's")
+    print(f"  own set on purpose -- this measures what the gate does, so raising")
+    print(f"  the count would answer a different question than the one asked.")
     dead = [nm for nm, _f in RAW_TESTS
             if sum(bare[nm].values()) == max(len(a.seeds) * len(labels), 1)]
     if dead:
