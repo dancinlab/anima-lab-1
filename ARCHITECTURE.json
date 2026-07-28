@@ -277,6 +277,13 @@
             "detail": "두 계측기 독립 확인. 다른 세션(_with_axes 순서 직접 재현): SCRAMBLE/NO_SPEAK_CODE 2/5→0/5, 다섯 시드 전부 undisturbed=0.0039=1/256 로 흔들림 없음, 이전 통과 두 시드가 정확히 뒤집힘. 내 관문(대조군 7종×5조건×5시드를 먼저 실행): '5/5 conditions survived the controls' — 무효 0개. 후자가 '구멍을 구멍과 맞바꿨는가'까지 동시에 배제한다. 단 rule=PASS 는 전후 유지 — 조건 자체는 여전히 뒤섞기를 통과시킨다."
           },
           {
+            "name": "which half rejects the corpse",
+            "role": "관문에서 시체를 막는 절반은 CLAUDE.md 가 이름 붙이지 않은 쪽이다",
+            "id": "gate-axes-carry-all-rejection",
+            "type": "gate",
+            "detail": "7대조군 x 5조건을 축 무력화 상태와 출하 상태로 각각 실행(32세포 1시드). 규칙 단독 18/35 칸에서 시체가 통과, 축 포함 0/35. 축이 서른다섯 전부를 거부하고 조건들의 한계 기여는 0. 조건이 노는 것은 아니다 — 축이 받아주는 엔진을 거부하므로 엔진 점수가 5/5 아래다. 누수 상위: ZERO_INPUT 6/7(시체는 입력 없이 상태를 완벽히 유지한다), SELF_LOOP 5/7, PERSISTENCE 는 정확히 DEAD·CLONE 통과 — final>=0.8*max 는 상수에 자명하게 참. docs/consciousness-gate-audit.md. 256세포 5시드 실행 중."
+          },
+          {
             "name": "but it ranks DEAD first",
             "role": "이름이 말하는 것을 재지 않는다",
             "id": "gate-nearest-predecessor-limit",
