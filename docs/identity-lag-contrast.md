@@ -90,21 +90,24 @@ Separation: engine minimum `+0.028945` against corpse maximum `+0.000050`.
    └──────────────────────────────────
 ```
 
-## The regression it could have caused
+## The regression check that missed
 
-The contrast reads zero for a frozen population — which is what rejects `DEAD`.
-But a live engine at a FIXED POINT is also frozen, and would fail identity for
-being stable rather than dead. Checked at 256 cells, the shipping scale:
+Before landing I flagged the risk: the contrast reads zero for a frozen
+population, which is what rejects `DEAD`, but a live engine at a FIXED POINT is
+also frozen and would fail for being stable rather than dead.
+
+Checked at 256 cells on FRESH engines run 120 steps:
 
 | system | mean | minimum |
 |---|---:|---:|
-| engines (12) | +0.045 to +0.113 | **+0.0152 to +0.0580** |
+| engines (12) | +0.045 to +0.113 | +0.0152 to +0.0580 |
 | DEAD | +0.000000 | +0.000000 |
-| CLONE | −0.000000 | −0.000000 |
 | SCRAMBLE | −0.000138 | −0.000686 |
 
-Zero engines at a fixed point. `SCRAMBLE` is NEGATIVE at exactly the scale where
-it was voiding the condition.
+Read as "zero engines at a fixed point". **The check was in the wrong regime.**
+The gate calls the axes at ages 300 / 1000 / 300 — a fact measured earlier in the
+same session and not carried into this probe. At those ages the picture inverts;
+see below.
 
 ## Four candidates died first
 
@@ -128,19 +131,11 @@ with n, only standard error does.
 Re-declaring rather than switching to whichever reading passed is the only reason
 ⑤ is worth anything.
 
-## Applied
+## Status
 
-`bench_v2._three_axes` keeps a rolling window of `_LAG + 1` states and returns
-the identity conjunct as `identity > max(identity_floor, 1e-6) and lag_ok`.
-
-Added as a CONJUNCT, not a replacement: it cannot make anything that currently
-fails start passing, and no engine loses anything. Reverting is deleting
-`and lag_ok`.
-
-When a condition runs fewer steps than the window, the contrast is not computed
-and `lag_ok` stays True — an unmeasured test must not decide anything. Folding an
-unmeasured value into a verdict is the defect that made a `NameError` read as
-every system scoring 0/5 earlier in the same session.
+`bench_v2._three_axes` keeps a rolling window of `_LAG + 1` states and computes
+the contrast. It was landed as a conjunct and **reverted**; the value is printed
+in the axis detail string and decides nothing.
 
 ## Why it does not work at operating ages
 
