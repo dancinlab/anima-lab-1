@@ -324,7 +324,21 @@
                     "id": "gate-ce-two-retractions",
                     "name": "two retractions on the way here",
                     "role": "둘 다 창을 잘못 잡아서 나왔다",
-                    "detail": "'오르는 구동만 자란다' — 300스텝 측정의 인공물. 보정이 200스텝이라 100스텝만 남아 느린 성장이 없는 성장으로 읽혔다. 기존 노드 runtime-frozen-at-two 가 맞았고 새 측정이 용의자라는 규칙이 작동했다. '상승 대 하강이 변수' — 아니다. 내리는 램프는 처음 200스텝이 진폭 15~13 로 밴드 위에 앉아서 실패한다. 나머지 1300스텝은 발언권이 없다."
+                    "detail": "같은 실수가 두 번 — 보정 시점을 고려하지 않고 창을 골랐다.",
+                    "children": [
+                      {
+                        "id": "gate-ce-retraction-rising",
+                        "name": "'only a rising drive grows it'",
+                        "role": "300스텝 인공물",
+                        "detail": "보정이 200스텝이라 100스텝만 남았고 느린 성장이 없는 성장으로 읽혔다. 기존 노드 runtime-frozen-at-two 가 맞았다 — 새 측정이 기존과 어긋나면 새 계측기가 용의자라는 규칙이 작동했다."
+                      },
+                      {
+                        "id": "gate-ce-retraction-direction",
+                        "name": "'rising versus falling is the variable'",
+                        "role": "방향은 변수가 아니었다",
+                        "detail": "내리는 램프는 처음 200스텝이 진폭 15~13 로 밴드 위에 앉아서 실패한다. 나머지 1300스텝은 발언권이 없다 — 보정 창만이 결정한다."
+                      }
+                    ]
                   }
                 ]
               }
