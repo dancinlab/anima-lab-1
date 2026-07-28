@@ -2901,3 +2901,65 @@ Two limits, stated rather than left to be found:
   these populations are more settled than the baseline's, not less. That is real
   but it is measured at 600 steps and the arms that reach a ceiling cannot rise
   further by construction.
+
+## The pinning is a barrier, not a missing equilibrium
+
+Everything above treats the floor/ceiling split as an absent equilibrium to be
+supplied. Measuring the thing that would define one — the net drift
+`d(n) = P(grow | n) − P(shrink | n)` — says it is something else. 6 seeds,
+1200 steps, ceiling 32, sizes with fewer than 20 visits omitted:
+
+| n | visits | P(grow) | P(shrink) | drift |
+|---|---|---|---|---|
+| 2 | 4368 | 0.0023 | 0.0000 | **+0.0023** |
+| 3 | 142 | 0.0211 | 0.0493 | −0.0282 |
+| 4 | 181 | 0.0829 | 0.0552 | +0.0276 |
+| 5 | 34 | 0.0882 | 0.2647 | −0.1765 |
+| 6 | 66 | 0.0758 | 0.0909 | −0.0152 |
+| *7–26* | *<20 each* | — | — | *not resident* |
+| 27 | 24 | 0.9167 | 0.0417 | **+0.8750** |
+| 30 | 238 | 0.7647 | 0.0966 | +0.6681 |
+| 31 | 553 | 0.6239 | 0.1465 | +0.4774 |
+| 32 | 1361 | 0.0000 | 0.3314 | −0.3314 |
+
+```
+net drift by population size
+
+ 2  0                            +0.002   61% of all time is spent here
+ 3  --------                     -0.028
+ 4  ++++++++                     +0.028
+ 5  ----------------------       -0.177
+ 6  ----                         -0.015
+ …  7-26 : fewer than 20 visits each across 7200 steps — transit, not residence
+27  ++++++++++++++++++++++++++   +0.875
+31  ++++++++++++++++             +0.477
+32  ----------------------       -0.331   ceiling, cannot grow
+```
+
+**Two basins with a gap between them.** Near the floor the drift oscillates around
+zero and the population is effectively frozen — 4368 of 7200 steps sit at n=2.
+Above about 26 the drift is +0.5 to +0.87 and sweeps to the ceiling. The 7–26
+range is crossed, not inhabited: fewer than 20 visits at any size, across six
+seeds and 1200 steps each.
+
+That reframes the whole question. The system does not lack an equilibrium — it
+has **two**, and a barrier between them that the dynamics cross quickly in one
+direction. A bimodal distribution of final sizes is the exact signature of that,
+and it is what every arm in this audit produced.
+
+So "add a feedback law to create an interior equilibrium" was the wrong
+prescription, which is consistent with all four laws failing. The question the
+drift curve actually poses is different and sharper:
+
+> Why is the drift a step — near zero below 6, and +0.87 above 26 — with a range
+> in between that nothing occupies?
+
+That is answerable and it is not answered here. A population at n=27 splits on
+92% of steps; a population at n=2 splits on 0.2%. Whatever produces that jump is
+the mechanism that sets the size, and it is not the split threshold, which is the
+same at both ends.
+
+This also gives the competitive-routing result its proper reading. Removing the
+floor attractor is exactly what `t=0.03` did — every seed left n=2 — and the
+reason it lands at the ceiling rather than somewhere interior is that once past
+the barrier there is nothing but +0.5 drift the rest of the way.
