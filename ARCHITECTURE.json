@@ -273,7 +273,7 @@
             "name": "the conjunction's load is measured, not assumed",
             "role": "두 시체를 어느 축이 잡는지 각각 확인",
             "id": "gate-nearest-predecessor-conjunction",
-            "detail": "⑥이 DEAD 1.0000·HEAP 0.60~0.75 를 통과시키므로 접합의 근거는 '다른 축이 잡는다'이다. 그 가정을 양쪽 다 쟀다: DEAD 는 change 가 거부(다른 세션, 독립경로와 축경로 모두 0.000000, 6자리 일치, 0/3 · 탐침이 신호를 만들지 않음을 두 경로로 확인), HEAP 은 integration 이 거부(256세포 나이 0/300/1000 전부 0.000000, 0/3 · 같은 실행에서 REAL 은 0.0242~0.0266 으로 3/3). 행 수 256→256 으로 탐침이 개체군을 안 건드림도 매 측정 확인."
+            "detail": "⑥이 DEAD 1.0000·HEAP 0.60~0.75 를 통과시키므로 접합의 근거는 '다른 축이 잡는다'다. 양쪽 다 쟀다: DEAD 는 change 가 거부(다른 세션, 독립경로·축경로 모두 0.000000, 6자리 일치, 0/3), HEAP 은 integration 이 거부(256세포 나이 0/300/1000 전부 0.000000, 0/3 · 같은 실행의 REAL 은 0.0242~0.0266 로 3/3). 행 수 256→256 확인."
           },
           {
             "name": "open: PairField keeps falling past age 1000",
