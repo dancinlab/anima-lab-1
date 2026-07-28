@@ -252,6 +252,18 @@
             "detail": "③ 산술잡음 바닥 대비 여유: 같은 입력 두 번을 분모로 쓰는 것이 곧 기존 response=differing/same 이다. 결정적 엔진의 바닥은 정확히 0 이라 여유가 2.2e38 — 1e6 상한이 단위만 바꾼 것이고, WHISPER 도 결정적이라 1.1e32 로 똑같이 통과한다. 착륙 규칙이 없었다면 '엔진 1e38 대 DEAD 0.000, 완벽한 분리'로 읽고 축을 그 축의 수리안으로 실었을 것이다."
           },
           {
+            "name": "sixth candidate: nearest predecessor",
+            "role": "널이 조합론 1/n — 데이터를 순열하지 않는다",
+            "id": "gate-nearest-predecessor",
+            "detail": "각 세포의 최근접 직전 상태가 자기 자신인 비율. 정체성 부재 = 우연 일치 = 1/n, 개체 수의 산술이라 SCRAMBLE 이 구성상 널이 되지 않는다. 32세포 표본 밖(시드 62~71, 설계 42~46과 서로소): 엔진 0.476~1.000 나이 0/300/1000 전부, SCRAMBLE 0.033~0.043, 바 4/32=0.125. ⑤를 죽인 나이 감쇠 없음. 미착륙 — 256세포 나이 스윕이 착륙 전 조건이다."
+          },
+          {
+            "name": "and its bar must use the ACTUAL row count",
+            "role": "요청 n 으로 계산하면 2행 엔진이 자동 통과한다",
+            "id": "gate-nearest-predecessor-bar",
+            "detail": "바 4/n 을 요청 세포 수로 계산하면 ConsciousnessEngine(실제 2행)에서 우연 일치율 1/2=0.5 가 바 0.125(32c)·0.0156(256c)보다 4~32배 높아 자동 통과한다. 그 엔진의 0.9833~1.0000 은 증거가 아니라 산술이다. 착륙 시 바는 get_hiddens().shape[0] 에서 런타임 계산해야 하며, 그러지 않으면 t>=3 을 검증하고 >0.0 을 출하한 것과 같은 불일치가 된다."
+          },
+          {
             "name": "the fifth candidate landed",
             "role": "과도기를 잰다 — 정체성이 아니다",
             "id": "gate-lag-contrast",
