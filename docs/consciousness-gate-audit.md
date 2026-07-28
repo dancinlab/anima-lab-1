@@ -1492,3 +1492,67 @@ Two rows are worth reading on their own:
 
 One seed at 32 cells. The five-seed run at the shipping default of 256 cells is
 what settles whether the picture changes with scale.
+
+## `PERSISTENCE` at the shipping default: the failures carry no trend
+
+The 256-cell run prints the Φ series for every seed a condition fails on. Nine
+were printed. Reading them changes what `PERSISTENCE` failures mean.
+
+`NarrativeEngine`, seed 45:
+
+```
+Φ  16 |
+   15 |                                          ╭╮
+   14 |  ╭╮          ╭╮                          ││
+   13 |  ││ ╭╮       ││    ╭╮                    ││
+   12 |  ││ ││ ╭╮    ││    ││ ╭╮                 ││
+   11 |  ││ ││ ││    ││    ││ ││ ╭╮              ││ ╭╮
+   10 |  ││ ││ ││ ╭╮ ││    ││ ││ ││              ││ ││
+      └──┴┴─┴┴─┴┴─┴┴─┴┴────┴┴─┴┴─┴┴──────────────┴┴─┴┴──
+         14.5 13.6 13.0 14.6 10.8 13.7 12.5 11.5 15.5 11.1
+```
+
+Φ never falls below 10.8 and ends at 11.1, which is 76% of its own maximum. The
+rule is `final >= 0.8 × max(first five)`, so 76% fails. Nothing collapsed; the
+series wanders inside a band and the last sample happened to land low.
+
+Shuffling each failing series' own values — destroying time order entirely and
+keeping the numbers — and asking how often `recovers` still passes:
+
+| ratio | min/max | pass rate of shuffled orderings |
+|---|---|---|
+| 0.000 | 0.000 | 17.9% |
+| 0.675 | 0.470 | 34.9% |
+| 0.620 | 0.519 | 53.0% |
+| 0.862 | 0.686 | 72.6% |
+| 0.788 | 0.616 | 61.3% |
+| 0.754 | 0.591 | 52.8% |
+| 0.628 | 0.586 | 56.6% |
+| 0.756 | 0.694 | 52.5% |
+| 0.719 | 0.667 | 52.5% |
+| **mean 0.645** | | **mean 52.4%** |
+
+```
+per-seed pass rate with all time order removed
+
+shuffled orderings  ██████████████████████████  52.4%
+bar the gate wants  ██████████████████████████████████████████████████  100% (5 of 5 seeds)
+```
+
+**A test that passes 52% of order-free data is required to pass five times out of
+five.** A series with no temporal structure at all clears that conjunction
+0.524⁵ = **3.9%** of the time. A `PERSISTENCE` FAIL is the expected outcome for a
+noisy Φ whether or not anything declined, so it carries almost no information
+about decline.
+
+Two limits on this reading, both against it:
+
+- Only failing seeds print their series, so these nine are selected for spread —
+  the 52.4% is measured on the values most likely to produce it.
+- A real ordering failing where 52% of shuffles pass does put it in the worse
+  half, which is mild evidence of a downward tilt. Mild is the point: the rule
+  reports it as a categorical failure.
+
+This is the same conclusion appendix D of `pairfield-persistence-failure.md`
+reached from the other direction, now measured on the gate's own shipping
+default rather than a side script.
