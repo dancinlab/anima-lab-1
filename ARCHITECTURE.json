@@ -281,7 +281,21 @@
             "role": "관문에서 시체를 막는 절반은 CLAUDE.md 가 이름 붙이지 않은 쪽이다",
             "id": "gate-axes-carry-all-rejection",
             "type": "gate",
-            "detail": "7대조군 x 5조건을 축 무력화 상태와 출하 상태로 각각 실행(32세포 1시드). 규칙 단독 18/35 칸에서 시체가 통과, 축 포함 0/35. 축이 서른다섯 전부를 거부하고 조건들의 한계 기여는 0. 조건이 노는 것은 아니다 — 축이 받아주는 엔진을 거부하므로 엔진 점수가 5/5 아래다. 누수 상위: ZERO_INPUT 6/7(시체는 입력 없이 상태를 완벽히 유지한다), SELF_LOOP 5/7, PERSISTENCE 는 정확히 DEAD·CLONE 통과 — final>=0.8*max 는 상수에 자명하게 참. docs/consciousness-gate-audit.md. 256세포 5시드 실행 중."
+            "detail": "7대조군 x 5조건을 축 무력화 상태와 출하 상태로 각각 실행(32세포 1시드). 규칙 단독 18/35 칸에서 시체가 통과, 축 포함 0/35. 축이 서른다섯 전부를 거부하고 조건들의 한계 기여는 0이다. docs/consciousness-gate-audit.md. 256세포 5시드 실행 중.",
+            "children": [
+              {
+                "id": "gate-conditions-are-not-idle",
+                "name": "the conditions are not idle",
+                "role": "한계 기여 0 은 무용과 다르다",
+                "detail": "조건들은 축이 받아주는 엔진을 거부한다 — 엔진 점수가 5/5 아래인 이유가 그것이고 배포 가능 수를 움직이는 것도 그쪽이다. 0 인 것은 시체를 막는 일에서의 기여뿐이다."
+              },
+              {
+                "id": "gate-leakiest-two-rows",
+                "name": "the two rows that leak most",
+                "role": "무엇이 새는지가 왜 새는지를 말해준다",
+                "detail": "ZERO_INPUT 단독 6/7 — 시체는 입력 없이 상태를 완벽히 유지하며, 그것이 시체라는 것의 정의다. PERSISTENCE 단독은 정확히 DEAD·CLONE 통과 — final>=0.8*max(첫 다섯)은 상수에 자명하게 참이다. monotonic 을 폐기시킨 병리가 그 자리를 대신한 disjunct 에 그대로 있다."
+              }
+            ]
           },
           {
             "name": "but it ranks DEAD first",
