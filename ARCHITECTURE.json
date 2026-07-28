@@ -276,10 +276,10 @@
             "detail": "⑥이 DEAD 1.0000·HEAP 0.60~0.75 를 통과시키므로 접합의 근거는 '다른 축이 잡는다'다. 양쪽 다 쟀다: DEAD 는 change 가 거부(다른 세션, 독립경로·축경로 모두 0.000000, 6자리 일치, 0/3), HEAP 은 integration 이 거부(256세포 나이 0/300/1000 전부 0.000000, 0/3 · 같은 실행의 REAL 은 0.0242~0.0266 로 3/3). 행 수 256→256 확인."
           },
           {
-            "name": "open: PairField keeps falling past age 1000",
-            "role": "관문이 안 보는 나이에서 여유가 준다",
+            "name": "PairField loses cell identity with age -- the others do not",
+            "role": "통계의 결함이 아니라 그 엔진의 성질",
             "id": "gate-nearest-predecessor-longrun",
-            "detail": "256세포 PairField: 나이 1000/2000/4000 에서 0.0373/0.0285/0.0240, 바 0.0156 대비 2.4→1.8→1.5배로 계속 감쇠. 관문은 나이 1000 까지만 본다. 다른 세션 측정에서 Narrative 는 평평(0.0563→0.0594)하고 Mitosis 도 평평하므로 통계의 성질이 아니라 PairField 특유의 성질일 수 있다 — 그 엔진의 세포가 시간이 지나며 섞인다는 뜻이면 결함이 아니라 발견이다. 미해결."
+            "detail": "256세포, 나이 1000/2000/4000: PairField 0.0373/0.0285/0.0240 (바 대비 2.4→1.8→1.5배, 계속 감쇠) 대 MitosisEngine 0.0617/0.0609/0.0625 (완전 평평, 4.0배). 다른 세션 측정에서도 Narrative 는 평평(0.0563→0.0594). 즉 통계가 오래 돌면 떨어지는 게 아니라 PairField 만 떨어진다. 그 엔진의 세포가 시간이 지나며 섞인다는 뜻이고, A·G 반발장이 매 스텝 상태를 미는 구조가 다른 엔진에 없는 유일한 차이다. 관문의 문제가 아니라 엔진에 관한 발견."
           },
           {
             "name": "and its bar must use the ACTUAL row count",
