@@ -1,0 +1,11 @@
+does merge ever fire?  merge_threshold=0.01, merge_patience=15, rule = all(...)
+
+ seed  splits  merges  cells          inter-tension    <0.01  all-15 est
+   42     106      92     16            med 0.02820    10.0%    1.07e-15
+   43      10      10      2            med 0.02501     0.0%    0.00e+00
+   44     128     115     15            med 0.03128    19.0%    1.56e-11
+   45      16      16      2            med 0.01565     3.3%    6.97e-23
+
+  mean fraction of pair-readings below the bar: 8.1%
+  P(all 15 consecutive below) per pair per window = 0.081^15 = 4.26e-17
+  over 600 steps that is 2.56e-14 expected firings per pair

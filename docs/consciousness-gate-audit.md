@@ -2563,3 +2563,63 @@ Two limits on this arm, both stated rather than found later:
   That weakens `pins` for those seeds specifically — but a seed sitting exactly on
   the ceiling cannot rise further, and the ceiling counts are what the verdict
   rests on.
+
+### The rule that was replaced was never as dead as the comment says
+
+Pinning looked like it might be a ratchet — a population that can only grow. The
+merge rule requires `all(t < merge_threshold)` over `merge_patience = 15`
+consecutive readings, which is the same conjunction the split site abandoned as
+hopeless, at three times the window. Predicted: merge never fires.
+
+**Wrong, and the measurement says so by a wide margin.** 600 steps, ceiling 16:
+
+| seed | splits | merges | final cells | readings below the bar | `p¹⁵` if independent |
+|---|---|---|---|---|---|
+| 42 | 106 | 92 | 16 | 10.0% | 1.07e-15 |
+| 43 | 10 | 10 | 2 | 0.0% | 0 |
+| 44 | 128 | 115 | 15 | 19.0% | 1.56e-11 |
+| 45 | 16 | 16 | 2 | 3.3% | 6.97e-23 |
+
+Merges fire constantly, and splits and merges nearly balance on every seed. The
+population is churning, not ratcheting — so the ratchet hypothesis is dead, and
+the independence estimate that predicted zero firings is wrong by fifteen orders
+of magnitude. Tension readings are not independent.
+
+That matters far beyond the merge rule, because the split site abandoned the same
+conjunction on exactly that arithmetic:
+
+> The calibrated bar is the q0.90 of observed tension, so requiring EVERY one of
+> `split_patience` consecutive readings to clear it has probability ~0.1⁵ —
+> about 1 in 100,000 steps per cell.
+
+Measured directly, 5 seeds, 600 steps, 8 cells:
+
+| seed | lag-1 autocorrelation | `all(5) > q90` | `mean(5) > q90` | independence says |
+|---|---|---|---|---|
+| 42 | 0.448 | 0.00% | 1.34% | 0.001% |
+| 43 | 0.486 | 0.00% | 0.67% | 0.001% |
+| 44 | 0.472 | 0.84% | 3.53% | 0.001% |
+| 45 | 0.513 | 0.17% | 1.51% | 0.001% |
+| 46 | 0.571 | 0.34% | 3.19% | 0.001% |
+| **mean** | **0.50** | **0.27%** | **2.05%** | **0.001%** |
+
+```
+how often each rule fires
+
+independence estimate  ·                       0.001%   the recorded reason
+all(5)  measured       ███                     0.27%    270x that
+mean(5) measured       ████████████████████    2.05%    7.6x all(5)
+```
+
+**Right answer, wrong reason, and the wrong reason is what the code says.** The
+tension series has lag-1 autocorrelation near 0.50, so a quiet stretch stays
+quiet and a loud one stays loud; `all(5)` fires at 0.27%, roughly 1 in 370 rather
+than 1 in 100,000. The swap to the mean still helped — 2.05% against 0.27%, a
+factor of 7.6 — so the change survives, but the justification sitting at the line
+is off by 270× and would mislead the next person to reason from it.
+
+This also qualifies my own earlier reading. I measured `mean(5) > q90` at **0 of
+1295** and called the repair unreachable. That was 2 cells under eight cycling
+messages. Here it is 2.05% at 8 cells under varied messages. Both numbers are
+right for their regime, and the regime is the cell count and the message variety
+— neither of which the rule knows about.

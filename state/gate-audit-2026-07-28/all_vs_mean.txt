@@ -1,0 +1,12 @@
+the split site swapped all(t>bar) for mean(window)>bar on a 0.1^5 estimate.
+that estimate assumes INDEPENDENT readings. measured on real tension:
+
+ seed  lag-1 autocorr   all(5)>q90   mean(5)>q90  indep. 0.1^5
+   42           0.448        0.00%         1.34%        0.001%
+   43           0.486        0.00%         0.67%        0.001%
+   44           0.472        0.84%         3.53%        0.001%
+   45           0.513        0.17%         1.51%        0.001%
+   46           0.571        0.34%         3.19%        0.001%
+
+  all(5)  mean 0.27%   mean(5)  mean 2.05%
+  the independence estimate for all(5) is 0.001%
