@@ -3191,3 +3191,74 @@ Two limits on this correction, in turn:
   injected noise against independent initialisations. That difference is the
   likely cause of the steeper slope, and it means the size information may be
   carried by lineage rather than by anything the tension rule can name.
+
+## Tension measures how recently a cell divided, and dividing is what it triggers
+
+The correction above ended on a suspicion: the size information in a grown
+population may be carried by lineage rather than by anything the tension rule can
+name. Measured directly, populations of ≥16 cells after step 600, 4 seeds:
+
+| lineage depth | cells sampled | mean tension |
+|---|---|---|
+| 0 — founders | 1200 | 0.006454 |
+| 1 | 14849 | 0.020321 |
+| 2 | 19463 | 0.023350 |
+| 3 | 1491 | **0.031800** |
+
+| age (steps/100) | cells sampled | mean tension |
+|---|---|---|
+| 0 — newest | 23807 | 0.023556 |
+| 3 | 1585 | 0.018955 |
+| 6 | 339 | 0.009139 |
+| 9 — oldest | 600 | **0.005702** |
+
+```
+mean tension
+
+by depth   0 ████████████████████            0.0065
+           1 ██████████████████████████████████████████████████████████████  0.0203
+           3 ██████████████████████████████████████████████████████████████████████████████████████████████████  0.0318
+
+by age     0 ████████████████████            0.0236   newest
+           9 ████                            0.0057   oldest
+```
+
+**Tension rises 4.9× with lineage depth and falls 4.1× with age.** Depth and age
+are confounded here — deeper cells are younger, because depth is accumulated by
+splitting — and this measurement does not separate them. The test that would is
+depth within a fixed age bucket, and it has not been run.
+
+Either way the mechanism is the same, and it is autocatalytic:
+
+```
+a cell splits
+  → the daughter is a clone with injected noise, and has not settled
+  → an unsettled cell deviates more from the population mean
+  → deviation from the population mean IS tension
+  → high tension is the split trigger
+  → the daughter splits
+```
+
+**Tension, as defined, largely measures how recently a cell divided.** The rule
+"high tension divides" then makes division self-reinforcing, and every otherwise
+puzzling number in this audit falls out of that:
+
+- drift is +0.87 above twenty-six cells because a large population is mostly
+  recent splits, hence mostly high-tension cells;
+- a grown population's tension runs 3.5× from n=2 to n=32 while a constructed one
+  runs 1.5×, because the constructed cells have no split history to be recent
+  from;
+- the population sweeps from the barrier to the ceiling rather than settling,
+  because each split raises the mean tension that triggers the next.
+
+That reframes the design question one last time. It is not *what threshold* or
+*what statistic* or *what feedback law* — those all operate on a quantity whose
+largest component is the system's own recent activity. **A control signal that is
+mostly a record of the controller's recent output is a feedback loop, not a
+measurement.**
+
+What this does not establish: that tension carries *nothing* else. Founders sit at
+0.0065 and the oldest cells at 0.0057, close but not equal, and the drive still
+moves tension — the amplitude band earlier in this document is real. The claim is
+about which component dominates in a grown population, not that the others are
+absent.
