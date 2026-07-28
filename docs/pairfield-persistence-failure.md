@@ -901,6 +901,62 @@ Three of the four systems measured are now at that cap. Post-fix, `response`
 separates "reads its input" from "does not", and nothing finer; it should not be
 read as a graded quantity.
 
+## Appendix D — does the rule separate anything? The controls' own null
+
+`recovers` was measured against an order-shuffled null: take one system's ten Φ
+checkpoints, shuffle only their ORDER 10,000 times, and compare the real order's
+pass rate to the shuffled one. A real order passing *below* its own null means
+the order carries information and its direction is downward — a genuine decline.
+
+That was established for engines. The open question was whether the **controls**
+decline too: a corpse that declines fails for the same reason a real engine
+does, and then the condition measures something real while separating nothing.
+Rule-only — the three axes are a separate conjunct and are excluded here.
+
+| system | 32c real / shuffled / gap | slope | 256c real / shuffled / gap | slope |
+|---|---|---|---|---|
+| HEAP | 20.0% / 31.5% / **−11.5** | −0.0043 | 0.0% / 44.3% / **−44.3** | **−0.1315** |
+| DECOUPLED | 60.0% / 56.1% / +3.9 | −0.0005 | 0.0% / 25.8% / **−25.8** | +0.0062 |
+| **DEAD** | **100.0%** / 100.0% / 0.0 | 0.0000 | **100.0%** / 100.0% / 0.0 | 0.0000 |
+| NOISE | 40.0% / 52.4% / −12.4 | −0.0011 | 40.0% / 26.8% / +13.2 | +0.0129 |
+| **CLONE** | **100.0%** / 100.0% / 0.0 | 0.0000 | **100.0%** / 100.0% / 0.0 | −0.0000 |
+| SCRAMBLE | 0.0% / 27.9% / **−27.9** | −0.0008 | 40.0% / 69.2% / **−29.2** | −0.0405 |
+| LINEAR | 40.0% / 47.4% / −7.4 | +0.0042 | 40.0% / 35.7% / +4.3 | +0.0047 |
+| PairField | 60.0% / 67.6% / −7.6 | **+0.0249** | 80.0% / 66.8% / **+13.2** | **+0.1434** |
+| NarrativeEngine | 100.0% / 62.0% / **+38.0** | +0.0076 | 80.0% / 67.1% / +12.9 | +0.0057 |
+
+**Yes, the controls decline — more than the engines do.** The
+"real-order-below-its-own-null" signature belongs to HEAP at both scales, and at
+256 cells HEAP is −44.3 points with a slope of −0.1315, larger in magnitude than
+any engine measured at either scale. At 256c *no* engine shows the signature and
+three controls do. A HEAP is a population whose parts never interact; whatever
+decline the rule is detecting, it is not a property that distinguishes an
+integrated system from a pile.
+
+**And the rule cannot reject a frozen Φ.** DEAD and CLONE pass `recovers` **100%
+at both scales**, because `final >= 0.8 × max(first five)` is trivially true when
+Φ never changes. That is the same pathology that retired the `monotonic`
+disjunct — a stationary series satisfies a no-collapse test by not moving — and
+`recovers` has it too. Only the axes reject those two corpses.
+
+Rule-only mean pass rate:
+
+| scale | controls | engines | separation |
+|---|---|---|---|
+| 32c | 51.4% | 80.0% | +28.6 pts |
+| 256c | 45.7% | 80.0% | +34.3 pts |
+
+There is separation on average, but it is produced by DEAD and CLONE scoring
+100% and HEAP scoring 0% — the two corpses that cannot move rank *above* every
+engine, and the one that declines ranks below. The ordering inside the controls
+is backwards, and the mean only looks right because the two errors point
+opposite ways.
+
+**The most direct consequence for this document:** PairField's Φ slope is
+**positive at both scales** (+0.0249 at 32c, +0.1434 at 256c) — its Φ rises over
+1000 steps — and it fails PERSISTENCE anyway, on 2 seeds at 32c and 1 at 256c.
+The engine blocked for "collapse over time" is the one whose Φ is going up.
+
 ---
 
 Reproduce. Measurement scripts are session scratch under
@@ -922,6 +978,7 @@ none of them modify anything in the repo.
 .venv/bin/python $SP/contract2.py                                  # appendix B, attribution
 .venv/bin/python $SP/grid.py $SP/anima-before BEFORE $SP           # appendix C
 .venv/bin/python $SP/grid.py $SP/anima-after  AFTER  $SP           # appendix C
+.venv/bin/python $SP/shuffle_null.py $SP/anima-after 256 64 128 $SP # appendix D
 .venv/bin/python $SP/reconcile5.py                                 # §9 reconciliation
 .venv/bin/python $SP/mechanism.py OscillatorLaser 32 32 128 44      # §6, 12 engines x seeds 42-46
 ```

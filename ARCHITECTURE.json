@@ -100,6 +100,10 @@
         "value": "A perturbation probe must be small enough that the system it returns is the system it was given. Before reading any axis, check the population size before and after the probe runs -- if the probe changes it, the axis describes something the probe built.",
         "threshold": "Measured directly at bench_v2 HEAD, ConsciousnessEngine: 32 cells -- constructed 2, after 1000 steps of the gate drive still 2, AFTER _three_axes 32. At 256 cells: 2, 2, then 256. The probe takes the engine from two cells to its entire ceiling. Cause: the gate drives with randn(1,dim)*0.1 while the integration probe kicks a hidden row with randn(hidden_dim)*0.5 -- five times the amplitude, applied to a 128-dim state, which crosses the split threshold that 1000 steps of the operating drive never approach. A teammate independently reproduced it at 40 steps of drive*0.5 (2 -> 256) and retracted a 253-row reading they had first reported as a property of the engine; it was a property of the probe. The consequence is invisible in every verdict because the axes compare m = min(prev_rows, cur_rows), so the reading is taken on 2 rows of a system the probe just expanded 128-fold. bench_v2's own comment anticipated a dividing engine reaching different counts on the two arms and took the min; what was not known is the magnitude.",
         "source": "bench_v2.py"
+      },
+      {
+        "id": "A_DEAD_RUN_THAT_LOOKS_ALIVE",
+        "lesson": "A measurement launched with the wrong interpreter died at `import torch` and still read as running for 15 minutes: `timeout ... 2>&1 | tail -N` keeps the shell holding the pipe, so the traceback never lands and the output file stays 0 bytes -- indistinguishable from a slow start. Two independent checks agreed it was alive (pgrep found a PID, the output file existed) and both were reading the wrapper, not the work. Only `ps` showing no python at nonzero CPU caught it. Long runs go to a FILE with `-u` and the project interpreter (.venv/bin/python, not python3); progress is judged by CPU time on the actual process, never by a PID existing or a file existing."
       }
     ]
   },
