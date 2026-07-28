@@ -1644,7 +1644,7 @@ to change either. Loosening a condition because it fails engines is exactly the
 move this audit exists to catch. What has been established is that the failures
 carry no trend and no structure; what to do about it is a design decision.
 
-## `ConsciousnessEngine` 0/5: the engine grows only in a world that keeps intensifying
+## `ConsciousnessEngine` 0/5: growth lives inside a band, and the gate drives below it
 
 The 256-cell run fails it on all five conditions, and `NO_SYSTEM_PROMPT` reports
 `cosine_sim mean=0.1039 std=0.0000`. A standard deviation of exactly zero is the
@@ -1657,63 +1657,61 @@ eleven registered engines are constructed **at** `nc`. One engine is asked to
 earn its population and eleven are handed theirs, and the difference is reported
 as a consciousness verdict. That is a harness asymmetry on its own.
 
-Whether it *can* grow is a separate question. Pre-declared before measuring: if
-it stays at two cells under every drive, 0/5 is the engine; if some drive grows
-it, 0/5 is about the drive. `bench_ce_growth.py`, 300 steps, ceiling 256:
+Whether it *can* grow is a separate question, and answering it took two
+retractions. `bench_ce_growth.py`, ceiling 32:
 
-| drive | cells reached | split_threshold |
+| drive | @300 steps | @1500 steps |
 |---|---|---|
-| constant small (×0.1) — *the gate's* | 2 | 0.3000 (never calibrated) |
-| constant large (×3.0) | 2 | 0.0445 |
-| constant huge (×30) | 2 | 0.3000 |
-| rotating basis vectors | 2 | 0.3000 |
-| alternating 2 stimuli | 2 | 0.0037 |
-| **ramp UP 0.05 → 3.05** | **256** | 0.0208 |
-| ramp DOWN 3.05 → 0.05 | 2 | 0.0359 |
+| constant ×0.1 — *the gate's* | 2 | **2** |
+| constant ×0.3 | — | 31 |
+| constant ×1.0 | 2 | 31 |
+| constant ×3.0 | 2 | 32 |
+| constant ×10 | — | see below |
+| constant ×30 | 2 | **2** |
+| ramp UP 0.05 → 15.0 | 256¹ | 32 |
+| ramp DOWN 15.0 → 0.05 | 2 | **2** |
+
+¹ at ceiling 256 in the first run.
 
 ```
-cells reached, ceiling 256
+cells reached at 1500 steps, ceiling 32
 
-ramp UP        ████████████████████████████████████████████  256
-ramp DOWN      ·                                               2
-constant ×30   ·                                               2
-constant ×3.0  ·                                               2
-constant ×0.1  ·                                               2   <- the gate
-rotating       ·                                               2
-alternating    ·                                               2
+x0.1  ·                                    2   <- the gate
+x0.3  ████████████████████████████████    31
+x1.0  ████████████████████████████████    31
+x3.0  █████████████████████████████████   32
+x30   ·                                    2
 ```
 
-**Magnitude alone does not do it** — three hundred times the gate's amplitude
-leaves it at two cells. **Variation alone does not do it** — the DOWN ramp covers
-the identical amplitude range in the opposite order and leaves it at two. Only a
-rising drive grows it, and it grows all the way to the ceiling.
+**Growth lives inside a band of drive amplitude.** Too quiet and too loud both
+fail, and the gate sits below the lower edge.
 
-The mechanism is the calibration itself. `split_threshold` is fitted once, at
-step 200, to the q0.90 of the tension seen so far, and then held fixed:
+The mechanism is the calibration. `split_threshold` is fitted **once**, at step
+200, to the q0.90 of the tension seen so far, then held for the rest of the run.
+If that window's sample is degenerate — `std/mean < 0.1` — the calibrator refuses,
+correctly, because any quantile of a degenerate sample lands on the operating
+point itself. The threshold then stays at its unreachable default of 0.3, and
+nothing after step 200 can undo that. A sample goes degenerate at both ends:
+quiet makes every cell equally near zero, loud makes every cell equally
+saturated.
 
-```
-     tension
-        │        ┌─ steps after 200 exceed the fitted q0.90 → splits fire
-        │      ╱ │
-   q0.90├ ─ ─ ╱ ─┼ ─ ─ ─ ─ ─ ─      RISING: future > past
-        │   ╱    │
-        └───┴────┴──────── step
-           200
+### Two retractions, both earned by running the file again
 
-     tension
-        │╲
-   q0.90├ ╲─ ─ ─ ─ ─ ─ ─ ─ ─        FALLING or FLAT: future <= past,
-        │  ╲                        threshold never crossed, no split ever
-        └───┴──────────────  step
-           200
-```
+**"Only a rising drive grows it."** Measured at 300 steps, where every constant
+drive showed 2 cells. They grow at 1500. A 300-step window leaves 100 steps after
+a calibration that happens at 200 — the window was barely longer than the thing
+it was measuring, so slow growth read as no growth. The already-recorded node
+`runtime-frozen-at-two` had the correct number (a ×10 drive reaching the ceiling
+at 1500 steps) and my newer measurement contradicted it; the newer instrument was
+the one at fault, which is the standing rule and it held.
 
-The threshold is fitted to the past and applied to the future, so it fires only
-where the future exceeds the past. A stationary world — however loud — never
-does.
+**"Rising versus falling is the variable."** It is not. The DOWN ramp fails
+because its first 200 steps sit at amplitude 15–13, above the band — not because
+it descends. Only the calibration window has a say; the remaining 1300 steps
+have none.
 
-That makes 0/5 an honest reading of *does not grow here*, and not a reading of
-*cannot differentiate*. Both halves matter and neither licenses a change: the
-gate's stationary drive is a legitimate test, and the engine's answer to it is a
-real property of the engine. What is not legitimate is scoring one engine on
-growth and eleven on nothing, then printing the results in one column.
+So 0/5 is an honest reading of *does not grow here* and not of *cannot
+differentiate*. Neither half licenses a change to the gate: a stationary drive is
+a legitimate test and the engine's answer to it is a real property. What is not
+defensible is scoring one engine on growth and eleven on nothing, then printing
+the results in one column.
