@@ -226,10 +226,10 @@
             "detail": "bench_v2 --verify 기본값(256c/64d/128h)에서 SCRAMBLE(시드 42)이 NO_SPEAK_CODE 를 통과 → 조건 무효, 4/5 만 생존, 판정 34/48 NEEDS WORK. 같은 칸을 다른 세션의 250칸 격자와 _with_axes 독립 재현이 먼저 짚었고(시드 42·44), 내 관문이 세 번째로 같은 결론에 도달했다. 32세포에서 0/5 였던 것은 여유가 아니라 5회 추첨이었다."
           },
           {
-            "name": "two candidate repairs, both refuted",
+            "name": "three candidate repairs, all refuted",
             "role": "착륙 규칙을 먼저 선언해 둘 다 착륙 전에 죽었다",
             "id": "gate-repairs-refuted",
-            "detail": "① 정체성 z-바(널 산포 단위): 엔진 11종 z 6.3~11.0 으로 통과하나 DEAD 71.9 · DECOUPLED 40.2 · HEAP 18.3 이 어느 엔진보다 높다. 현행보다 나쁨. ② 응답축 입력상대분리 널: 엔진 0.015~0.035 인데 NOISE 1.009 · LINEAR 0.582 · SCRAMBLE 0.064 · HEAP 0.044 가 겹친다. 단독 축으로 기각. 단 WHISPER(1e-9)를 1.5e-8 로 잡아내 엔진과 여섯 자릿수 분리 — 접합으로는 실패집합 크기 0 문제를 닫지만 측정된 바가 아직 없다."
+            "detail": "① 정체성 z-바: 엔진 z 6.3~11.0 통과하나 DEAD 71.9·DECOUPLED 40.2·HEAP 18.3 이 어느 엔진보다 높다. ② 응답축 입력상대분리: 엔진 0.015~0.035 인데 NOISE 1.009·LINEAR 0.582·SCRAMBLE 0.064·HEAP 0.044 가 겹친다. WHISPER 는 1.5e-8 로 잡히지만 단독 축으로는 기각. ③ 산술잡음 바닥 대비 여유: 위반 4건이고, 더 중요하게는 같은 입력 두 번을 분모로 쓰는 것이 곧 기존 response=differing/same 이다 — 새 설계가 아니라 기존 축이었고, 결정적 엔진의 여유 1e38 은 1e6 상한을 이름만 바꾼 것이며 WHISPER 도 1.1e32 로 통과한다."
           },
           {
             "name": "dead channels",
