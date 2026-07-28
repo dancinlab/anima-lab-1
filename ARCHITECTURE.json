@@ -319,6 +319,21 @@
             ]
           },
           {
+            "id": "gate-persistence-blocks-ten-of-eleven",
+            "name": "it blocks ten of eleven engines",
+            "role": "관문의 배포 가능 수를 정하는 가장 큰 단일 변수",
+            "type": "gate",
+            "detail": "256세포 출하 실행: 엔진 11개 중 10개가 PERSISTENCE 실패, 통과는 OscillatorLaser 하나. 실패한 엔진은 전부 5시드 중 정확히 1개에서만 실패 — 시드당 통과율 80%, 0.8^5=33% 기대 대 실측 1/11=9%. 실패 시드 분포 42:2 43:1 44:3 45:3 46:0, 균등 기대 1.8, chi2=3.78 df=4 p~0.44 — 엔진 성질이면 몰리고 불운한 시드면 그쪽에 몰리는데 둘 다 아니다. docs/consciousness-gate-audit.md",
+            "children": [
+              {
+                "id": "gate-persistence-not-a-licence",
+                "name": "this is evidence, not a licence",
+                "role": "조건이 엔진을 떨어뜨린다는 이유로 완화하는 것은 이 감사가 잡으려는 바로 그 수다",
+                "detail": "확립된 것은 실패가 추세도 구조도 싣지 않는다는 것뿐이다. PERSISTENCE 존폐와 시드 규칙(전부 대 5중3)은 보드에 이미 올라간 소유자 결정이며 측정이 그것을 대신하지 않는다."
+              }
+            ]
+          },
+          {
             "name": "but it ranks DEAD first",
             "role": "이름이 말하는 것을 재지 않는다",
             "id": "gate-nearest-predecessor-limit",
