@@ -276,6 +276,12 @@
             "detail": "⑥이 DEAD 1.0000·HEAP 0.60~0.75 를 통과시키므로 접합의 근거는 '다른 축이 잡는다'다. 양쪽 다 쟀다: DEAD 는 change 가 거부(다른 세션, 독립경로·축경로 모두 0.000000, 6자리 일치, 0/3), HEAP 은 integration 이 거부(256세포 나이 0/300/1000 전부 0.000000, 0/3 · 같은 실행의 REAL 은 0.0242~0.0266 로 3/3). 행 수 256→256 확인."
           },
           {
+            "name": "not the change axis re-derived",
+            "role": "③ 을 죽인 검사를 ⑥ 에 적용한 결과",
+            "id": "gate-nearest-not-change",
+            "detail": "실격 기준 |r|>=0.8 을 숫자 전에 선언(음의 상관도 실격 — change 를 뒤집은 것도 새 축이 아니므로). 32세포, 10엔진+시체5, 나이 0/300/1000: 엔진만 r=+0.4024, 시체 포함 전체 r=−0.4707. 둘 다 기준 아래이고 부호가 뒤집힌다 — 단조 관계면 부호가 유지되므로, 두 축은 공간의 다른 부분에서 다른 관계를 갖는다. 시체가 음의 상관을 만든다: DEAD nearest 1.0000/change 0.0000, NOISE 0.0358/1.4136."
+          },
+          {
             "name": "PairField loses cell identity with age -- the others do not",
             "role": "통계의 결함이 아니라 그 엔진의 성질",
             "id": "gate-nearest-predecessor-longrun",
