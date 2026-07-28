@@ -337,17 +337,33 @@ that configuration must not decay. **Naming a mechanism and not running its
 control is how a plausible story becomes a recorded fact** — the sweep is running
 in the other session and the claim stays withdrawn until it lands.
 
-## Status: not landed
+## Status: landed, with all four conditions met
 
-Three conditions, recorded before any landing:
+    32 cells    44/60 -> 44/60      no engine lost anything, controls unchanged
+    256 cells   SCRAMBLE / NO_SPEAK_CODE  2/5 -> 0/5
+
+At 256 cells every seed now reads `undisturbed = 0.0039` — chance, 1/256 —
+against a bar of 0.0156, with **no seed-to-seed wobble**. That is the difference
+from candidate 5, whose contrast read 0.00000 but landed positive often enough to
+let the corpse through. The two seeds that previously cleared are exactly the two
+that flipped.
+
+Read independently by a second session running the `_with_axes` sequence directly
+rather than through this code. A second reading from my own gate is still
+running, and the full seven-control grid at 256c — the "traded one hole for
+another" check — is not yet complete, so *closed one hole* is established and
+*opened no other* is not.
+
+The four conditions, recorded before landing and all met in the shipped code:
 
 1. **Conjunct only.** As a replacement, `DEAD` passes identity at 1.000.
 2. **The comment must say undisturbedness, not identity.** Otherwise it is a lie
    the next reader inherits.
 3. **It closes one hole in a misnamed, corpse-inverted test.** It does not repair
    the axis, and the text must not claim it does.
-4. **The commit and this file must say that `NO_SPEAK_CODE`'s own rule still
-   passes `SCRAMBLE`.** Measured at both scales on all ten runs: autocorrelation
+4. **The commit and this file say that `NO_SPEAK_CODE`'s own rule still passes
+   `SCRAMBLE`.** Confirmed in the 256c readout itself: `rule=PASS` on all five
+   seeds BEFORE and AFTER. Measured at both scales on all ten runs: autocorrelation
    0.64–0.86 against a 0.3 bar, variance 0.29–0.76 against 0.001, cosine
    0.955–0.998 against 0.5. The condition has never once rejected a scramble on
    its own terms. Landing candidate 6 makes the AXES reject what the condition
