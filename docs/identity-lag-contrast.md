@@ -282,14 +282,25 @@ population is a defect found in the same session.
       └── 1000 ──── 2000 ──── 4000
 ```
 
-Mitosis is flat to 4000; Narrative is flat over the same span. **The statistic
-does not decay when run long — PairField does.** Its cells continue into their
-own past 1.6× less well at age 4000 than at 1000.
+Mitosis is flat to 4000; Narrative is flat over the same span. The statistic does
+not decay when run long — PairField's reading does.
+
+**These are MINIMA over seeds, and that limits the claim.** A second session
+reports PairField's MEAN at age 1000 as 0.0617 ± 0.013 over disjoint seeds. My
+0.0388 is the minimum of ten draws from that distribution: the expected minimum
+is 0.0417 with spread 0.0076, so the observation is +0.38 sd from expectation —
+consistent, not a conflict. Part of the descent from 0.0373 to 0.0240 is
+therefore the minimum wandering rather than the distribution moving.
+
+The Mitosis contrast survives, because it is the same statistic on both sides.
+But **"PairField's cells mix over time" is a claim about the distribution and
+this measured minima.** It needs the mean at ages 2000 and 4000 before it stands.
+If the mean is flat, the finding shrinks to "PairField's weakest seed wanders and
+Mitosis's does not", which is a much smaller thing.
 
 PairField is the only engine in the registry whose cells are pushed every step by
-a repulsion field between two populations. So this is a finding about the engine,
-not a defect in the test — and it answers the margin question: the weakest reading
-belongs to an engine genuinely losing what the axis measures.
+a repulsion field between two populations, so there is a mechanism to look at
+rather than a mystery — but the measurement does not yet reach the claim.
 
 ## Status: not landed
 
@@ -300,3 +311,22 @@ Three conditions, recorded before any landing:
    the next reader inherits.
 3. **It closes one hole in a misnamed, corpse-inverted test.** It does not repair
    the axis, and the text must not claim it does.
+4. **The commit and this file must say that `NO_SPEAK_CODE`'s own rule still
+   passes `SCRAMBLE`.** Measured at both scales on all ten runs: autocorrelation
+   0.64–0.86 against a 0.3 bar, variance 0.29–0.76 against 0.001, cosine
+   0.955–0.998 against 0.5. The condition has never once rejected a scramble on
+   its own terms. Landing candidate 6 makes the AXES reject what the condition
+   cannot — it does not make the condition work. "`NO_SPEAK_CODE` is no longer
+   void" is true and will be read as "`NO_SPEAK_CODE` works", which is false.
+
+## Still open
+
+- Is candidate 6 the `change` axis re-derived? Candidate 3 died of exactly that.
+  "How undisturbed is each cell" and "how much did the population move" may be
+  one quantity with a sign. If they correlate above ~0.8 across systems without
+  the corpses breaking it, candidate 6 is candidate 3 again and should be
+  dropped. Predicted divergence: `DEAD` reads change 0.000000 and nearest
+  1.0000 — maximally opposite — so if the correlation is high on engines and
+  breaks on corpses, the honest description is "redundant where it does not
+  matter, load-bearing only where it does", which is weaker than "a new axis".
+- PairField's long-run mean, per above.
