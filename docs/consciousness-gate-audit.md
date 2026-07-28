@@ -3145,3 +3145,49 @@ thirty-two, a fourfold change where the fixed-n construction gives 1.5×. Growth
 history changes the distribution. The flatness above eight cells is established
 for constructed populations and not for grown ones, and the difference is exactly
 the regime the engine operates in.
+
+### Correction: in the regime the engine is actually in, the distribution does carry size
+
+The previous section closed on "no scalar function of the tension distribution
+can tell eight cells from thirty-two", with one stated limit: it was measured on
+**constructed** populations, and the engine grows into its size by splitting.
+Measuring the regime the engine is actually in:
+
+| n | built mean | grown mean | grown/built | built q0.90 | grown q0.90 |
+|---|---|---|---|---|---|
+| 2 | 0.008438 | 0.005804 | 0.69 | 0.012627 | 0.009455 |
+| 4 | 0.011325 | 0.006033 | 0.53 | 0.017347 | 0.011519 |
+| 16 | 0.012066 | 0.007287 | 0.60 | 0.018817 | 0.015220 |
+| 32 | 0.012398 | **0.020407** | **1.65** | 0.018919 | **0.037876** |
+
+```
+mean tension, n=2 -> n=32
+
+built   ████████ 0.0084  ->  ████████████ 0.0124     1.5x
+grown   █████ 0.0058     ->  ████████████████████ 0.0204   3.5x
+```
+
+**The claim is overturned for grown populations.** Mean tension rises 3.52× from
+two cells to thirty-two and `q0.90` rises 4.0×, against 1.5× for the constructed
+case. Grown cells sit *lower* than constructed ones at small n and *higher* at
+large n, which is a steeper slope in exactly the direction that carries size
+information.
+
+So the strongest form of the wall as I stated it one section ago is wrong for the
+regime that matters, and it was wrong in the way I flagged when I wrote it. What
+survives is narrower: a **quantile** bar cannot size a population however often it
+recalibrates, because it admits a fixed fraction by construction — that is
+arithmetic and holds in both regimes. What does not survive is "the information is
+not there". For a grown population it is there, and the tracking-bar experiment
+that reached 4 of 8 interior was working with real signal rather than noise.
+
+Two limits on this correction, in turn:
+
+- The grown buckets are sampled at whatever size the population happens to be
+  passing through, and the drift curve shows 7–26 is transit rather than
+  residence. The n=16 row is therefore a population moving through sixteen cells,
+  not one settled there, and a settled sixteen might look different.
+- Grown and constructed populations differ in what their cells *are* — clones with
+  injected noise against independent initialisations. That difference is the
+  likely cause of the steeper slope, and it means the size information may be
+  carried by lineage rather than by anything the tension rule can name.

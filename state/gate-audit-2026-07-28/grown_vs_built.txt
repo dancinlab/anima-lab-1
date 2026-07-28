@@ -1,0 +1,10 @@
+does the distribution stop changing for GROWN populations too?
+
+   n  built mean  grown mean  grown/built  built q90  grown q90
+   2    0.008438    0.005804         0.69   0.012627   0.009455
+   4    0.011325    0.006033         0.53   0.017347   0.011519
+   8    0.011796 (n<50 samples)
+  16    0.012066    0.007287         0.60   0.018817   0.015220
+  32    0.012398    0.020407         1.65   0.018919   0.037876
+
+  grown, 2 -> 32 cells: mean 0.005804 -> 0.020407 (3.52x)
