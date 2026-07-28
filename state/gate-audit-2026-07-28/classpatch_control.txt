@@ -1,0 +1,7 @@
+CLASS-level patch survives deepcopy. control must reproduce the baseline.
+
+arm                         ceiling  finals
+unpatched (baseline)              8  [2, 2, 2, 2, 7, 8, 8, 8]
+unpatched (baseline)             16  [2, 2, 2, 15, 16, 16, 16, 16]
+class-patched, GAIN empty         8  [2, 2, 2, 2, 7, 8, 8, 8]
+class-patched, GAIN empty        16  [2, 2, 2, 15, 16, 16, 16, 16]

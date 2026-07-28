@@ -2849,3 +2849,55 @@ arm that should have reproduced a known value and did not. The rule this one add
 is narrow and mechanical — **before trusting a probe that patches an object the
 engine copies, check the control against a measurement taken without the patch.**
 A no-op wrapper is not a no-op if something deep-copies the object.
+
+### Competition abolishes the floor and not the ceiling
+
+The withdrawn question needed a probe that survives `deepcopy`. Patching
+`ConsciousnessCell.forward` on the **class** rather than the instance does, and
+the control proves it: unpatched and class-patched with the gain table empty give
+byte-identical populations at both ceilings — `[2,2,2,2,7,8,8,8]` and
+`[2,2,2,15,16,16,16,16]`.
+
+With a valid probe, 8 seeds, 600 steps:
+
+| arm | ceiling 8 | ceiling 16 |
+|---|---|---|
+| none | 2, 2, 2, 2, 7, 8, 8, 8 | 2, 2, 2, 15, 16, 16, 16, 16 |
+| t=0.3 | 2, 2, 2, 2, 2, 3, 4, 8 | 2, 2, 2, 2, 15, 15, 16, 16 |
+| t=0.1 | 2, 2, 7, 8, 8, 8, 8, 8 | 2, 16, 16, 16, 16, 16, 16, 16 |
+| **t=0.03** | **7, 7, 8, 8, 8, 8, 8, 8** | **15, 15, 16, 16, 16, 16, 16, 16** |
+
+```
+seeds stuck at the floor (2 cells), out of 8
+
+none     ████████ 4          ceiling 8      ███ 3        ceiling 16
+t=0.3    █████ 5                            ████ 4
+t=0.1    ██ 2                               █ 1
+t=0.03   · 0                                · 0
+```
+
+**At t=0.03 no seed is at the floor, at either ceiling.** That is the first arm in
+this entire audit where every seed leaves 2 cells — and it holds when the ceiling
+doubles, which is the clause that has killed every other candidate.
+
+It is not the interior equilibrium the audit was looking for. Competition
+converts a bimodal floor/ceiling distribution into a ceiling-dominated one:
+interior counts move 1/8 → 2/8 at best, and the non-ceiling seeds sit at 7 of 8
+and 15 of 16 — one below the ceiling, still ceiling-relative.
+
+So the honest statement is narrow and it is the first positive structural result
+here: **competitive routing removes the floor attractor. It does not create an
+interior one.** Whether a population that reliably grows to its ceiling is better
+than one that splits between floor and ceiling is a design question — and the
+answer that arrived with these runs argues it is not, since a ceiling of clones is
+overproduction without the pruning that would make it developmental.
+
+Two limits, stated rather than left to be found:
+
+- t=0.03 is sharp competition. The gain spread at t=0.1 was already 0.01–2.50;
+  at 0.03 it is sharper still, and whether routing that concentrated is structure
+  or manipulation is what `CLAUDE.md` rule 2 governs.
+- `rising` is 0–2 of 8 on the competitive rows against 2–3 on the baseline, so
+  these populations are more settled than the baseline's, not less. That is real
+  but it is measured at 600 steps and the arms that reach a ceiling cannot rise
+  further by construction.
