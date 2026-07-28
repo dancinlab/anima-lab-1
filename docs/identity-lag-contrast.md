@@ -296,11 +296,22 @@ to which seeds are drawn, so nothing about PairField rests on it.
 
 Both flat, on the same seeds where my minimum fell 0.0373 → 0.0240.
 
-**What survives is a statement about SPREAD, not level.** PairField's sd grows
-1.8× with age (0.0102 → 0.0185) while Mitosis's stays at 0.003. The distribution
-widens rather than moving, which is exactly why the minimum wanders and the mean
-does not. That is the honest finding, and it is a smaller and more specific one
-than "the cells mix".
+**And the spread claim does not survive either.** A 5-seed sd estimate carries
+±35% of its own uncertainty (1/√(2(n−1))), so 0.0102 → 0.0185 is 1.19 sd on the
+log ratio — suggestive, not established.
+
+**The mechanism is retired by its own control.** At `strength = 0` — the same
+engine with the two sides never interacting, no repulsion field at all — a second
+session measures the identical signature: mean flat (0.0573 / 0.0599 / 0.0508),
+minimum descending (0.0547 → 0.0352), bounded at peak 6.00. The effect exists
+without the cause, so the cause is not the cause.
+
+A descending minimum is what a minimum over a fixed number of draws does when the
+distribution is flat. It happens at every coupling strength including none.
+
+**The accurate state is: not measured, in either direction.** Not "decaying", not
+"flat", not "widening". The claim narrowed three times under data and the fourth
+position is that there is nothing to claim.
 
 Their caveat, at its own weight: two seeds. Their 5-seed mean at age 1000 was
 0.0617 and their 2-seed mean is 0.0488 — one full sd apart. The means support "no
