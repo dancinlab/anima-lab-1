@@ -2448,3 +2448,63 @@ chain that came back stronger for being re-checked.
 The two pre-existing three-seed rows are flagged rather than re-run: they predate
 this chain, nothing here depends on them, and re-running them is separate work
 that should be chosen rather than smuggled in.
+
+## Divergent design: six definitions of tension, judged by the tail criterion
+
+Everything above ends at the same wall — a window mean clears a high quantile only
+when the distribution has a tail, and under conversation input nothing in the repo
+produces one. `docs/mitosis-calibration.md` already named the only repair in this
+area that requires redefining something: *tension is a per-cell property with no
+dependence on population size.* So the divergence is over what tension IS.
+
+Six candidates against one drive, three seeds, 400 steps, `bench_tension_redefine.py`.
+The bar is 1.30, taken from the measured separation rather than chosen: 1.26 was
+the loudest drive that never grew and 1.48 the quietest that did.
+
+| definition | max/q90 @2 | @32 | verdict |
+|---|---|---|---|
+| `current` — squared deviation from the population mean | 1.35 | 1.30 | viable |
+| `absolute` — output magnitude, `mitosis.py`'s form | 1.37 | 1.32 | viable |
+| **`standardised`** — deviation ÷ mean deviation | **1.00** | **1.08** | **dead** |
+| **`nearest`** — distance to the closest other cell | **1.16** | **1.14** | **dead** |
+| `per-capita` — deviation × n | 1.35 | 1.30 | viable |
+| **`surprise`** — deviation from the cell's OWN previous output | **1.58** | **2.07** | viable |
+
+```
+tail headroom by definition (bar 1.30)
+
+surprise @32   ████████████████████████████  2.07
+surprise @2    ████████████████████          1.58
+absolute       ██████████                    1.37
+current        █████████                     1.35
+per-capita     █████████                     1.35
+nearest        ██                            1.16
+standardised   ·                             1.00
+```
+
+Three results worth separating.
+
+**The intuitive fix is the worst one.** `standardised` — divide each deviation by
+the population's mean deviation, so a cell counts as tense when it is unusual *for
+this population* — lands at exactly 1.00. Dividing by the mean pins the top of the
+distribution to the mean by construction, which is the one thing that guarantees no
+window average can ever reach a high quantile of it. The z-score intuition is
+precisely inverted here.
+
+**`surprise` is the only candidate whose tail grows with the population**
+(1.58 → 2.07); every other definition is flat or falls slightly. It also measures a
+different thing: deviation from the cell's own previous output rather than from its
+peers, so a cell repeating itself is at rest however far it sits from the others.
+That is novelty rather than eccentricity, and it is the only row here that gets
+easier to satisfy as cells are added.
+
+**`per-capita` is untestable by this metric and that is the metric's fault.**
+Multiplying every cell's tension by n is a constant factor within a step, so it
+cannot move `max/q90` at fixed n — the 1.35/1.30 is `current`'s number, not
+evidence about the candidate. Its intended effect is that splitting *relieves*
+tension, which only appears when n changes during the run. Measuring that needs a
+different experiment, and until then this row says nothing either way.
+
+Nothing is landed. Changing what tension means changes what the engine is, and the
+two `dead` rows are the useful part: they close two designs that look reasonable
+before anyone spends a session on them.
