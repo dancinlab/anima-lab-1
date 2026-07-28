@@ -1494,6 +1494,11 @@ PHILOSOPHY_ENGINES = {
 }
 
 
+# How far back the identity lag contrast looks. 50 steps at the gate's own
+# drive; the contrast is read only when the window has filled, so a condition
+# that runs fewer steps than this simply does not apply it.
+_LAG = 50
+
 def _three_axes(engine, dim, cells, steps=60, drive=None):
     """Differentiation, temporal identity, and change — one per way of not being conscious.
 
@@ -1528,6 +1533,13 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
 
     prev = engine.get_hiddens().clone()
     same, other, moved = [], [], []
+    # Keep a short window so identity can also be read at a LONG lag. The
+    # derangement null below cannot reject SCRAMBLE -- deranging rows IS what
+    # SCRAMBLE does every step, so the null and that control are the same
+    # operation and the corpse sits on the bar by construction. Measured at 32c
+    # over 10 seeds: SCRAMBLE's signal is +0.38 sd from its own null while a
+    # real engine is +10.62. The lag contrast below uses no permutation at all.
+    window = [prev.clone()]
     n = prev.shape[0]
     for _step in range(steps):
         engine.process(drive(_step))
@@ -1548,6 +1560,9 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
         moved.append(float((cur[:k] - prev[:k]).norm()
                            / max(float(prev[:k].norm()), 1e-9)))
         prev = cur.clone()
+        window.append(prev)
+        if len(window) > _LAG + 1:
+            window.pop(0)
 
     identity = float(np.mean(same) - np.mean(other))
     change = float(np.mean(moved))
@@ -1597,6 +1612,46 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
                           - (sim.sum() - sim.diag().sum())
                           / max(rows * (rows - 1), 1)))
     identity_floor = float(np.mean(null) + 3 * np.std(null))
+
+    # LAG CONTRAST -- a second identity reading that uses no permutation.
+    #
+    # The derangement floor above cannot reject SCRAMBLE, because deranging rows
+    # IS what SCRAMBLE does: null and control are the same operation, so the
+    # corpse sits ON the bar and which side it lands is numerical noise. That is
+    # not a threshold being slightly wrong; it is why SCRAMBLE cleared
+    # NO_SPEAK_CODE at the shipping default and voided the condition.
+    #
+    # A population with identity is closer to its own IMMEDIATE past than to its
+    # DISTANT past. One without is equally far from both, and -- the part the
+    # derangement null gets backwards -- a FROZEN population is equally CLOSE to
+    # both, so it reads zero here while the old floor hands it the largest
+    # margin of any system tested (DEAD +0.98 against a live engine's +0.35).
+    #
+    # Measured out-of-sample on seeds 62-81, disjoint from the seeds used to
+    # design it, with the rule declared before the run: every engine t >= 3 and
+    # DEAD/CLONE/SCRAMBLE below 3.
+    #
+    #     engines            t = 5.92 to 12.67      all twelve
+    #     DEAD  0.00   CLONE -1.37   SCRAMBLE 1.01
+    #     separation: engine minimum +0.028945 vs corpse maximum +0.000050
+    #
+    # Added as a CONJUNCT rather than a replacement: it cannot make anything
+    # that currently fails start passing, and no engine loses anything, since
+    # the closest engine clears the bar by six standard errors.
+    lag_contrast = 0.0
+    if len(window) >= _LAG + 1:
+        def _ident(a_t, b_t):
+            m = min(a_t.shape[0], b_t.shape[0])
+            if m < 2:
+                return 0.0
+            u = F.normalize(a_t[:m], dim=1)
+            v = F.normalize(b_t[:m], dim=1)
+            s = u @ v.T
+            return float(s.diag().mean()
+                         - (s.sum() - s.diag().sum()) / max(m * (m - 1), 1))
+
+        lag_contrast = _ident(window[-1], window[-2]) - _ident(window[-1],
+                                                               window[0])
 
     # INTEGRATION replaces the differentiation conjunct, on two measured
     # grounds from a /gap audit. (1) Differentiation rejected nothing: at 32
@@ -1690,11 +1745,17 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
     _put(handle)
     response = float(np.median([min(v, 1e6) for v in spreads]))
 
+    # The lag contrast joins identity as a conjunct. When the run is shorter
+    # than the window it is not measured, and an unmeasured test must not
+    # decide anything -- so it only ever removes a pass, never grants one.
+    lag_ok = True if len(window) < _LAG + 1 else lag_contrast > 0.0
+
     return (integration > 0.001 and response > 1.5,
-            identity > max(identity_floor, 1e-6),
+            identity > max(identity_floor, 1e-6) and lag_ok,
             change > 0.001,
             f"integration={integration:.5f} response={response:.2f} "
-            f"identity={identity:+.4f}>floor={identity_floor:+.4f} change={change:.5f} "
+            f"identity={identity:+.4f}>floor={identity_floor:+.4f} "
+            f"lag={lag_contrast:+.5f} change={change:.5f} "
             f"[Φ={phi_now:.4f} floor={phi_floor:.4f}]")
 
 
