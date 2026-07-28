@@ -3093,3 +3093,55 @@ So the decision now has its number: tracking the bar is the largest single
 improvement measured here, it does not by itself produce a ceiling-independent
 size, and doing it properly means re-answering the degeneracy question the latch
 was built to settle.
+
+### Why a tracking bar still tracks the ceiling: the distribution stops changing
+
+A tracking bar set to `q0.90` admits ten percent of cells **by construction**, at
+every population size. A constant per-cell split rate gives exponential growth,
+so a quantile bar cannot produce a size-dependent outcome however often it is
+recalibrated. That is arithmetic, and it predicts what the tracking runs showed.
+
+The alternative is a bar at a multiple of the mean, whose admitted fraction
+depends on the distribution's *shape*. Measured at fixed population sizes, 400
+steps each:
+
+| n | mean | q0.90 | over q0.90 | 2·mean | over 2·mean |
+|---|---|---|---|---|---|
+| 2 | 0.008438 | 0.012627 | 9.9% | 0.016877 | **0.00%** |
+| 4 | 0.011325 | 0.017347 | 9.9% | 0.022651 | 0.75% |
+| 8 | 0.011796 | 0.018516 | 10.0% | 0.023592 | 1.97% |
+| 16 | 0.012066 | 0.018817 | 10.0% | 0.024131 | 2.00% |
+| 32 | 0.012398 | 0.018919 | 10.0% | 0.024797 | 1.85% |
+
+```
+fraction of cells the bar admits
+
+q0.90     ██████████ 9.9   ██████████ 9.9   ██████████ 10.0  ██████████ 10.0  ██████████ 10.0
+2*mean    ·      0.00      █      0.75      ██     1.97      ██     2.00      ██     1.85
+          n=2              n=4              n=8              n=16             n=32
+```
+
+**Worse at the bottom, identical at the top.** At two cells a `2·mean` bar admits
+nothing at all, so the population could never leave the floor. From eight cells up
+it is flat at about 2%, which is a constant per-cell rate again.
+
+The reason is underneath both bar forms: **the tension distribution stops changing
+at around eight cells.** Mean goes 0.0118 → 0.0124 and `q0.90` 0.0185 → 0.0189
+between n=8 and n=32 — two to five percent, against a fourfold change in
+population. No scalar function of that distribution can distinguish eight cells
+from thirty-two, because for this purpose they are the same distribution.
+
+That is the strongest form of the wall this audit has been mapping. It is not
+that the bar is fitted once, or that the rule uses a mean, or that the tension
+definition lacks a tail — those are all true and all downstream. **The information
+needed to choose a population size is not present in the tension distribution
+above about eight cells.**
+
+One limit, and it is not small. These are *fixed-n* engines, constructed at their
+size. A grown population reaches its size by splitting, and its cells are clones
+with noise rather than independent initialisations — measured earlier in this
+document, a grown population's mean tension runs 0.0047 at two cells to 0.0207 at
+thirty-two, a fourfold change where the fixed-n construction gives 1.5×. Growth
+history changes the distribution. The flatness above eight cells is established
+for constructed populations and not for grown ones, and the difference is exactly
+the regime the engine operates in.

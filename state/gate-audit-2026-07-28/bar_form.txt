@@ -1,0 +1,11 @@
+a quantile bar admits a FIXED fraction by construction. does k*mean vary with n?
+
+   n       mean      q0.90  over q0.90   2.0*mean  over 2*mean
+   2   0.008438   0.012627        9.9%   0.016877        0.00%
+   4   0.011325   0.017347        9.9%   0.022651        0.75%
+   8   0.011796   0.018516       10.0%   0.023592        1.97%
+  16   0.012066   0.018817       10.0%   0.024131        2.00%
+  32   0.012398   0.018919       10.0%   0.024797        1.85%
+
+  q0.90 is ~10% at every n by definition — a constant per-cell split rate.
+  k*mean varies only if the DISTRIBUTION SHAPE changes with n.
