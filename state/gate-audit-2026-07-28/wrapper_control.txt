@@ -1,0 +1,6 @@
+control: does a PURE PASS-THROUGH wrapper on forward change the population?
+
+unwrapped          ceiling   8  [2, 2, 2, 2, 7, 8, 8, 8]
+wrapped (no-op)    ceiling   8  [2, 2, 2, 2, 2, 2, 2, 2]
+unwrapped          ceiling  16  [2, 2, 2, 15, 16, 16, 16, 16]
+wrapped (no-op)    ceiling  16  [2, 2, 2, 2, 2, 2, 2, 2]

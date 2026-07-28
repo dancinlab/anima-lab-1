@@ -1,0 +1,5 @@
+FIXED n=8 (no splitting): does the wrapper alone change the numbers?
+
+arm                 mean tension   max/q90   pair cos
+unwrapped               0.015609     1.530    -0.0113
+wrapped (no-op)         0.015609     1.530    -0.0113

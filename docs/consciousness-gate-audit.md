@@ -2806,3 +2806,46 @@ Stated against the finding: at t=0.1 the gain spread is 0.01–2.50, a factor of
 structure or manipulation is exactly the judgement `CLAUDE.md`'s second rule
 governs, and it is not mine to make. What is established is that the mechanism is
 not inert, and the earlier report that it is came from a gentler setting.
+
+### A no-op wrapper is not a no-op if the engine copies the object
+
+The competitive-routing result raised the obvious follow-on: differentiation went
+up 2.4×, but this audit exists because of population *size*, so does competition
+break the pinning? I ran it and the control arm disagreed with a number already
+measured — `none` gave all 2s where the clean bench had given
+`[2,2,2,2,7,8,8,8]` on the same seeds and steps. Turning competition off should
+reproduce the baseline exactly.
+
+It does not, and the cause is the probe. A **pure pass-through** wrapper on
+`ConsciousnessCell.forward` — a function whose entire body calls the original:
+
+| arm | ceiling 8 | ceiling 16 |
+|---|---|---|
+| unwrapped | 2, 2, 2, 2, 7, 8, 8, 8 | 2, 2, 2, 15, 16, 16, 16, 16 |
+| **wrapped, no-op** | **2, 2, 2, 2, 2, 2, 2, 2** | **2, 2, 2, 2, 2, 2, 2, 2** |
+
+`_create_cell` does `copy.deepcopy(parent_module)`, and a deep-copied module does
+not carry an instance-attribute closure. Division dies.
+
+**Scope, established rather than assumed.** At fixed `n`, where no splitting
+happens, the same wrapper is provably inert:
+
+| arm | mean tension | max/q90 | pair cosine |
+|---|---|---|---|
+| unwrapped | 0.015609 | 1.530 | −0.0113 |
+| wrapped, no-op | 0.015609 | 1.530 | −0.0113 |
+
+Identical to six figures. So:
+
+- The **temperature sweep stands** — fixed `n=8`, both arms wrapped, wrapper inert
+  in that regime. Competition raising tail headroom to 1.723 and differentiation
+  2.4× is a real measurement.
+- Every **population** number measured through that wrapper is **withdrawn**. The
+  question it was asked to answer — does competitive routing break the pinning —
+  is unanswered, and answering it needs a probe that survives `deepcopy`.
+
+That makes four probe defects this session, each caught the same way: a control
+arm that should have reproduced a known value and did not. The rule this one adds
+is narrow and mechanical — **before trusting a probe that patches an object the
+engine copies, check the control against a measurement taken without the patch.**
+A no-op wrapper is not a no-op if something deep-copies the object.
