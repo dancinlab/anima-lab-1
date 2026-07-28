@@ -1420,3 +1420,75 @@ That is the first direct evidence that the axes carry weight rather than
 decorating the conditions. `tests/test_gate_controls.py` now runs 7 controls × 5
 conditions + the positive guard = **36 passed**, so disabling the axes makes
 LINEAR pass ZERO_INPUT and SELF_LOOP and turns the suite red immediately.
+
+## Which half rejects the corpse — measured across the whole grid
+
+The LINEAR result above showed the axes carry weight *somewhere*. It did not say
+how much, or which conditions would survive without them. This measures it
+directly: run every control through every condition twice, once with all four
+axes neutralised and once as the gate ships it. `bench_condition_alone.py`.
+
+Neutralising the axes means patching `_three_axes` itself, not removing the
+`_with_axes` decorator. Three of the five conditions call it inside their own
+body and conjoin it there (`bench_v2.py` 1954 / 1995 / 2026):
+
+```
+recovers = phi_history[-1] >= max(phi_history[:half]) * 0.8
+d_ok, i_ok, c_ok, axes = _three_axes(engine, dim, cells)
+passed = recovers and d_ok and i_ok and c_ok
+```
+
+The first run of this bench stripped only the decorator, left the axes running in
+three of five rows, and reported their work as the conditions'. It read as
+`ZERO_INPUT`, `PERSISTENCE` and `SELF_LOOP` rejecting every corpse unaided. What
+exposed it was appendix D of `pairfield-persistence-failure.md`, which had
+`recovers` alone clearing DEAD and CLONE 100% at both scales — the two readings
+could not both stand.
+
+### 32 cells, 1 seed — seeds on which the corpse cleared the condition
+
+| condition | HEAP | DECOUPLED | DEAD | NOISE | CLONE | SCRAMBLE | LINEAR | total |
+|---|---|---|---|---|---|---|---|---|
+| NO_SYSTEM_PROMPT | 1 | · | · | · | · | 1 | · | **2/7** |
+| NO_SPEAK_CODE | 1 | · | · | · | 1 | 1 | · | **3/7** |
+| ZERO_INPUT | 1 | 1 | 1 | · | 1 | 1 | 1 | **6/7** |
+| PERSISTENCE | · | · | 1 | · | 1 | · | · | **2/7** |
+| SELF_LOOP | · | 1 | 1 | 1 | 1 | · | 1 | **5/7** |
+| **rule alone** | | | | | | | | **18/35** |
+| **rule + axes** | · | · | · | · | · | · | · | **0/35** |
+
+```
+corpse-cells cleared by the condition's own rule
+
+ZERO_INPUT        ██████████████████████████  6/7
+SELF_LOOP         █████████████████████       5/7
+NO_SPEAK_CODE     █████████████               3/7
+NO_SYSTEM_PROMPT  ████████                    2/7
+PERSISTENCE       ████████                    2/7
+                  ─────────────────────────
+with the axes on  (nothing)                   0/35
+```
+
+**The four axes reject all thirty-five. The five conditions reject nothing the
+axes had not already rejected** — against these controls their marginal
+contribution to turning away a corpse is zero.
+
+That is not the same as the conditions being idle. They reject *engines* the axes
+accept, which is why engines score below 5/5 and why the deployable count moves
+at all. It means the half of the gate that keeps a corpse out is the half
+`CLAUDE.md` does not name, and the five named conditions are doing a different
+job than the one the document claims for them.
+
+Two rows are worth reading on their own:
+
+- `ZERO_INPUT` alone clears six of seven. A corpse holds its state perfectly
+  with no input — that is what being a corpse *is* — so "maintains consciousness
+  without external input" is close to free for anything that does not move.
+- `PERSISTENCE` alone clears exactly DEAD and CLONE, the two whose Φ never
+  changes. `final >= 0.8 × max(first five)` is trivially true of a constant.
+  This is the same pathology that retired the `monotonic` disjunct, reproduced
+  in the disjunct that replaced it, and it matches appendix D's independent
+  measurement of `recovers` at both scales.
+
+One seed at 32 cells. The five-seed run at the shipping default of 256 cells is
+what settles whether the picture changes with scale.
