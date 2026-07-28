@@ -2407,3 +2407,28 @@ What does not hold: the idea of a sharp edge. There is no threshold amplitude �
 region where growth is probabilistic sits on each side, and any cutoff estimated
 from single-seed rows (`bar/mean ≤ 1.07`, the `max/q90` separations) is an
 estimate of where a probability crosses about 0.5, not a boundary.
+
+### Seed counts audited across this document
+
+The eight-seed rule applies backwards, not only forwards. Sweeping this file for
+claims still resting on three seeds or fewer:
+
+| claim | seeds | status |
+|---|---|---|
+| condition-alone leak grid, 32 cells | 1 | superseded — the 256-cell grid is 5 seeds, 89/175 |
+| amplitude band | 1 | **re-run at 8**, two cells corrected, shoulders found |
+| repetition versus novelty | 1 | **retracted at 4** |
+| magnitude versus direction | 3 | **retracted at 8** |
+| runtime path A versus path B | 3 | **re-running at 8** — see below |
+| repulsion strength sweep, 6 values | 3 | pre-existing, outside this chain, left as recorded |
+| inter-engine cosine, 128 cells | 3 | pre-existing, outside this chain, left as recorded |
+
+The one that matters is path A versus path B. Its three-seed result — 2/2/2
+against 32/32/31 — is what the README correction, the `CLAUDE.md` correction and
+an owner-decision item all rest on. Now that the band is known to have 5/8
+shoulders, a clean 2/2/2 is exactly what a shoulder sampled three times looks
+like, so it goes to eight before it stands.
+
+The two pre-existing three-seed rows are flagged rather than re-run: they predate
+this chain, nothing here depends on them, and re-running them is separate work
+that should be chosen rather than smuggled in.
