@@ -147,11 +147,20 @@ def main():
     print(f"  corpse passes, condition alone : {bare_hits}/{total}")
     print(f"  corpse passes, condition+axes  : {full_hits}/{total}")
     print(f"  rejected by the axes           : {bare_hits - full_hits}")
-    print(f"\n  The totals are RATES over {total} cells and are sound at {n} seeds.")
-    print(f"  An individual cell is a {n}-seed sweep: '{n}/{n}' and '.' both mean")
-    print(f"  'never observed otherwise', not 'cannot happen'. Seeds are the gate's")
-    print(f"  own set on purpose -- this measures what the gate does, so raising")
-    print(f"  the count would answer a different question than the one asked.")
+    seed_word = "seed" if n == 1 else "seeds"
+    print(f"\n  The totals are RATES over {total} cells.")
+    print(f"  An individual cell is a {n}-{seed_word} sweep: '{n}/{n}' and '.' both")
+    print(f"  mean 'never observed otherwise', not 'cannot happen'.")
+    if list(a.seeds) == list(B.VERIFY_SEEDS):
+        print(f"  These are the gate's own {n} seeds, on purpose -- this measures what")
+        print(f"  the gate does, so raising the count would answer a different")
+        print(f"  question than the one asked.")
+    else:
+        print(f"  ! These are NOT the gate's seeds ({list(B.VERIFY_SEEDS)}), so this")
+        print(f"    is no longer a measurement of what the gate does.")
+    if n < 3:
+        print(f"  ! At {n} {seed_word} even the totals are one draw per cell and the")
+        print(f"    rate has no error bar worth quoting.")
     dead = [nm for nm, _f in RAW_TESTS
             if sum(bare[nm].values()) == max(len(a.seeds) * len(labels), 1)]
     if dead:
