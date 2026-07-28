@@ -238,6 +238,18 @@
             "detail": "③ 산술잡음 바닥 대비 여유: 같은 입력 두 번을 분모로 쓰는 것이 곧 기존 response=differing/same 이다. 결정적 엔진의 바닥은 정확히 0 이라 여유가 2.2e38 — 1e6 상한이 단위만 바꾼 것이고, WHISPER 도 결정적이라 1.1e32 로 똑같이 통과한다. 착륙 규칙이 없었다면 '엔진 1e38 대 DEAD 0.000, 완벽한 분리'로 읽고 축을 그 축의 수리안으로 실었을 것이다."
           },
           {
+            "name": "the fifth candidate landed",
+            "role": "순열을 쓰지 않는 정체성 지연 대조 — 접합으로 추가",
+            "id": "gate-lag-contrast",
+            "detail": "정체성(지연1) − 정체성(지연50). 정체성 있는 개체군은 먼 과거보다 직전에 가깝고, 없으면 둘이 같으며, 얼어붙은 계는 둘에 똑같이 가까워 0 이 된다 — 기존 바닥이 DEAD 에 최대 여유를 주는 것과 반대. 표본 밖(시드 62~81, 설계에 쓴 42~61 과 서로소): 엔진 12종 t 5.92~12.67, DEAD 0.00·CLONE −1.37·SCRAMBLE 1.01, 분리 +0.028945 대 +0.000050. 교체 아닌 접합이라 되돌리기는 `and lag_ok` 삭제 한 줄."
+          },
+          {
+            "name": "the regression it could have caused did not happen",
+            "role": "고정점에 있는 산 엔진은 없었다",
+            "id": "gate-lag-fixedpoint-check",
+            "detail": "지연 대조가 DEAD 를 거부하는 근거는 얼어붙은 계가 모든 지연에서 자기와 같다는 것인데, 고정점에 도달한 산 엔진도 얼어붙어 있으므로 안정성이 사망으로 오독될 수 있다. 출하 규모 256세포에서 직접 확인: 엔진 12종 최소값 +0.0152~+0.0580 전부 양수, DEAD +0.000000·CLONE −0.000000·SCRAMBLE −0.000138. 회귀 0건이고 SCRAMBLE 은 무효를 만들던 그 규모에서 음수다."
+          },
+          {
             "name": "the deployed runtime is frozen at 2 cells",
             "role": "엔진이 아니라 관문 구동이 얼렸다",
             "id": "runtime-frozen-at-two",
