@@ -39,6 +39,35 @@ RAW_TESTS = [
 ]
 
 
+class _axes_off:
+    """Neutralise EVERY axes call, not just the `_with_axes` wrapper.
+
+    Stripping the wrapper is not enough and the first run of this bench was
+    wrong because of it. Three of the five conditions call `_three_axes`
+    inside their own body and conjoin it themselves:
+
+        recovers = phi_history[-1] >= max(phi_history[:half]) * 0.8
+        d_ok, i_ok, c_ok, axes = _three_axes(engine, dim, cells)   # 1954/1995/2026
+        passed = recovers and d_ok and i_ok and c_ok
+
+    so an unwrapped ZERO_INPUT / PERSISTENCE / SELF_LOOP still runs the axes,
+    and their all-rejected "alone" row said nothing about their rules. It
+    read as those three conditions doing the work themselves, which is the
+    opposite of what the isolated `recovers` measurement found (DEAD and
+    CLONE clear it 100% at both scales). Patching the function reaches both
+    the wrapper and the three internal calls.
+    """
+
+    def __enter__(self):
+        self._real = B._three_axes
+        B._three_axes = lambda *a, **k: (True, True, True, "axes: OFF")
+        return self
+
+    def __exit__(self, *exc):
+        B._three_axes = self._real
+        return False
+
+
 def _grid(tests, cells, dim, hidden, seeds):
     """{condition: {control_label: n_seeds_that_passed}} plus a raised tally."""
     from bench_verify_audit import CONTROLS, factory_for
@@ -80,7 +109,8 @@ def main():
     print("=" * 78)
     print("  CONDITION ALONE  (_with_axes stripped)")
     print("=" * 78)
-    bare, bare_raised = _grid(RAW_TESTS, a.cells, a.dim, a.hidden, a.seeds)
+    with _axes_off():
+        bare, bare_raised = _grid(RAW_TESTS, a.cells, a.dim, a.hidden, a.seeds)
 
     print("=" * 78)
     print("  CONDITION AND AXES  (what the gate ships)")
