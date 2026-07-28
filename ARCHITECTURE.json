@@ -298,6 +298,13 @@
             ]
           },
           {
+            "id": "gate-persistence-failures-carry-no-trend",
+            "name": "PERSISTENCE failures carry no trend",
+            "role": "실패가 하락의 증거가 아니라 노이즈의 기대값이다",
+            "type": "gate",
+            "detail": "256세포 출하 실행이 인쇄한 실패 계열 9개. 평균 ratio 0.645(기준 0.800)인데 같은 값들을 순서만 섞으면 52.4%가 통과한다. 시간 구조가 전혀 없는 계열이 5시드 전부 통과할 확률은 0.524^5=3.9%. NarrativeEngine 시드45는 Φ가 10.8 아래로 안 내려가고 자기 최대의 76%로 끝나는데 실패다. 한계 둘 다 이 읽기에 불리하게: 실패 시드만 인쇄되므로 산포가 큰 표본이고, 실제 순서가 섞기의 나쁜 절반에 있는 것은 약한 하락 증거다 — 규칙은 그것을 범주적 실패로 보고한다. docs/consciousness-gate-audit.md"
+          },
+          {
             "name": "but it ranks DEAD first",
             "role": "이름이 말하는 것을 재지 않는다",
             "id": "gate-nearest-predecessor-limit",
