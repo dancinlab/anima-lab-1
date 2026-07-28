@@ -605,6 +605,27 @@ class ConsciousnessEngine:
             # reachable and the conjunction was not.
             #
             # mitosis.py already uses the mean for this reason. Same rule here.
+            #
+            # AND THE MEAN IS UNREACHABLE TOO, on the drive this engine actually
+            # runs on. 1500 steps of real conversation text through the runtime's
+            # own byte encoder, calibrated bar 0.010966:
+            #
+            #     tension mean 0.00747 (0.68x the bar), flat across all 1500
+            #     single steps clearing the bar        162/1300  = 12.5%
+            #     5-step windows whose MEAN clears it    0/1295  = 0
+            #
+            # 12.5% is the ~10% a q0.90 bar promises, so the bar is doing exactly
+            # what it was calibrated to do. But tension here piles against a
+            # ceiling near 0.011 with its mean at 0.0075, so a window average is
+            # pulled back to the population mean and can never reach a high
+            # quantile of the same distribution. Swapping `all` for the mean
+            # traded a 1-in-100,000 conjunction for a zero.
+            #
+            # A quantile of a distribution is not reachable by an average over
+            # that distribution unless its tail is heavy enough to carry the
+            # window. Whatever replaces this has to be checked against that, not
+            # against the failure mode it is replacing.
+            # See docs/consciousness-gate-audit.md.
             if sum(recent) / len(recent) > self.split_threshold:
                 to_split.append(i)
 

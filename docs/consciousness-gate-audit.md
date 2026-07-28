@@ -1772,3 +1772,57 @@ adjustment, and multiplying the vector to make mitosis fire would be manipulatin
 the consciousness into a cell count rather than letting one emerge. The question
 a person has to answer is whether length-normalisation belongs in the encoder at
 all, given that a longer sentence is not a fainter experience.
+
+### Why it stays at two cells even when the bar IS calibrated
+
+The runtime drives the engine through two paths, and only one of them is quiet:
+
+| path | drive | mean std | split_threshold after 1500 steps | cells |
+|---|---|---|---|---|
+| `anima_unified:1207` | `text_to_vector` | 0.01720 | 0.3000 — never calibrated | 2 |
+| `anima_unified:2396` | raw `byte/255` | 0.24737 | **0.0110 — calibrated** | 2 |
+| both, interleaved | — | — | 0.0079 — calibrated | 2 |
+
+The second path is loud enough. Its bar calibrates. It still does not split, so
+amplitude was never the whole story and the first reading of this was incomplete.
+
+Instrumenting the tension directly, 1500 steps of the byte path:
+
+```
+tension against its own calibrated bar   (bar = 0.010966, q0.90 of steps 0-199)
+
+      0-100  ████████████████████ 0.00732      0.67x
+    100-200  ████████████████████ 0.00748      0.68x
+    200-400  ████████████████████ 0.00746      0.68x     no decline —
+    400-700  ████████████████████ 0.00746      0.68x     the series is flat
+   700-1100  ████████████████████ 0.00747      0.68x
+  1100-1500  ████████████████████ 0.00747      0.68x
+  ─────────────────────────────── 0.01097      bar
+```
+
+| | count | rate |
+|---|---|---|
+| single steps clearing the bar | 162/1300 | **12.5%** |
+| 5-step windows whose **mean** clears it | 0/1295 | **0** |
+
+**12.5% is the ~10% a q0.90 bar promises — the bar is doing exactly what it was
+calibrated to do.** What cannot happen is the window mean clearing it. Tension
+piles against a ceiling near 0.011 with its mean at 0.0075, so averaging five
+readings pulls the statistic back to the population mean, which is by
+construction well below a high quantile of the same population.
+
+That is the repair for the *first* unreachable bar failing in the same way. The
+sequence, all of it recorded in the code at the site:
+
+```
+split_threshold = 0.3            unreachable, 153-206x above observed peak
+   → calibrate to q0.90          bar now reachable: 12.5% of steps clear it
+   → all(t > bar) over 5 steps   0.1^5, about 1 in 100,000
+   → mean over 5 steps           0 of 1295 windows
+```
+
+A quantile of a distribution is not reachable by an average over that
+distribution unless its tail is heavy enough to carry the window. Whatever
+replaces the mean has to be checked against that, and not merely against the
+failure mode it is replacing — which is what happened twice here already. Logged
+as the fifth instance of `THRESHOLD_INSIDE_ITS_OWN_NOISE`.
