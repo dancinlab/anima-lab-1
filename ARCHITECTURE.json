@@ -279,7 +279,7 @@
             "name": "PairField loses cell identity with age -- the others do not",
             "role": "통계의 결함이 아니라 그 엔진의 성질",
             "id": "gate-nearest-predecessor-longrun",
-            "detail": "256세포, 나이 1000/2000/4000: PairField 0.0373/0.0285/0.0240 (바 대비 2.4→1.8→1.5배, 계속 감쇠) 대 MitosisEngine 0.0617/0.0609/0.0625 (완전 평평, 4.0배). 다른 세션 측정에서도 Narrative 는 평평(0.0563→0.0594). 즉 통계가 오래 돌면 떨어지는 게 아니라 PairField 만 떨어진다. 그 엔진의 세포가 시간이 지나며 섞인다는 뜻이고, A·G 반발장이 매 스텝 상태를 미는 구조가 다른 엔진에 없는 유일한 차이다. 관문의 문제가 아니라 엔진에 관한 발견."
+            "detail": "256세포, 나이 1000/2000/4000: PairField 0.0373/0.0285/0.0240(바 대비 2.4→1.8→1.5배, 계속 감쇠) 대 MitosisEngine 0.0617/0.0609/0.0625(평평, 4.0배). 다른 세션에서 Narrative 도 평평. 통계가 오래 돌면 떨어지는 게 아니라 PairField 만 떨어진다 — 그 엔진의 세포가 시간이 지나며 섞인다는 뜻이고, A·G 반발장이 매 스텝 상태를 미는 구조가 유일한 차이다."
           },
           {
             "name": "and its bar must use the ACTUAL row count",
