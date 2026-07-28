@@ -247,7 +247,13 @@
             "name": "the check measured the wrong regime",
             "role": "위험을 맞게 짚고 틀린 나이에서 쟀다",
             "id": "gate-lag-fixedpoint-check",
-            "detail": "지연 대조는 엔진 나이에 따라 두세 자릿수 감쇠한다(32세포, 5시드 최소): ConsciousnessEngine −0.019629/+0.026187/+0.000079, PairField +0.300371/+0.004021/+0.000198 @0/300/1000. PERSISTENCE 는 나이 1000 에서 축을 부르고 거기서 엔진 값이 ~1e-4 로 시체 잡음(±1e-4)과 같은 자릿수다. 바를 0 에 둔 것이 곧 자기 잡음 안의 바. 내 확인은 갓 만든 엔진 120스텝에서 해서 이 체제를 못 봤다. 실측 비용: NarrativeEngine DEPLOYABLE→BLOCKED, 44/60→42/60."
+            "detail": "지연 대조는 엔진 나이에 따라 두세 자릿수 감쇠한다(32세포, 5시드 최소): ConsciousnessEngine −0.019629 / +0.026187 / +0.000079, PairField +0.300371 / +0.004021 / +0.000198 @나이0/300/1000. PERSISTENCE 는 나이 1000 에서 축을 부르고, 거기서 엔진 값 ~1e-4 는 시체 잡음 ±1e-4 와 같은 자릿수다. 바를 0 에 둔 것이 곧 자기 잡음 안의 바."
+          },
+          {
+            "name": "and the cost was measured",
+            "role": "내 확인이 놓친 것을 관문이 잡았다",
+            "id": "gate-lag-revert-cost",
+            "detail": "실측: NarrativeEngine 이 DEPLOYABLE→BLOCKED(PERSISTENCE), MitosisEngine 이 ZERO_INPUT 위에 PERSISTENCE 추가, 44/60→42/60. 내 고정점 확인은 갓 만든 엔진 120스텝에서 해서 이 체제를 못 봤다. 관문이 축을 나이 300·1000·300 에서 부른다는 사실은 같은 세션에서 내가 직접 측정해놓고 탐침에 반영하지 않았다."
           },
           {
             "name": "the deployed runtime is frozen at 2 cells",
