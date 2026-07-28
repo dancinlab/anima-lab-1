@@ -271,10 +271,10 @@
             "detail": "32세포 관문 전후 44/60 → 44/60. NarrativeEngine DEPLOYABLE 유지, 대조군 5/5 조건 생존, 새로 뚫린 곳 없음. ⑤ 는 같은 자리에서 44/60→42/60 이 되며 NarrativeEngine 을 잃었다. 표본 밖 증거가 예측한 무손실이 관문에서 확인됐다. 256세포(무효가 난 규모) 델타가 이 변경의 목적이며 측정 중."
           },
           {
-            "name": "256c: hole closed, no other opened",
+            "name": "256c: hole closed, confirmed by two instruments",
             "role": "무효가 난 규모에서 구멍이 닫혔다 — 한 계측기 판독",
             "id": "gate-nearest-landed-256c",
-            "detail": "두 계측기 독립 확인. 다른 세션(_with_axes 순서 직접 재현): SCRAMBLE/NO_SPEAK_CODE 2/5→0/5, 다섯 시드 전부 undisturbed=0.0039=1/256 로 흔들림 없음, 이전 통과 두 시드가 정확히 뒤집힘. 내 관문(대조군 7종×5조건×5시드를 먼저 실행): '5/5 conditions survived the controls' — 무효 0개. 후자가 '구멍을 구멍과 맞바꿨는가'까지 동시에 배제한다. 단 rule=PASS 는 전후 유지 — 조건 자체는 여전히 뒤섞기를 통과시킨다."
+            "detail": "두 계측기 독립 확인. 다른 세션이 _with_axes 순서를 직접 재현해 SCRAMBLE/NO_SPEAK_CODE 2/5→0/5, 다섯 시드 전부 undisturbed=0.0039=1/256. 내 관문 전체 실행도 '5/5 conditions survived the controls' — 무효 0개이며 다른 대조군이 새로 통과한 것도 없다. 단 rule=PASS 는 전후 유지 — 조건 자신은 여전히 뒤섞기를 통과시킨다."
           },
           {
             "name": "which half rejects the corpse",
@@ -320,10 +320,10 @@
           },
           {
             "id": "gate-persistence-blocks-ten-of-eleven",
-            "name": "it blocks ten of eleven engines",
+            "name": "it blocks ten of twelve engines",
             "role": "관문의 배포 가능 수를 정하는 가장 큰 단일 변수",
             "type": "gate",
-            "detail": "256세포 출하 실행: 엔진 11개 중 10개가 PERSISTENCE 실패, 통과는 OscillatorLaser 하나. 실패한 엔진은 전부 5시드 중 정확히 1개에서만 실패 — 시드당 통과율 80%, 0.8^5=33% 기대 대 실측 1/11=9%. 실패 시드 분포 42:2 43:1 44:3 45:3 46:0, 균등 기대 1.8, chi2=3.78 df=4 p~0.44 — 엔진 성질이면 몰리고 불운한 시드면 그쪽에 몰리는데 둘 다 아니다. docs/consciousness-gate-audit.md",
+            "detail": "256세포 출하 실행 최종: 45/60(75%), DEPLOYABLE 1(OscillatorLaser). 조건별 11/12 · 11/12 · 11/12 · PERSISTENCE 1/12 · 11/12. 엔진 10개가 네 조건을 5/5 로 통과하고 PERSISTENCE 만 4/5 — 각각 시드 하나에 막혔다. 실패 시드 분포 42:2 43:1 44:3 45:3 46:0, chi2=3.78 df=4 p~0.44. docs/consciousness-gate-audit.md",
             "children": [
               {
                 "id": "gate-persistence-not-a-licence",
