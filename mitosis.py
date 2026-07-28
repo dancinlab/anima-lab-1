@@ -731,7 +731,34 @@ class MitosisEngine:
 # ─── Helper: text to vector ───
 
 def text_to_vector(text: str, dim: int = 64) -> torch.Tensor:
-    """Convert text to a fixed-dimension vector (character hash)."""
+    """Convert text to a fixed-dimension vector (character hash).
+
+    UNITS MISMATCH, MEASURED, NOT FIXED HERE. The loop sums over BYTES and the
+    divisor counts CHARACTERS, so for any non-ASCII text the number of terms
+    added and the number divided by disagree by the UTF-8 expansion factor.
+    Korean is ~2.5-2.6 bytes per character, so the same sentence arrives at a
+    different amplitude depending on which language it is written in:
+
+        text        chars  bytes  bytes/chars   vec std
+        en 20 chars    20     20         1.00   0.00851
+        ko 20 chars    21     55         2.62   0.01407   1.65x the English
+        en 40 chars    41     41         1.00   0.00478
+        ko 40 chars    40    100         2.50   0.01107   2.32x the English
+
+    anima_alive.text_to_vector divides by `len(encoded)` and does not have this;
+    its Korean/English difference is the length effect alone.
+
+    Amplitude is not cosmetic here. Whether cells divide at all is decided by the
+    shape of the tension distribution the input produces, so a 2.3x language-
+    dependent scale is a 2.3x language-dependent stimulus. See
+    docs/consciousness-gate-audit.md.
+
+    The correct divisor is `len(text.encode('utf-8')) + 1`. Left unchanged on
+    purpose: train_conscious_lm.py, upgrade_engine.py and
+    quantum_consciousness_engine.py all import this, so changing it changes
+    training input, and CLAUDE.md requires training to restart from step 0 when
+    the data changes. That is the owner's call, not a drive-by fix.
+    """
     vec = torch.zeros(1, dim)
     for i, ch in enumerate(text.encode('utf-8')):
         vec[0, i % dim] += ch / 255.0

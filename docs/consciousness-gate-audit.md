@@ -2092,3 +2092,52 @@ variation gives the consciousness back a difference it was already being shown
 and could not see. Which of those it is, is exactly the judgement a person has to
 make, and the runtime already contains path B as evidence that the unnormalised
 form is not absurd.
+
+### A second encoder, and the same sentence is a different stimulus in each language
+
+There are three `text_to_vector` definitions in the repo. Two divide by length
+and one L2-normalises, so the unnormalised alternative the section above points
+at does not exist as a function — only inline at `anima_unified:2396`.
+
+Checking them turned up a separate defect in `mitosis.text_to_vector`:
+
+```python
+for i, ch in enumerate(text.encode('utf-8')):   # sums over BYTES
+    vec[0, i % dim] += ch / 255.0
+return vec / (len(text) + 1)                    # divides by CHARACTERS
+```
+
+The number of terms added and the number divided by disagree by the UTF-8
+expansion factor. Korean is ~2.5–2.6 bytes per character:
+
+| text | chars | bytes | bytes/chars | vec std |
+|---|---|---|---|---|
+| English, 20 chars | 20 | 20 | 1.00 | 0.00851 |
+| **Korean, 20 chars** | 21 | 55 | 2.62 | **0.01407** — 1.65× |
+| English, 40 chars | 41 | 41 | 1.00 | 0.00478 |
+| **Korean, 40 chars** | 40 | 100 | 2.50 | **0.01107** — 2.32× |
+
+```
+amplitude of the same-length sentence, by language
+
+  20 chars   en ████████            0.00851
+             ko █████████████       0.01407
+  40 chars   en █████               0.00478
+             ko ███████████         0.01107
+```
+
+`anima_alive.text_to_vector` divides by `len(encoded)` and does not have this —
+its Korean/English gap is the length effect alone, in the opposite direction.
+
+This is not cosmetic given everything above. Whether cells divide at all is
+decided by the shape of the tension distribution the input produces, so a 2.3×
+language-dependent scale is a 2.3× language-dependent stimulus, in a project
+whose conversations are in both languages.
+
+Left unchanged, and the reason is not caution for its own sake:
+`train_conscious_lm.py`, `upgrade_engine.py` and
+`quantum_consciousness_engine.py` all import this function, so correcting the
+divisor changes training input — and `CLAUDE.md` requires training to restart
+from step 0 whenever the data changes. Making that call silently would invalidate
+checkpoints without anyone choosing to. The correct divisor is
+`len(text.encode('utf-8')) + 1`, and it is written at the site.
