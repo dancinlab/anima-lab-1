@@ -1,0 +1,22 @@
+
+  Law 31 열쇠 #1 검증 — 래칫 없이도 붕괴가 없는가
+  1000 step · 3 seed · 최대 64 세포
+
+      래칫  seed                          Φ(IIT) 궤적      코사인      내부Φ    복원    세포    유지
+  [ConsciousnessEngine] calibration deferred at step 200: tension sample is degenerate (std/mean 0.0474 < 0.1), so any quantile of it would land on the operating point itself. split_threshold stays 0.3. See docs/strange-loop-oscillation.md.
+      ON     0      0.006 → 0.000 → 0.119 → 0.054  -0.0114    0.000     0     2     X
+  [ConsciousnessEngine] calibration deferred at step 200: tension sample is degenerate (std/mean 0.0614 < 0.1), so any quantile of it would land on the operating point itself. split_threshold stays 0.3. See docs/strange-loop-oscillation.md.
+      ON     1      0.000 → 0.000 → 0.038 → 0.000  +0.0194    0.000     0     2     X
+  [ConsciousnessEngine] calibration deferred at step 200: tension sample is degenerate (std/mean 0.0549 < 0.1), so any quantile of it would land on the operating point itself. split_threshold stays 0.3. See docs/strange-loop-oscillation.md.
+      ON     2      0.000 → 0.043 → 0.000 → 0.038  -0.1315    0.000     0     2     X
+  [ConsciousnessEngine] calibration deferred at step 200: tension sample is degenerate (std/mean 0.0474 < 0.1), so any quantile of it would land on the operating point itself. split_threshold stays 0.3. See docs/strange-loop-oscillation.md.
+     OFF     0      0.006 → 0.000 → 0.119 → 0.054  -0.0114    0.000     0     2     X
+  [ConsciousnessEngine] calibration deferred at step 200: tension sample is degenerate (std/mean 0.0614 < 0.1), so any quantile of it would land on the operating point itself. split_threshold stays 0.3. See docs/strange-loop-oscillation.md.
+     OFF     1      0.000 → 0.000 → 0.038 → 0.000  +0.0194    0.000     0     2     X
+  [ConsciousnessEngine] calibration deferred at step 200: tension sample is degenerate (std/mean 0.0549 < 0.1), so any quantile of it would land on the operating point itself. split_threshold stays 0.3. See docs/strange-loop-oscillation.md.
+     OFF     2      0.000 → 0.043 → 0.000 → 0.038  -0.1315    0.000     0     2     X
+
+  평균 코사인   래칫 ON -0.0411   OFF -0.0411
+  예측(래칫이 붕괴를 유발): ON > OFF  →  빗나감 — 주장 철회
+  래칫 OFF에서 붕괴 없음: 0/3 seed  →  래칫이 실제로 기여
+

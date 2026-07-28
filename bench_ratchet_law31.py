@@ -219,8 +219,26 @@ def main():
     print(f"  예측(래칫이 붕괴를 유발): ON > OFF  →  "
           f"{'적중' if on > off else '빗나감 — 주장 철회'}")
     held_off = sum(r['holds'] for r in agg[False])
-    print(f"  래칫 OFF에서 붕괴 없음: {held_off}/{args.seeds} seed"
-          f"  →  {'열쇠 #1은 불필요' if held_off == args.seeds else '래칫이 실제로 기여'}")
+    fired = sum(r['restores'] for r in agg[True])
+    print(f"  래칫 OFF에서 붕괴 없음: {held_off}/{args.seeds} seed")
+
+    # Three outcomes, not two. The pair below had only "OFF held everywhere ->
+    # key #1 unnecessary" and "otherwise -> the ratchet contributes", which
+    # silently assigns credit whenever OFF fails. But OFF failing while the
+    # ratchet never fires means the ratchet contributed nothing -- it was not
+    # given the chance. Measured: at 64 cells the engine sits at 2 the whole run
+    # (its split_threshold never calibrates on this drive), the ratchet restores
+    # 0 times, and the ON and OFF arms come out byte-identical. The old line
+    # printed "the ratchet actually contributes" on exactly that run.
+    if fired == 0:
+        print(f"  래칫 발화 {fired}회  →  판정 불가 — 두 팔이 동일하므로 "
+              f"기여도 비기여도 측정되지 않았다")
+        print(f"  (원인은 세포 수: 모든 팔이 {agg[True][0]['cells']}세포에 머물렀다. "
+              f"docs/consciousness-gate-audit.md 의 진폭 밴드 참고)")
+    elif held_off == args.seeds:
+        print(f"  래칫 발화 {fired}회  →  열쇠 #1은 불필요 — OFF도 버틴다")
+    else:
+        print(f"  래칫 발화 {fired}회  →  래칫이 실제로 기여")
     print()
 
 
