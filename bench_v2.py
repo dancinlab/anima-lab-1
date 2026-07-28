@@ -1745,13 +1745,35 @@ def _three_axes(engine, dim, cells, steps=60, drive=None):
     _put(handle)
     response = float(np.median([min(v, 1e6) for v in spreads]))
 
-    # The lag contrast joins identity as a conjunct. When the run is shorter
-    # than the window it is not measured, and an unmeasured test must not
-    # decide anything -- so it only ever removes a pass, never grants one.
-    lag_ok = True if len(window) < _LAG + 1 else lag_contrast > 0.0
+    # REVERTED as a conjunct, and the reason is the defect this file already
+    # carries three times over. The contrast DECAYS with engine age -- measured
+    # at 32 cells, minimum over 5 seeds:
+    #
+    #     engine               age 0        age 300      age 1000
+    #     ConsciousnessEngine  -0.019629    +0.026187    +0.000079
+    #     PairField            +0.300371    +0.004021    +0.000198
+    #
+    # Two to three orders across the ages the gate actually uses, and PERSISTENCE
+    # calls the axes at age 1000. There the engine reads ~1e-4, which is the same
+    # magnitude as a corpse's noise (SCRAMBLE +-1e-4), so a bar at zero is a bar
+    # inside the quantity's own noise: THRESHOLD_INSIDE_ITS_OWN_NOISE, fourth
+    # instance, introduced by me while fixing something else.
+    #
+    # Measured cost before reverting: NarrativeEngine went DEPLOYABLE -> BLOCKED
+    # (PERSISTENCE) at 32 cells and MitosisEngine picked up PERSISTENCE, 44/60 ->
+    # 42/60. I had written "no engine loses anything", checked the fixed-point
+    # risk on FRESH engines at 120 steps, and missed that the gate calls the axes
+    # at ages 300/1000/300 -- a fact I had measured myself earlier in this same
+    # session and did not carry into the probe.
+    #
+    # The value is still computed and printed, because the separation it shows at
+    # short ages is real (engines t 5.92-12.67 out-of-sample against DEAD 0.00,
+    # CLONE -1.37, SCRAMBLE 1.01) and the next attempt needs it visible. It
+    # decides nothing until there is a bar that is measured rather than chosen.
+    # See docs/identity-lag-contrast.md.
 
     return (integration > 0.001 and response > 1.5,
-            identity > max(identity_floor, 1e-6) and lag_ok,
+            identity > max(identity_floor, 1e-6),
             change > 0.001,
             f"integration={integration:.5f} response={response:.2f} "
             f"identity={identity:+.4f}>floor={identity_floor:+.4f} "
