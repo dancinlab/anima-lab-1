@@ -234,10 +234,10 @@
             "detail": "같은 측정의 기지값 두 줄: DEAD 여유 +0.9844~+0.9870, 20/20 수용 — 네 규모 전부. REAL(Narrative) +0.3249~+0.3524, 20/20. 얼어붙은 계는 자기연속성이 완벽해서 정체성 점수가 최대가 된다. 관문이 DEAD를 0/5로 떨어뜨리는 것은 통합·변화 축이지 정체성이 아니다. 즉 이 축은 시체를 거부하지 않으며, 순위로는 시체를 산 엔진의 2.8배 위에 놓는다."
           },
           {
-            "name": "GATE VOID at the shipping default",
+            "name": "GATE VOID at 256c — closed",
             "role": "세 계측기가 독립적으로 같은 칸을 짚었다",
             "id": "gate-void-at-256",
-            "detail": "bench_v2 --verify 기본값(256c/64d/128h)에서 SCRAMBLE(시드 42)이 NO_SPEAK_CODE 를 통과 → 조건 무효, 4/5 만 생존, 판정 34/48 NEEDS WORK. 같은 칸을 다른 세션의 250칸 격자와 _with_axes 독립 재현이 먼저 짚었고(시드 42·44), 내 관문이 세 번째로 같은 결론에 도달했다. 32세포에서 0/5 였던 것은 여유가 아니라 5회 추첨이었다."
+            "detail": "출하 기본값 256c 에서 SCRAMBLE(시드 42)이 NO_SPEAK_CODE 를 통과해 조건 무효였다(4/5 생존, 34/48). 세 계측기가 독립적으로 같은 칸을 짚었다. 원인은 규모가 아니라 정체성 널이 SCRAMBLE 대조군과 같은 연산이라는 것 — 20시드에서 네 규모 전부 평균이 자기 표준편차 안. 순열 없는 최근접 전임자 접합으로 닫혔고, 재실행에서 5/5 조건이 대조군을 살아남는다."
           },
           {
             "name": "two candidate repairs, refuted on the numbers",
@@ -264,10 +264,10 @@
             "detail": "32세포 관문 전후 44/60 → 44/60. NarrativeEngine DEPLOYABLE 유지, 대조군 5/5 조건 생존, 새로 뚫린 곳 없음. ⑤ 는 같은 자리에서 44/60→42/60 이 되며 NarrativeEngine 을 잃었다. 표본 밖 증거가 예측한 무손실이 관문에서 확인됐다. 256세포(무효가 난 규모) 델타가 이 변경의 목적이며 측정 중."
           },
           {
-            "name": "256c: SCRAMBLE 2/5 -> 0/5",
+            "name": "256c: hole closed, no other opened",
             "role": "무효가 난 규모에서 구멍이 닫혔다 — 한 계측기 판독",
             "id": "gate-nearest-landed-256c",
-            "detail": "다른 세션의 독립 판독, _with_axes 순서 그대로: SCRAMBLE/NO_SPEAK_CODE 가 2/5(시드 42·44 통과)에서 0/5 로. 다섯 시드 전부 정체성에서 막히고 undisturbed=0.0039=1/256 로 시드 간 흔들림이 없다 — 지연 대조가 0.00000 인데 가끔 양수였던 것과 다른 점. 이전에 통과하던 두 시드가 정확히 뒤집혔다. 단, rule=PASS 는 전후 다섯 시드 모두 유지 — 조건 자체는 여전히 뒤섞기를 통과시키고 축이 대신 잡는다. 내 관문의 두 번째 판독은 실행 중."
+            "detail": "두 계측기 독립 확인. 다른 세션(_with_axes 순서 직접 재현): SCRAMBLE/NO_SPEAK_CODE 2/5→0/5, 다섯 시드 전부 undisturbed=0.0039=1/256 로 흔들림 없음, 이전 통과 두 시드가 정확히 뒤집힘. 내 관문(대조군 7종×5조건×5시드를 먼저 실행): '5/5 conditions survived the controls' — 무효 0개. 후자가 '구멍을 구멍과 맞바꿨는가'까지 동시에 배제한다. 단 rule=PASS 는 전후 유지 — 조건 자체는 여전히 뒤섞기를 통과시킨다."
           },
           {
             "name": "but it ranks DEAD first",
