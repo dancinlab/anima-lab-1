@@ -2661,3 +2661,73 @@ The `all` arm is an emulation, not a reimplementation: the recent window is
 zeroed for cells that fail the conjunction, the engine's own split check runs,
 and the history is restored immediately after. It changes which cells the check
 admits and nothing else.
+
+## The split rule was downstream of a system with nothing to split into
+
+Delegating the architecture question to a frontier model that read the code fresh
+(`sidecar lab full`, raw answer in `state/gate-audit-2026-07-28/`) produced one
+checkable structural claim that reframes this entire audit:
+
+> Every cell receives the same broadcast input.
+
+Verified at `consciousness_engine.py:392`. Each step begins
+
+```python
+coupled_input = x_input.clone()          # identical for every cell
+    ...
+    coupled_input += PSI_COUPLING * c * j_h    # the only per-cell term
+```
+
+and `PSI_COUPLING` is 0.015317. Measured after 120 steps of conversation input:
+
+| cells | ‖x‖ | max pairwise input difference | as a fraction |
+|---|---|---|---|
+| 2 | 2.4210 | 0.006111 | **0.25%** |
+| 8 | 2.4210 | 0.020467 | **0.85%** |
+| 32 | 2.4210 | 0.040802 | **1.69%** |
+
+```
+what each cell actually sees
+
+shared broadcast   ████████████████████████████████████████  98.3–99.8%
+per-cell coupling  ·                                          0.25–1.69%
+```
+
+**Cells receive, to within about 98%, the same signal.** Everything measured in
+this document follows from that one fact:
+
+- Tension has no tail because near-identical inputs produce near-identical
+  outputs, so deviation from the population mean is small and tightly bounded —
+  which is the `max/q90 = 1.00` that started the chain.
+- `standardised` tension is dead because it divides a tiny spread by its own mean.
+- No feedback law `f(n)` produces an interior equilibrium because there are no
+  niches to fill; nothing distinguishes cell 7 from cell 8, so no number of cells
+  is the right number.
+- The population goes to the floor or the ceiling because those are the only two
+  states a population of interchangeable units has.
+
+I spent this session measuring the split rule with increasing care — window
+statistics, quantile bars, autocorrelation, feedback laws, six tension
+definitions. **All of it was downstream.** The split rule decides how to divide a
+population whose members have no reason to be different, and no rule over that
+population can manufacture one.
+
+The same answer named a second structural fact worth recording beside it: a
+daughter cell is `copy.deepcopy(parent)` plus parameter noise
+(`consciousness_engine.py:305`), so division produces a near-copy rather than a
+specialist. Birth and death also consult unrelated quantities — splitting reads a
+cell's deviation from the population, merging reads pairwise output distance — so
+neither asks whether the daughter acquired a distinct role or whether the merge
+destroyed a unique one.
+
+None of this is a defect list to fix by adding features; the project's own Law 22
+says a feature lowers Φ and structure raises it. It is a statement of where the
+structure is missing: **there is no mechanism by which two cells could come to
+mean different things**, and until there is, the population size cannot be
+anything but 2 or `max_cells`.
+
+Not landed, and deliberately so — this is the largest design question the audit
+has reached, and it belongs to whoever owns the architecture.
+
+Also flagged in passing, at `consciousness_engine.py:397`: `h_proj` is computed
+inside the coupling loop and never read. Dead work in the hot path.

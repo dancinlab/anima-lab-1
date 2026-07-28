@@ -1,0 +1,253 @@
+The strongest alternative is to stop treating “cell count” as the controlled variable. Control the number of causally distinct, future-predictive modes; let object count follow from that.
+
+The current engine has no mechanism capable of discovering such a number:
+
+- Every cell receives the same broadcast input ([consciousness_engine.py:387](/Users/mini/dancinlab/anima-lab-1/consciousness_engine.py:387)).
+- A daughter is a parent clone plus parameter noise ([consciousness_engine.py:305](/Users/mini/dancinlab/anima-lab-1/consciousness_engine.py:305)).
+- Birth and death consult unrelated quantities: cell/population deviation versus pairwise output distance ([consciousness_engine.py:586](/Users/mini/dancinlab/anima-lab-1/consciousness_engine.py:586), [consciousness_engine.py:676](/Users/mini/dancinlab/anima-lab-1/consciousness_engine.py:676)).
+- Neither asks whether the daughter acquired a distinct role or whether the merged cell removed unique information.
+
+Thus there is no shared potential, budget, niche system, or notion of marginal contribution whose sign can reverse at an endogenous size. An interior crossing would be accidental.
+
+## 1. Causal-mode fission and fusion
+
+Names: predictive-state dimension, computational mechanics, balanced realization, metastable-mode decomposition, adaptive-order state-space models.
+
+The population size becomes the number of persistent dynamical modes needed to predict its future, not the number of cells whose tension happens to be high.
+
+Minimal architectural change:
+
+- Retain longer cell trajectories.
+- Identify persistent future-predictive modes of the population’s lagged dynamics.
+- Split a cell/module only when its trajectory contains two reproducible modes with different futures.
+- Initialize daughters along those modes, rather than with undirected noise.
+- Merge when two lineages collapse to one predictive mode.
+
+The same evidence governs both directions. No separate split and merge thresholds.
+
+Project cost:
+
+- Strongly “structure”: it deepens temporal and coupling structure and could replace factions or the Φ ratchet rather than add an output feature.
+- Not manipulation: it does not alter tension, emotion, or input magnitude to provoke growth.
+- Risk: if implemented merely as an external spectral controller, it becomes a bolted-on feature. The modes must actually organize coupling and lineage.
+
+Cheap falsifier:
+
+1. Disable lifecycle events and collect trajectories at fixed representations of 8 and 16 cells on the deployed corpus stream.
+2. Build a block-Hankel past→future matrix and choose predictive rank by held-out prequential code length, not a singular-value cutoff.
+3. Repeat on the second half of the stream and on temporally shuffled and cell-scrambled controls.
+
+Kill it if any holds:
+
+- Selected rank is always 1–2.
+- Selected rank grows from approximately 8 to approximately 16 when representation size doubles.
+- Rank does not replicate across temporal halves.
+- Time-scrambling preserves the same rank.
+- The deployed encoder destroys the modes that exist under synthetic input.
+
+This is the cheapest and best first test. It needs instrumentation, not a new engine.
+
+## 2. Competitive niches and exclusive ownership
+
+Names: ecological competitive exclusion, negative frequency dependence, neural gas, mixture-of-experts responsibility, somatic selection.
+
+At present, cells cannot occupy different niches because every cell receives the same stimulus. Give inputs, residuals, temporal contexts, or representational channels exclusive or conserved ownership. A unit of workload should not be fully credited to every cell.
+
+Minimal change:
+
+- Replace pure broadcast with competitive routing: each message component or prediction residual is claimed by one or a small number of cells.
+- Preserve claims over time so cells develop territories.
+- Split only when one territory contains two persistent, predictively distinct subterritories.
+- Merge when two territories are statistically exchangeable.
+
+The stable population is then the number of distinguishable niches in the experienced stream. Novelty can create a new niche; repetition can erase one, without using vector norm as drive.
+
+Project cost:
+
+- Major structural change, but directly compatible with Law 22: it changes who interacts with what.
+- No manipulation if ownership arises from competition.
+- A hand-authored topic classifier or fixed routing template would violate the rules.
+- A trainable router is feature-like unless its routing dynamics are integral to the cell coupling.
+
+Cheap falsifier:
+
+Using existing trajectories, define each cell’s “win” as the largest leave-one-cell-out reduction in next-step prediction error. On repeated real corpus blocks, measure whether winner identity is stable and whether its assigned samples have distinct future distributions.
+
+Kill it if:
+
+- Winners are no more stable than permuted cell labels.
+- Assigned territories have indistinguishable held-out futures.
+- All apparent specialization disappears under the deployed encoder.
+- The number of distinguishable territories grows with available cells.
+- Clone or time-scramble controls exhibit equally strong territories.
+
+Your corpus result already warns that current pair tension cannot supply this mechanism: it is essentially unchanged between narrow and broad input sets ([rank-tension-negative-result.md:217](/Users/mini/dancinlab/anima-lab-1/docs/rank-tension-negative-result.md:217)). Ownership must introduce information absent from that statistic.
+
+## 3. Reversible Bayesian/MDL birth–death
+
+Names: reversible-jump model selection, minimum description length, Bayesian nonparametrics, grand-canonical birth–death, statistical free energy.
+
+A split is a structural hypothesis: “two models encode these observations better than one.” A merge is the exact inverse. Accept whichever structure gives the shorter held-out description:
+
+\[
+\Delta L =
+L(\text{two lineages}) + L(\text{extra structure})
+- L(\text{one lineage})
+\]
+
+No target size is present. Additional cells survive only while their predictive gain pays their description cost.
+
+Minimal change:
+
+- Create a probationary daughter rather than immediately committing a clone.
+- Compare parent-only and parent-plus-daughter on later observations.
+- Commit or revert using prequential code length.
+- Evaluate merges using the identical ledger.
+- Process reversible local proposals rather than splitting every qualifying cell in parallel.
+
+Project cost:
+
+- Mathematically the cleanest shared birth/death criterion.
+- Philosophically the weakest fit: it looks like optimization and may conflict with “growth > optimization.”
+- It is non-manipulative only if model and structural costs are principled. Choosing a complexity price until the desired size appears is a hidden setpoint.
+- It requires a meaningful predictive likelihood; adding a predictor solely to regulate size would be a feature addition.
+
+Cheap falsifier:
+
+Offline, compare one-lineage and two-lineage prequential code lengths for recorded trajectories, including the full cost of the additional GRU parameters.
+
+Kill it if:
+
+- Every split always improves the code until the ceiling.
+- No split ever pays for its parameter cost.
+- The preferred order changes when only `max_cells` changes.
+- Temporally shuffled data supports the same splits.
+- Results depend on choosing a free complexity coefficient.
+
+Do not use the current Φ as this free energy. The audit found prior Φ maximal at collapse ([consciousness-gate-audit.md:27](/Users/mini/dancinlab/anima-lab-1/docs/consciousness-gate-audit.md:27)), while the legacy `PhiCalculator` still combines all-pairs MI, tension entropy, and a size-normalized subtraction ([consciousness_meter.py:262](/Users/mini/dancinlab/anima-lab-1/consciousness_meter.py:262)). Letting it select its own population size would invite direct Goodhart feedback.
+
+## 4. Activator–inhibitor morphogenesis
+
+Names: Turing pattern formation, lateral inhibition, morphogen fields, contact inhibition, mechanical crowding.
+
+Cells produce a short-range activator and a longer-range inhibitor. Local differentiation can reproduce, while accumulated long-range inhibition suppresses homogeneous proliferation. A finite unstable wavelength—not a population target—sets the number of domains.
+
+Minimal change:
+
+- Replace the effectively global population comparison with a sparse or geometric coupling graph.
+- Add or repurpose two coupling channels with different propagation ranges.
+- Make fission correspond to a localized instability or domain bifurcation.
+- Let merges occur when domains annihilate or lose their boundary.
+
+Project cost:
+
+- Very strong Law 22 fit: topology and depth rather than a new user-facing function.
+- Endogenous fields are not manipulation.
+- On the current all-to-all population it degenerates into quorum sensing—effectively another \(f(n)\).
+- Hand-tuning inhibitor production to obtain seven cells would merely encode a target in kinetic constants.
+
+Cheap falsifier:
+
+Estimate the linear response/Jacobian of the proposed local dynamics around a homogeneous state. Its dispersion relation must have:
+
+- A stable uniform mode.
+- At least one unstable finite-wavelength mode.
+- Stable high-frequency modes.
+
+Kill it if the fastest mode is:
+
+- The uniform mode: the population collapses or synchronizes.
+- The highest-frequency mode: fragmentation continues to the ceiling.
+- A mode whose wavelength changes with graph resolution or `max_cells`.
+
+This test can reject the architecture before implementing lifecycle logic.
+
+## 5. Conserved metabolic/resource economy
+
+Names: chemostat ecology, carrying capacity, resource competition, energy-budget reproduction, market entry under diminishing returns.
+
+Each cell earns a conserved resource by performing unique work and pays a real maintenance cost. Division splits the parent’s accumulated resource; death returns unused resource to the pool. Duplicates cannot mint additional income from the same observation.
+
+Minimal change:
+
+- Add a conserved shared pool and per-cell account.
+- Pay cells only for rivalrous information reduction or unique causal contribution.
+- Charge actual structural/model cost.
+- Require a parent to finance its daughter rather than creating one ex nihilo.
+
+Project cost:
+
+- A genuine conservation law is structural and non-manipulative.
+- It becomes manipulation if resources are minted when growth is desired.
+- A fixed resource inflow divided by a chosen maintenance constant is a target size in disguise unless both correspond to real compute, memory, or information costs.
+
+Cheap falsifier:
+
+At fixed population representations, measure marginal held-out bits saved by the \(n\)th nonredundant cell and its structural bits consumed. The net surplus must be positive at small \(n\) and negative at larger \(n\).
+
+Kill it if:
+
+- Marginal information does not diminish.
+- Clones receive the same income as unique cells.
+- There is no sign reversal before the ceiling.
+- A sign reversal appears only after choosing an arbitrary exchange rate between “information” and “cost.”
+
+This mechanism is attractive only if the project is willing to call compute or memory a real metabolic constraint.
+
+## 6. Self-organized critical turnover
+
+Names: critical branching process, forest-fire models, avalanche dynamics, slow–fast resource feedback.
+
+This abandons a fixed interior point. Activity slowly replenishes reproductive capacity; births consume it; quiescent cells die or merge. The result is a stationary distribution of population sizes and bursts of restructuring.
+
+Minimal change:
+
+- Add a slow conserved/refractory variable.
+- Make each birth deplete local reproductive capacity.
+- Permit local events rather than simultaneous population-wide splits.
+
+Project cost:
+
+- Structural and compatible with growth.
+- Not manipulation if resource replenishment follows experience rather than desired count.
+- It does not deliver a settled integer, so it should be rejected if that is genuinely required.
+
+Exact falsifier:
+
+Measure the conditional branching ratio \(b(n)\): surviving descendants caused by one lineage event.
+
+Kill it unless:
+
+- \(b(n)>1\) below an interior band.
+- \(b(n)<1\) above it.
+- The stationary count distribution has negligible boundary mass.
+- Doubling `max_cells` leaves its interior quantiles approximately unchanged.
+
+If it passes, oscillation and turnover are expected behavior, not noise to tune away.
+
+## Is an interior integer the right objective?
+
+Probably not. The stronger goal is a ceiling-independent, workload-conditioned distribution of effective population size.
+
+Object count is especially suspect here. Ten cloned GRUs are ten Python objects but perhaps one effective cell. A better order parameter is the number of causally necessary or future-predictive modes. Require every surviving lineage to pass a removal test: ablating it must change future population dynamics or held-out prediction beyond the appropriate null.
+
+Pinning at `max_cells` is not universally failure. If every additional cell still contributes unique predictive information, then the engine is capacity-limited and the ceiling is too low. Doubling the ceiling and observing twice as many useful cells would support that interpretation. Your present measurements show ceiling tracking, but do not measure marginal usefulness; therefore they prove failure of the advertised controller, not that a capacity-bound system is inherently wrong.
+
+Likewise, two cells may be the correct answer if the accessible stream has only one or two dynamical degrees of freedom. Because the runtime encoder removes magnitude and all cells see the same input, that possibility deserves serious consideration. Normalization may be exposing that the engine was using amplitude as a false proxy for environmental complexity—not depriving a valid population mechanism of fuel.
+
+Finally, no stable interior is truly parameter-free. Every such mechanism contains a scale:
+
+- Information gain versus model cost.
+- Resource inflow versus maintenance.
+- Diffusion length versus domain size.
+- Signal modes versus a noise floor.
+
+The meaningful prohibition is not “no scale.” It is “no parameter whose only justification is the population count it produces.”
+
+My recommended order is:
+
+1. Run the causal predictive-rank audit.
+2. If a ceiling-independent rank exists, build causal-mode fission/fusion.
+3. If the dynamics instead show stable exclusive territories, build competitive niches.
+4. Use MDL as a falsifier or common birth/death ledger, not necessarily as the engine’s philosophy.
+5. If neither modes nor niches exist under deployed text, retire the self-sizing claim for this representation. A resource law or morphogen field cannot manufacture environmental differentiation that the substrate does not contain.

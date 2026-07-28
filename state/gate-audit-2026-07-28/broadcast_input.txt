@@ -1,0 +1,8 @@
+how different is each cell's INPUT from its peers?  PSI_COUPLING=0.015317
+
+ cells      ||x||   max pair diff   diff/||x||
+     2     2.4210        0.006111        0.25%
+     8     2.4210        0.020467        0.85%
+    32     2.4210        0.040802        1.69%
+
+  every cell starts from the SAME x_input; the only per-cell term is coupling.
