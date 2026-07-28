@@ -1,0 +1,6 @@
+which half of the signal drives division: direction or magnitude?
+
+drive                             max/q90    cells (3 seeds)
+raw (both kept)                      1.95       [32, 32, 31]
+unit vector (direction only)         1.03          [2, 2, 2]
+scalar magnitude only                1.87       [32, 32, 32]

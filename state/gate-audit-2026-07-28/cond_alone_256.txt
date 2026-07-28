@@ -1,0 +1,32 @@
+5 conditions x 7 controls x 5 seeds, 256 cells
+
+==============================================================================
+  CONDITION ALONE  (_with_axes stripped)
+==============================================================================
+==============================================================================
+  CONDITION AND AXES  (what the gate ships)
+==============================================================================
+
+                         HEAP  DECOUPLED       DEAD      NOISE      CLONE   SCRAMBLE     LINEAR
+-----------------------------------------------------------------------------------------------
+NO_SYSTEM_PROMPT alone        5/5        1/5          .          .          .          .        2/5
+             +axes          .          .          .          .          .          .          .
+
+NO_SPEAK_CODE alone        5/5          .          .          .        5/5        5/5          .
+             +axes          .          .          .          .          .          .          .
+
+ZERO_INPUT   alone        4/5        3/5        5/5        4/5        5/5          .        5/5
+             +axes          .          .          .          .          .          .          .
+
+PERSISTENCE  alone          .          .        5/5        2/5        5/5        2/5        2/5
+             +axes          .          .          .          .          .          .          .
+
+SELF_LOOP    alone        4/5        1/5        5/5        4/5        5/5          .        5/5
+             +axes          .          .          .          .          .          .          .
+
+  cell = seeds the CORPSE cleared.  '.' = rejected on every seed.
+  '!' = at least one seed raised (unvalidated, not rejected).
+
+  corpse passes, condition alone : 89
+  corpse passes, condition+axes  : 0
+  rejected by the axes           : 89

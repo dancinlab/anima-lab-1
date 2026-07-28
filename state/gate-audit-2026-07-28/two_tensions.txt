@@ -1,0 +1,7 @@
+consciousness_engine       mean 0.007452  q0.90 0.010960  q90/mean  1.47  max/mean  1.47
+                           single steps above   9.9%   5-step window means above   0.0%
+
+  [MitosisEngine] split_threshold=0.3 is unreachable: peak tension over 200 steps was 0.0235 (13x below). Mitosis cannot fire. Derive a bar from measurement with calibrate_split_threshold(), or scale the inputs.
+mitosis.py                 mean 0.015641  q0.90 0.023454  q90/mean  1.50  max/mean  1.50
+                           single steps above   8.4%   3-step window means above   0.0%
+

@@ -1,0 +1,4 @@
+the runtime's two drive paths at EIGHT seeds, 1200 steps, ceiling 32
+
+A  text_to_vector (runtime main)   grew 0/8   [2, 2, 2, 2, 2, 2, 2, 2]
+B  raw byte/255                    grew 8/8   [32, 32, 31, 32, 32, 32, 32, 32]

@@ -1,0 +1,17 @@
+runtime text_to_vector amplitude vs the growth band
+
+message                                              std       max
+안녕                                               0.03763   0.14818
+오늘 뭐 했어?                                         0.01966   0.05635
+너는 지금 무슨 생각을 하고 있어?                              0.01361   0.06576
+I've been reading about integrated informati     0.01188   0.05196
+그 실험 결과 어떻게 나왔어? 궁금하다.                           0.01099   0.05001
+what do you want                                 0.01744   0.08227
+너 스스로 뭘 원한다고 느껴?                                 0.01474   0.06506
+Tell me something you have never told anyone     0.01169   0.06445
+
+  runtime mean std   0.01720
+  gate drive std     0.10000   (6x louder, and ALREADY below the band)
+  band lower edge   ~0.30000   (17x louder)
+
+  1500 steps of real conversation text -> 2 cells (threshold 0.3000)

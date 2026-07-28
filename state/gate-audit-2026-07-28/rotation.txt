@@ -1,0 +1,4 @@
+stimulus pattern                    cells   threshold
+8 messages rotating (real chat)         2      0.0110
+1 message repeated                      2      0.3000
+1 message + tiny jitter                 2      0.3000

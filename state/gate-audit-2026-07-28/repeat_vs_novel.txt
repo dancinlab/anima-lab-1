@@ -1,0 +1,7 @@
+400-message pool REPEATED vs never-repeating, 1200 steps, 4 seeds
+
+  seed  pool of 400 (repeats)    all-new (no repeat)
+    42                     32                     32
+    43                     32                     32
+    44                     32                     31
+    45                     32                     32

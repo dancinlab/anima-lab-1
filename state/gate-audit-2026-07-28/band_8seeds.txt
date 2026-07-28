@@ -1,0 +1,5 @@
+amplitude band at 8 seeds, ceiling 32, 1500 steps
+
+drive               grew (>16 cells)  cells per seed
+x0.1 (the gate)    0/8                [2, 2, 2, 2, 2, 2, 2, 2]
+x0.3               5/8                [31, 32, 2, 30, 2, 32, 2, 32]

@@ -1,0 +1,7 @@
+does a wider message vocabulary create the tail mitosis needs?
+
+distinct messages            mean   max/q90  5win>q90  cells@1200
+8                        0.006345      1.00      0.0%           2
+64                       0.009572      1.16      0.0%           2
+400                      0.008425      1.36      4.1%          32
+all-new                  0.008425      1.36      4.1%           2

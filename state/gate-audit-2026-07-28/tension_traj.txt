@@ -1,0 +1,12 @@
+calibrated split_threshold = 0.010966   (fitted at step 200 from steps 0-199)
+
+       steps   mean tension          max   vs threshold
+       0-100       0.007320     0.010969          0.67x
+     100-200       0.007481     0.010976          0.68x
+     200-400       0.007457     0.010989          0.68x
+     400-700       0.007456     0.010998          0.68x
+    700-1100       0.007468     0.010998          0.68x
+   1100-1500       0.007468     0.010998          0.68x
+
+  steps above the bar after calibration: 162/1300  (12.5%)
+  5-step windows whose MEAN clears the bar: 0/1295

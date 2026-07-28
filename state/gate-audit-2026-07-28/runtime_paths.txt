@@ -1,0 +1,6 @@
+A  text_to_vector (line 1207)      mean std 0.01720   range 0.01099-0.03763
+B  raw bytes/255 (line 2396)       mean std 0.24737   range 0.10533-0.36710
+
+A  text_to_vector      1500 steps ->   2 cells  (threshold 0.3000)
+B  raw bytes/255       1500 steps ->   2 cells  (threshold 0.0110)
+A and B interleaved    1500 steps ->   2 cells  (threshold 0.0079)

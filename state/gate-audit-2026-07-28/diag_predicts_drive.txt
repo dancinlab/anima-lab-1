@@ -1,0 +1,8 @@
+does the diagnostic separate drives that GROW from drives that do not?
+
+drive                   q90/mean  max/mean  5win>q90  cells@1500
+conversation bytes          1.47      1.48      0.0%           2
+randn x0.1 (gate)           1.06      1.16      2.0%           2
+randn x1.0                  1.97      2.92     10.1%          31
+randn x3.0                  1.85      2.79     11.6%          32
+randn x30                   1.23      1.55      0.0%           2

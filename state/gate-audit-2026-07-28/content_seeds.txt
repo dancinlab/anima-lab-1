@@ -1,0 +1,5 @@
+8 seeds, common norm 3.6272, 1200 steps
+
+condition                          cells per seed                           reached ceiling
+content varies, magnitude FIXED    [2, 2, 31, 2, 32, 31, 32, 32]            5/8
+content varies, magnitude free     [32, 32, 2, 32, 31, 32, 32, 30]          7/8

@@ -1,0 +1,5 @@
+200 messages rescaled to a common norm 3.6272
+
+drive                                   tension spread (std/mean)    cells (3 seeds)
+content varies, magnitude FIXED                           0.06544         [2, 2, 31]
+content varies, magnitude free                            0.59522        [32, 32, 2]

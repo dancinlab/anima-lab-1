@@ -1,0 +1,7 @@
+ceiling 32, 1500 steps
+drive                       cells
+ramp UP   0.05->15.0           32
+ramp DOWN 15.0->0.05            2
+constant x0.3                  31
+constant x0.5                  31
+constant x10                    2
