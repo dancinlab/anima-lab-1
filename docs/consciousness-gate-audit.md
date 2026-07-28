@@ -1556,3 +1556,53 @@ Two limits on this reading, both against it:
 This is the same conclusion appendix D of `pairfield-persistence-failure.md`
 reached from the other direction, now measured on the gate's own shipping
 default rather than a side script.
+
+### And the failures do not cluster on an engine, or on a seed
+
+The same run, all eleven engines:
+
+| engine | PERSISTENCE | seed it failed on |
+|---|---|---|
+| ConsciousnessEngine | FAIL | (other cause) |
+| PairField | FAIL | 44 |
+| MitosisEngine | FAIL | 44 |
+| **OscillatorLaser** | **PASS** | — |
+| QuantumEngine | FAIL | 45 |
+| Trinity | FAIL | 45 |
+| DesireEngine | FAIL | 42 |
+| NarrativeEngine | FAIL | 45 |
+| AlterityEngine | FAIL | 42 |
+| FinitudeEngine | FAIL | 44 |
+| QuestioningEngine | FAIL | 43 |
+
+**Ten of eleven engines fail. Every one of them fails on exactly one seed of
+five** — none fails twice — so the per-seed pass rate is 80% across the board and
+the condition is decided entirely by the all-seeds conjunction: 0.8⁵ = 33%
+expected, 1 of 11 = 9% observed.
+
+```
+failures per seed        expected 1.8 under chance
+
+seed 42  ██████                2
+seed 43  ███                   1
+seed 44  █████████             3
+seed 45  █████████             3
+seed 46  ·                     0
+                         chi-square 3.78, df 4, p ~ 0.44
+```
+
+If the failure were a property of the engines, it would concentrate — the same
+engines failing the same way. If it were a property of one unlucky seed, it would
+concentrate there. It does neither: the spread is what uniform noise looks like
+(p ≈ 0.44 against uniform, i.e. no evidence of structure at all).
+
+So at the shipping default `PERSISTENCE` blocks ten of eleven engines, each of
+which passes it four times out of five, on a rule that order-shuffled data passes
+half the time. It is the single largest determinant of how many engines the gate
+calls deployable, and what it is measuring is the conjunction, not collapse.
+
+This is evidence for the two owner decisions already on the board — whether
+`PERSISTENCE` stays, and whether the seed rule is all-5 or 3-of-5 — not a licence
+to change either. Loosening a condition because it fails engines is exactly the
+move this audit exists to catch. What has been established is that the failures
+carry no trend and no structure; what to do about it is a design decision.
