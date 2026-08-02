@@ -151,6 +151,29 @@ def test_public_route_reuses_tunnel_and_creates_canonical_dns_record(monkeypatch
     )
 
 
+def test_public_health_uses_explicit_probe_identity(monkeypatch):
+    route = deploy.load_public_routes()["anima"]
+
+    class Response:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    def fake_urlopen(request, timeout):
+        assert timeout == 5
+        assert request.get_header("User-agent") == "anima-deploy-health/1.0"
+        assert request.get_header("Accept") == "text/html,application/xhtml+xml"
+        return Response()
+
+    monkeypatch.setattr(deploy.urllib.request, "urlopen", fake_urlopen)
+
+    assert deploy._public_health(route, attempts=1)
+
+
 def test_deploy_requires_published_head(monkeypatch):
     revisions = iter(("local", "remote"))
     monkeypatch.setattr(deploy, "_git_output", lambda *args: next(revisions))

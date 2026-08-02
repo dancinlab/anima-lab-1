@@ -31,7 +31,10 @@ def test_pairfield_cell_view_updates_live_state():
     engine.cells[2].hidden = replacement
 
     assert torch.equal(engine.A.hiddens[2], replacement.squeeze(0))
-    assert torch.allclose(engine.A.hiddens[2] - engine.G.hiddens[2], field_before)
+    assert torch.allclose(
+        engine.A.hiddens[2] - engine.G.hiddens[2], field_before,
+        atol=1e-6, rtol=1e-6,
+    )
 
 
 def test_pairfield_declares_ownership_of_runtime_dynamics():

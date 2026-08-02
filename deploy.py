@@ -317,7 +317,13 @@ WantedBy=default.target
 
 def _public_health(route: PublicRoute, attempts: int = 20) -> bool:
     for _ in range(attempts):
-        request = urllib.request.Request(f"https://{route.hostname}/")
+        request = urllib.request.Request(
+            f"https://{route.hostname}/",
+            headers={
+                "User-Agent": "anima-deploy-health/1.0",
+                "Accept": "text/html,application/xhtml+xml",
+            },
+        )
         try:
             with urllib.request.urlopen(request, timeout=5) as response:
                 if response.status == 200:
