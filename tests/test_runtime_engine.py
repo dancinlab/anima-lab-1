@@ -1,5 +1,6 @@
 import torch
 
+from anima_alive import ConsciousMind
 from anima_unified import AnimaUnified
 from bench_v2 import ENGINE_REGISTRY
 from mitosis import MitosisEngine
@@ -39,6 +40,18 @@ def test_pairfield_declares_ownership_of_runtime_dynamics():
     assert engine.manages_cell_diversity
     assert engine.manages_cell_dynamics
     assert not engine.supports_population_growth
+
+
+def test_consciousness_score_reads_pairfield_tension_protocol():
+    engine = PairFieldEngine(4, 8, 16, 8)
+    mind = ConsciousMind(8, 16)
+    for _ in range(3):
+        engine.process_runtime(torch.randn(1, 8))
+
+    score = mind.get_consciousness_score(engine)
+
+    assert score['phi'] > 0
+    assert len(engine.inter_tension_history) == 4
 
 
 def test_mitosis_snapshot_restores_complete_runtime_state():

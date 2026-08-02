@@ -217,6 +217,12 @@ class PairFieldEngine:
             'merges': 0,
         }
 
+    @property
+    def inter_tension_history(self):
+        """Expose A/G disagreement through the shared runtime protocol."""
+        return {(index, index): history for index, history in
+                enumerate(self._tension_histories)}
+
     def get_hiddens(self):
         return self.A.get_hiddens()
 

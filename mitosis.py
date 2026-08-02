@@ -211,6 +211,11 @@ class MitosisEngine:
         self.__dict__.clear()
         self.__dict__.update(copy.deepcopy(snapshot))
 
+    @property
+    def inter_tension_history(self) -> Dict[Tuple[int, int], List[float]]:
+        """Public runtime view of the inter-cell tension histories."""
+        return self._inter_tension_history
+
     # ─── Cell lifecycle ───
 
     def _create_cell(self, parent: Optional[Cell] = None) -> Cell:

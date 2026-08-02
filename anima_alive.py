@@ -397,7 +397,11 @@ class ConsciousMind(nn.Module):
         phi = getattr(self, '_saved_phi', 0.0)  # start from saved value
         if mitosis_engine and len(mitosis_engine.cells) >= 2:
             ict_vals = []
-            for key, hist in mitosis_engine._inter_tension_history.items():
+            histories = getattr(
+                mitosis_engine, 'inter_tension_history',
+                getattr(mitosis_engine, '_inter_tension_history', {}),
+            )
+            for key, hist in histories.items():
                 if hist:
                     ict_vals.append(hist[-1])
             if ict_vals:
