@@ -3262,3 +3262,44 @@ What this does not establish: that tension carries *nothing* else. Founders sit 
 moves tension — the amplitude band earlier in this document is real. The claim is
 about which component dominates in a grown population, not that the others are
 absent.
+
+### Fixed-age result: lineage depth is not the effect
+
+The missing separation test is now run. `bench_lineage_age.py` collected the
+instantaneous tension of grown populations at ≥16 cells after step 600, over
+eight seeds and 1,200 steps. It compared cells only inside strata with the same
+seed, the same engine step, and the same **exact age**. Thus age, population
+size, and the current drive are held fixed. Ratios are normalized per one level
+of lineage depth and aggregated in log space; the seed, not the 150,717
+cell-step readings, is the unit of replication.
+
+| seed | observations | comparable strata | weighted geometric ratio per depth |
+|---:|---:|---:|---:|
+| 42 | 18,924 | 956 | 1.1495 |
+| 43 | 18,819 | 1,507 | 0.8516 |
+| 44 | 18,588 | 2,797 | 1.0407 |
+| 45 | 19,059 | 1,466 | 0.9935 |
+| 46 | 18,853 | 2,606 | 0.9273 |
+| 47 | 18,807 | 1,944 | 1.2849 |
+| 48 | 18,748 | 2,962 | 1.0132 |
+| 49 | 18,919 | 2,042 | 1.0514 |
+
+The seed median is **1.0269× per depth** (range 0.8516–1.2849), with a positive
+effect in only 5/8 seeds. The two-sided exact sign test is `p=0.7266`. The
+parallel median-of-contrasts estimate is still smaller at 1.0155× per depth.
+
+**The prior 4.9× depth gradient does not survive fixing age.** Cumulative
+lineage depth is not a consistent source of tension. The observed gradient was
+the consequence of deeper cells being younger. The narrower mechanism now has
+direct support: tension records time since the latest division, not how many
+divisions a lineage has accumulated.
+
+This strengthens the control diagnosis rather than weakening it. A daughter is
+temporarily unsettled regardless of its ancestry, and the split trigger reads
+that transient. The next engine design must therefore use a control signal that
+is independent of recent split activity; another threshold over current tension
+would keep the same feedback loop.
+
+Full reproduction conditions and output are in
+`state/lineage-age-2026-08-02/README.md` and
+`state/lineage-age-2026-08-02/exact_age_8seeds.txt`.

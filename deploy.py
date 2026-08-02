@@ -53,6 +53,7 @@ SSH_KEY = Path.home() / ".runpod" / "ssh" / "RunPod-Key-Go"
 # 배포할 핵심 파일
 CORE_FILES = [
     'anima_unified.py', 'anima_alive.py', 'anima_agent.py',
+    'consciousness_engine.py',
     'conscious_lm.py', 'trinity.py', 'model_loader.py',
     'tension_link.py', 'voice_synth.py',
     'consciousness_hub.py', 'consciousness_persistence.py',

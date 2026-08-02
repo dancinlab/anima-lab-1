@@ -138,6 +138,7 @@ class CellState:
     hidden_history: List[torch.Tensor] = field(default_factory=list)
     creation_step: int = 0
     parent_id: Optional[int] = None
+    lineage_depth: int = 0
     faction_id: int = 0
 
     @property
@@ -344,6 +345,8 @@ class ConsciousnessEngine:
             hidden=hidden,
             creation_step=self._step,
             parent_id=parent_state.cell_id if parent_state else None,
+            lineage_depth=(parent_state.lineage_depth + 1
+                           if parent_state else 0),
             faction_id=faction_id,
         )
 
@@ -858,6 +861,9 @@ class ConsciousnessEngine:
                     'faction': s.faction_id,
                     'avg_tension': s.avg_tension,
                     'parent_id': s.parent_id,
+                    'creation_step': s.creation_step,
+                    'age': self._step - s.creation_step,
+                    'lineage_depth': s.lineage_depth,
                 }
                 for s in self.cell_states
             ],
@@ -884,6 +890,9 @@ class ConsciousnessEngine:
                 'tension': s.avg_tension,
                 'curiosity': 0.0,
                 'specialty': label or 'general',
+                'creation_step': s.creation_step,
+                'age': self._step - s.creation_step,
+                'lineage_depth': s.lineage_depth,
             })
         ict_values = list(result.get('inter_tensions', {}).values()) or [0.0]
         return {
@@ -939,6 +948,8 @@ class _CellCompat:
         self.specialty = 'general'
         self.process_count = 0
         self.parent_id = state.parent_id
+        self.creation_step = state.creation_step
+        self.lineage_depth = state.lineage_depth
         self.mind = module
 
     @property

@@ -1,0 +1,31 @@
+lineage depth at fixed age
+comparison strata: same seed + same engine step + same exact cell age
+
+  seed  observations    strata   contrasts   median /depth  weighted geo /depth
+    42         18924       956        1056          1.1584               1.1495
+    43         18819      1507        1765          0.8396               0.8516
+    44         18588      2797        4209          1.0345               1.0407
+    45         19059      1466        1466          0.9741               0.9935
+    46         18853      2606        3490          0.9869               0.9273
+    47         18807      1944        2228          1.1905               1.2849
+    48         18748      2962        5261          1.0080               1.0132
+    49         18919      2042        2680          1.0230               1.0514
+
+positive seed effects: 5/8
+two-sided exact sign p: 0.7266
+seed median of per-depth median ratios: 1.0155 (range 0.8396..1.1905)
+seed median of weighted geometric ratios: 1.0269 (range 0.8516..1.2849)
+
+configuration
+  steps: 1200
+  min step: 600
+  min cells: 16
+  max cells: 32
+  cell dim: 64
+  hidden dim: 128
+  seeds: 42 43 44 45 46 47 48 49
+
+totals
+  observations: 150717
+  comparable exact-age strata: 16280
+  within-stratum depth contrasts: 22155
