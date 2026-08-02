@@ -1,0 +1,40 @@
+
+=== SAME   8 seeds x 400 steps ===
+   n     mean T      LOO T  max/q90    surp      PR  PR/(n-1)      cos      Phi
+   2   0.009304   0.018607    1.393   1.347    1.00     1.000  -0.0025   0.0000
+   4   0.014200   0.018934    1.572   2.021    2.92     0.975  -0.0027   0.0073
+   8   0.016418   0.018764    1.676   2.260    6.60     0.943  -0.0015   0.0162
+  16   0.017728   0.018910    1.598   2.386   13.35     0.890   0.0000   0.0323
+  32   0.018272   0.018861    1.732   2.486   24.84     0.801   0.0000   0.0168
+  fit T = sigma^2(1-1/n):  sigma^2=0.018845  R^2=0.99948
+  LOO across n: 0.018607..0.018934 (+1.8% spread)
+
+=== MULTI   8 seeds x 400 steps ===
+   n     mean T      LOO T  max/q90    surp      PR  PR/(n-1)      cos      Phi
+   2   0.011364   0.022729    1.000   1.000    1.00     1.000  -0.0147   0.0000
+   4   0.016337   0.021783    1.175   1.168    2.93     0.977  -0.0099   0.0086
+   8   0.018309   0.020925    1.186   1.130    6.62     0.946  -0.0031   0.0150
+  16   0.019414   0.020709    1.285   1.205   13.37     0.891  -0.0013   0.0331
+  32   0.020460   0.021120    1.272   1.229   24.90     0.803  -0.0017   0.0159
+  fit T = sigma^2(1-1/n):  sigma^2=0.021198  R^2=0.97960
+  LOO across n: 0.020709..0.022729 (+9.8% spread)
+
+=== COMPETE   8 seeds x 400 steps ===
+   n     mean T      LOO T  max/q90    surp      PR  PR/(n-1)      cos      Phi
+   2   0.009307   0.018614    1.393   1.363    1.00     1.000  -0.0024   0.0000
+   4   0.014206   0.018942    1.584   2.068    2.92     0.973  -0.0027   0.0073
+   8   0.016432   0.018780    1.679   2.362    6.59     0.941  -0.0010   0.0163
+  16   0.017748   0.018931    1.648   2.391   13.32     0.888   0.0001   0.0323
+  32   0.018283   0.018872    1.758   2.532   24.78     0.799  -0.0000   0.0168
+  fit T = sigma^2(1-1/n):  sigma^2=0.018859  R^2=0.99947
+  LOO across n: 0.018614..0.018942 (+1.8% spread)
+
+--- why COMPETE changed nothing: gain spread diagnostic (seed 42, 300 steps) ---
+n=8:  gain 0.8322..1.1819  per-step max/min 1.1625  relative spread of d across cells 0.0521
+n=32: gain 0.7971..1.3070  per-step max/min 1.2509  relative spread of d across cells 0.0546
+
+The gains were applied and did vary by 16-25% within a step. They are computed
+from a distance that differs across cells by only ~5%, because the cells are
+exchangeable -- which is the thing the arm was meant to break. Responsibility
+needs differentiation and differentiation needs responsibility; soft gating on
+the population's own current state cannot bootstrap either.
