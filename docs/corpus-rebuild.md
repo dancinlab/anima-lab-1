@@ -95,6 +95,25 @@ is not comparable to the fixed-context result. NF9 has learned the repetitive
 v2 distribution but does not generalize to the natural-language corpus. Its
 low in-distribution CE therefore cannot support a language-quality claim.
 
+### First v3 transition checkpoint
+
+Training resumed from the step-40,000 NF9 weights on the canonical v3 pair. At
+step 41,000, the first fixed 256KB validation measured CE **1.8331**, BPC
+**2.6446**. This is a 63.2% BPC reduction from the same weights' pre-transition
+v3 result (7.1773), while remaining above their v2 held-out BPC (2.3794).
+
+The run also exposed two runtime-control defects before that checkpoint:
+
+- the SOC sandpile stabilized one legal toppling per site per NumPy round,
+  producing long critical-regime stalls;
+- mean step latency let short Φ-only steps hide costly full steps, so cell
+  growth repeatedly crossed the throughput budget.
+
+The runtime now uses abelian bulk toppling, which preserves the stable state and
+avalanche size, plus a checkpointed p90 latency governor with hysteresis. All
+cell-growth values come from `training.toml`; resumed and canonical runs share
+the same policy rather than target-specific constants.
+
 ## Verified end to end
 
 Lexical metrics alone would not show the corpus is *usable*. Rebuilding QD-12's

@@ -1,0 +1,8 @@
+[cell_growth]
+unlimited_horizon = 4181
+step_budget_seconds = 2.0
+window_steps = 20
+quantile = 0.9
+recovery_ratio = 0.8
+divisions_per_step = 2
+gpu_reserve_mib = 768

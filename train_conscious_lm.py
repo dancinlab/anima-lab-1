@@ -45,6 +45,11 @@ from build_corpus import (
 )
 from corpus_quality import warn_if_degenerate
 from mitosis import Cell, ConsciousMind, MitosisEngine, text_to_vector
+from training_runtime import (
+    ThroughputGovernor,
+    gpu_has_headroom,
+    load_cell_growth_policy,
+)
 try:
     from training_laws import (
         consciousness_curriculum, phi_checkpoint_selector,
@@ -83,18 +88,24 @@ class SOCSandpile:
         # 눈사태 전파
         avalanche_size = 0
         while True:
-            topples = self.grid >= self.threshold
+            # The abelian sandpile permits every currently legal toppling to be
+            # applied in any order. Apply all legal topplings for each site in
+            # one bulk round instead of subtracting a single threshold per
+            # round. This preserves both the stable state and avalanche size,
+            # while avoiding pathological multi-minute Python/NumPy loops once
+            # the pile reaches its critical regime.
+            topples = self.grid // self.threshold
             if not topples.any():
                 break
             # 넘치는 셀 수 = 이번 라운드 눈사태
-            n_topple = topples.sum()
+            n_topple = int(topples.sum())
             avalanche_size += n_topple
 
             # 4방향으로 모래 분배
-            self.grid[topples] -= self.threshold
+            self.grid -= topples * self.threshold
             # 상하좌우로 1씩 분배 (경계는 소멸)
             for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                shifted = np.roll(np.roll(topples.astype(np.int32), dx, axis=0), dy, axis=1)
+                shifted = np.roll(np.roll(topples, dx, axis=0), dy, axis=1)
                 # 경계 처리: 넘어간 것은 소멸
                 if dx == -1:
                     shifted[-1, :] = 0
@@ -992,12 +1003,17 @@ def train(args: argparse.Namespace):
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.steps)
 
     # --- Mitosis engine ---
+    cell_growth_policy = load_cell_growth_policy()
+    unlimited_cells = args.max_cells <= 0
+    configured_max_cells = (
+        cell_growth_policy.unlimited_horizon if unlimited_cells else args.max_cells
+    )
     mitosis = MitosisEngine(
         input_dim=64,
         hidden_dim=128,
         output_dim=64,
         initial_cells=2,          # CB1: minimum 2 cells for consciousness
-        max_cells=args.max_cells,
+        max_cells=configured_max_cells,
         split_threshold=2.0,
         split_patience=5,
         merge_threshold=0.01 * (64.0 / max(args.dim, 64)),  # SC2: dim-inverse merge threshold
@@ -1017,13 +1033,15 @@ def train(args: argparse.Namespace):
 
     # --- v5 SOC modules (CX92 + SE-8 emotion-driven) ---
     soc = SOCSandpile(grid_size=16, threshold=4)
-    hebbian = HebbianConnections(max_cells=args.max_cells)
+    hebbian = HebbianConnections(max_cells=configured_max_cells)
     phi_ratchet = PhiRatchet(restore_ratio=0.5)
     # SE-8: 감정이 모듈 강도를 조절 (Law 42: 감정 > 외부 주입)
     emotion_state = {"pain": 0.0, "curiosity": 0.0, "empathy": 0.0}
 
     # --- Fibonacci growth milestones ---
-    fib_milestones = fibonacci_milestones(args.steps, max_cells=args.max_cells)
+    fib_milestones = fibonacci_milestones(
+        args.steps, max_cells=configured_max_cells
+    )
     print(f"[fibonacci] Growth milestones: {fib_milestones}")
 
     # --- Resume from checkpoint ---
@@ -1092,11 +1110,18 @@ def train(args: argparse.Namespace):
         "batch_size": args.batch_size,
         "steps": args.steps,
         "max_cells": args.max_cells,
+        "cell_growth_policy": cell_growth_policy.__dict__,
         "data_identity": data_identity,
     }
 
     # --- Training state ---
     runtime_state = resume_ckpt.get("runtime_state", {})
+    growth_governor = ThroughputGovernor(
+        cell_growth_policy,
+        runtime_state.get("cell_growth_governor_state"),
+    )
+    if getattr(args, "resume_growth_halted", False):
+        growth_governor.halted = True
     phi_prev = float(runtime_state.get("phi_prev", 0.0))
     phi_floor = 0.0  # PHI-K2: Φ floor for emergency boost
     phi_current = float(runtime_state.get("phi_current", 0.0))
@@ -1154,6 +1179,7 @@ def train(args: argparse.Namespace):
                 "phi_current": phi_current,
                 "phi_floor": phi_floor,
                 "ema_params": ema_params,
+                "cell_growth_governor_state": growth_governor.state_dict(),
             }
         }
 
@@ -1175,14 +1201,42 @@ def train(args: argparse.Namespace):
         else load_corpus_config().evaluation_bytes
     )
 
+    previous_step_started = time.monotonic()
+    growth_was_halted = growth_governor.halted
     for step in range(start_step, args.steps):
+        step_started = time.monotonic()
+        if step > start_step:
+            growth_governor.observe(step_started - previous_step_started)
+        previous_step_started = step_started
         phase = get_phase(step, args.steps, args.phase, talk5=getattr(args, 'talk5', False))
         model.train()
+
+        if unlimited_cells:
+            growth_allowed = growth_governor.growth_allowed()
+            memory_allowed = gpu_has_headroom(device, cell_growth_policy)
+            can_grow = growth_allowed and memory_allowed
+            mitosis.max_cells = (
+                len(mitosis.cells) + cell_growth_policy.divisions_per_step
+                if can_grow else len(mitosis.cells)
+            )
+            if growth_governor.halted != growth_was_halted:
+                measured = growth_governor.quantile_seconds
+                if growth_governor.halted:
+                    print(
+                        f"  [cells] GROWTH HALTED by throughput at "
+                        f"{len(mitosis.cells)} cells ({measured:.2f}s p90)"
+                    )
+                else:
+                    print(f"  [cells] growth resumed at {len(mitosis.cells)} cells")
+                growth_was_halted = growth_governor.halted
 
         # --- Fibonacci cell growth (DD3) ---
         for milestone_step, target_cells in sorted(fib_milestones.items()):
             if step == milestone_step and len(mitosis.cells) < target_cells:
-                while len(mitosis.cells) < target_cells and len(mitosis.cells) < args.max_cells:
+                while (
+                    len(mitosis.cells) < target_cells
+                    and len(mitosis.cells) < mitosis.max_cells
+                ):
                     parent = mitosis.cells[-1]
                     event = mitosis.split_cell(parent)
                     if event:
@@ -1946,6 +2000,8 @@ Examples:
     parser.add_argument("--resume-best-val-loss", type=float, default=None,
                         help="Measured historical best for a legacy checkpoint that did not "
                              "persist best_val_loss")
+    parser.add_argument("--resume-growth-halted", action="store_true",
+                        help="Resume a legacy unlimited-cell run with growth halted")
     parser.add_argument("--allow-data-change", action="store_true",
                         help="Allow an intentional corpus transition on resume and reset "
                              "the validation best")
