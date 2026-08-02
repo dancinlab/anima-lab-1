@@ -1,5 +1,8 @@
+import asyncio
+
 import torch
 
+import anima_unified
 from anima_alive import ConsciousMind
 from anima_unified import AnimaUnified
 from bench_v2 import ENGINE_REGISTRY
@@ -55,6 +58,30 @@ def test_consciousness_score_reads_pairfield_tension_protocol():
 
     assert score['phi'] > 0
     assert len(engine.inter_tension_history) == 4
+
+
+def test_websocket_disconnect_is_not_reported_as_handler_error(monkeypatch, capsys):
+    class ConnectionClosed(Exception):
+        pass
+
+    class Socket:
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            raise ConnectionClosed
+
+    runtime = object.__new__(AnimaUnified)
+    runtime.web_clients = set()
+    runtime.participants = []
+    runtime._sessions = {}
+    monkeypatch.setattr(anima_unified, '_ws_ConnectionClosed', ConnectionClosed)
+
+    asyncio.run(runtime._ws_handler(Socket()))
+
+    captured = capsys.readouterr()
+    assert 'Handler error' not in captured.out
+    assert 'Traceback' not in captured.err
 
 
 def test_mitosis_snapshot_restores_complete_runtime_state():

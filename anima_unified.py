@@ -99,10 +99,12 @@ DREAM_IDLE_THRESHOLD = 60.0   # Enter dream mode after 60s idle
 DREAM_CYCLE_INTERVAL = 30.0   # Interval between dream cycles (seconds)
 
 _ws_serve = _ws_Response = _ws_Headers = None
+_ws_ConnectionClosed = ()
 try:
     from websockets.asyncio.server import serve as _ws_serve
     from websockets.http11 import Response as _ws_Response
     from websockets.datastructures import Headers as _ws_Headers
+    from websockets.exceptions import ConnectionClosed as _ws_ConnectionClosed
 except ImportError:
     pass
 
@@ -3302,6 +3304,8 @@ class AnimaUnified:
                                 'type': 'tension_link_status',
                                 'status': 'error', 'message': str(e)})
 
+        except _ws_ConnectionClosed:
+            pass
         except Exception as e:
             _log("ws", f"Handler error: {e}")
             import traceback; traceback.print_exc()
