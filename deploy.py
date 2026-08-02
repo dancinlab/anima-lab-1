@@ -39,6 +39,7 @@ class Target:
     name: str
     ssh_alias: str
     role: str
+    proxy_jump: str | None = None
     remote_root: PurePosixPath | None = None
     service: str | None = None
     python: str = "python3"
@@ -74,6 +75,7 @@ def load_targets(path: Path = DEFAULT_CONFIG) -> dict[str, Target]:
             name=name,
             ssh_alias=values["ssh_alias"],
             role=values["role"],
+            proxy_jump=values.get("proxy_jump"),
             remote_root=PurePosixPath(remote_root) if remote_root else None,
             service=values.get("service"),
             python=values.get("python", "python3"),
@@ -85,7 +87,9 @@ def load_targets(path: Path = DEFAULT_CONFIG) -> dict[str, Target]:
             raise DeployError(f"{name}: remote_root must be absolute")
         if target.remote_root and len(target.remote_root.parts) < 4:
             raise DeployError(f"{name}: remote_root is too broad")
-        for label, value in (("ssh_alias", target.ssh_alias), ("service", target.service)):
+        for label, value in (("ssh_alias", target.ssh_alias),
+                             ("proxy_jump", target.proxy_jump),
+                             ("service", target.service)):
             if value and not SAFE_NAME.fullmatch(value):
                 raise DeployError(f"{name}: invalid {label}")
         requirements_path = PurePosixPath(target.requirements)
@@ -137,15 +141,16 @@ def _run(
     return result
 
 
+def _ssh_argv(target: Target) -> list[str]:
+    argv = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10"]
+    if target.proxy_jump:
+        argv.extend(("-J", target.proxy_jump))
+    argv.append(target.ssh_alias)
+    return argv
+
+
 def _ssh(target: Target, command: str, *, timeout: int = 30, check: bool = True):
-    return _run(
-        [
-            "ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
-            target.ssh_alias, command,
-        ],
-        timeout=timeout,
-        check=check,
-    )
+    return _run([*_ssh_argv(target), command], timeout=timeout, check=check)
 
 
 def _remote_script(target: Target, script: str, *, timeout: int = 30):
@@ -274,11 +279,8 @@ umask 077
 cat > {shlex.quote(str(token_file))}.tmp
 mv {shlex.quote(str(token_file))}.tmp {shlex.quote(str(token_file))}
 """
-    _run(
-        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
-         target.ssh_alias, f"bash -ceu {shlex.quote(prepare)}"],
-        timeout=180, input_bytes=token.encode(),
-    )
+    _run([*_ssh_argv(target), f"bash -ceu {shlex.quote(prepare)}"],
+         timeout=180, input_bytes=token.encode())
     unit = render_tunnel_service(target, route)
     install = f"""
 printf %s {shlex.quote(unit)} > {shlex.quote(str(unit_path))}
@@ -362,11 +364,8 @@ def _upload_release(target: Target, revision: str) -> PurePosixPath:
     )
     assert archive.stdout is not None
     extract = subprocess.run(
-        [
-            "ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
-            target.ssh_alias,
-            f"tar -xzf - -C {shlex.quote(str(release))}",
-        ],
+        [*_ssh_argv(target),
+         f"tar -xzf - -C {shlex.quote(str(release))}"],
         stdin=archive.stdout,
         capture_output=True,
         timeout=300,
@@ -513,7 +512,11 @@ def deploy(target: Target, model_path: Path | None = None) -> str:
         assert target.remote_root
         destination = target.remote_root / "shared" / "checkpoints" / "clm_v2" / "final.pt"
         _ssh(target, f"mkdir -p {shlex.quote(str(destination.parent))}")
-        _run(["scp", str(model_path), f"{target.ssh_alias}:{destination}"], timeout=600)
+        scp = ["scp"]
+        if target.proxy_jump:
+            scp.extend(("-o", f"ProxyJump={target.proxy_jump}"))
+        scp.extend((str(model_path), f"{target.ssh_alias}:{destination}"))
+        _run(scp, timeout=600)
     assert target.remote_root and target.service
     had_previous = _ssh(
         target,

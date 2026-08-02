@@ -12,6 +12,7 @@ def test_repository_target_config_uses_ssh_aliases():
     assert targets["aiden"].ssh_alias == "aiden"
     assert not targets["aiden"].deployable
     assert targets["summer"].ssh_alias == "summer"
+    assert targets["summer"].proxy_jump == "aiden"
     assert targets["summer"].deployable
     assert targets["summer"].requirements == "requirements-runtime.txt"
 
@@ -76,6 +77,18 @@ def test_service_rejects_research_only_target():
 
     with pytest.raises(deploy.DeployError, match="no runtime configuration"):
         deploy.render_service(target)
+
+
+def test_ssh_uses_configured_proxy_jump():
+    target = deploy.Target(
+        name="gpu", ssh_alias="gpu", proxy_jump="gateway",
+        role="runtime",
+    )
+
+    assert deploy._ssh_argv(target) == [
+        "ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
+        "-J", "gateway", "gpu",
+    ]
 
 
 def test_tunnel_service_reads_secret_from_token_file():

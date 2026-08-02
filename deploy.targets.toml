@@ -4,6 +4,7 @@ role = "gpu-research"
 
 [targets.summer]
 ssh_alias = "summer"
+proxy_jump = "aiden"
 role = "gpu-research-runtime"
 remote_root = "/home/summer/services/anima-lab-1"
 service = "anima-lab-1"
