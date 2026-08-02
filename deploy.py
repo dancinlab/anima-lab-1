@@ -11,7 +11,6 @@ from __future__ import annotations
 import argparse
 import re
 import shlex
-import socket
 import subprocess
 import sys
 import time
@@ -256,12 +255,14 @@ systemctl --user restart {shlex.quote(target.service)}.service
     _remote_script(target, script, timeout=300)
 
 
-def _tcp_health(target: Target, attempts: int = 20) -> bool:
+def _runtime_health(target: Target, attempts: int = 20) -> bool:
     if target.port is None:
         return False
     probe = (
-        f"import socket; s=socket.create_connection(('127.0.0.1',{target.port}),2); "
-        "s.close()"
+        "import http.client; "
+        f"c=http.client.HTTPConnection('127.0.0.1',{target.port},timeout=2); "
+        "c.request('GET','/'); r=c.getresponse(); r.read(1); "
+        "raise SystemExit(0 if r.status == 200 else 1)"
     )
     for _ in range(attempts):
         result = _ssh(
@@ -289,7 +290,7 @@ ln -sfn "$old" {shlex.quote(str(root / 'current'))}
 systemctl --user restart {shlex.quote(target.service)}.service
 """
     _remote_script(target, script)
-    if not _tcp_health(target):
+    if not _runtime_health(target):
         raise DeployError(f"{target.name}: rollback did not become healthy")
 
 
@@ -313,7 +314,7 @@ def deploy(target: Target, model_path: Path | None = None) -> str:
         check=False,
     ).returncode == 0
     _install_runtime(target, release)
-    if not _tcp_health(target):
+    if not _runtime_health(target):
         if had_previous:
             rollback(target)
             suffix = "; previous release restored"
@@ -346,7 +347,7 @@ def status(target: Target) -> tuple[bool, str]:
             check=False,
         )
         active = service.stdout.decode().strip() == "active"
-        port_ok = _tcp_health(target, attempts=1)
+        port_ok = _runtime_health(target, attempts=1)
         lines.append(f"runtime: {'active' if active else 'inactive'}, port: {'open' if port_ok else 'closed'}")
         healthy = healthy and active and port_ok
     return healthy, "\n".join(lines)
@@ -388,7 +389,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         revision = deploy(target, args.model)
         print(f"deployed {revision[:12]} to {target.name}")
         return 0
-    except (DeployError, OSError, subprocess.SubprocessError, socket.error) as error:
+    except (DeployError, OSError, subprocess.SubprocessError) as error:
         print(f"deploy failed: {error}", file=sys.stderr)
         return 1
 

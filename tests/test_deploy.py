@@ -76,3 +76,26 @@ def test_deploy_requires_published_head(monkeypatch):
 
     with pytest.raises(deploy.DeployError, match="origin/main"):
         deploy._assert_published_head()
+
+
+def test_runtime_health_uses_valid_http_request(monkeypatch):
+    commands = []
+    target = deploy.Target(
+        name="gpu",
+        ssh_alias="gpu",
+        role="runtime",
+        port=9000,
+    )
+
+    class Result:
+        returncode = 0
+
+    def fake_ssh(_target, command, **_kwargs):
+        commands.append(command)
+        return Result()
+
+    monkeypatch.setattr(deploy, "_ssh", fake_ssh)
+
+    assert deploy._runtime_health(target, attempts=1)
+    assert "HTTPConnection" in commands[0]
+    assert "request" in commands[0]
