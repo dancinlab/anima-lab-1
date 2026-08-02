@@ -9,12 +9,16 @@ shared directory, and switches the ``current`` symlink only after setup.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shlex
 import subprocess
 import sys
 import time
 import tomllib
+import urllib.error
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Sequence
@@ -23,6 +27,7 @@ from typing import Sequence
 ANIMA_DIR = Path(__file__).resolve().parent
 DEFAULT_CONFIG = ANIMA_DIR / "deploy.targets.toml"
 SAFE_NAME = re.compile(r"^[A-Za-z0-9_.@-]+$")
+HOSTNAME = re.compile(r"^(?=.{1,253}$)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$")
 
 
 class DeployError(RuntimeError):
@@ -44,6 +49,18 @@ class Target:
     @property
     def deployable(self) -> bool:
         return all((self.remote_root, self.service, self.port, self.runtime_args))
+
+
+@dataclass(frozen=True)
+class PublicRoute:
+    name: str
+    target: str
+    hostname: str
+    zone: str
+    tunnel_name: str
+    service: str
+    cloudflared_url: str
+    ttl: int
 
 
 def load_targets(path: Path = DEFAULT_CONFIG) -> dict[str, Target]:
@@ -82,6 +99,28 @@ def load_targets(path: Path = DEFAULT_CONFIG) -> dict[str, Target]:
     return targets
 
 
+def load_public_routes(path: Path = DEFAULT_CONFIG) -> dict[str, PublicRoute]:
+    """Load public routes from the deployment SSOT."""
+    with path.open("rb") as handle:
+        raw = tomllib.load(handle)
+    routes = {}
+    for name, values in raw.get("public_routes", {}).items():
+        route = PublicRoute(name=name, **values)
+        if not all(SAFE_NAME.fullmatch(value) for value in
+                   (route.target, route.tunnel_name, route.service)):
+            raise DeployError(f"{name}: invalid public route identifier")
+        if not HOSTNAME.fullmatch(route.hostname) or not HOSTNAME.fullmatch(route.zone):
+            raise DeployError(f"{name}: invalid hostname or zone")
+        if not route.hostname.endswith(f".{route.zone}"):
+            raise DeployError(f"{name}: hostname must belong to zone")
+        if not route.cloudflared_url.startswith("https://"):
+            raise DeployError(f"{name}: cloudflared_url must use HTTPS")
+        if route.ttl != 1 and not 60 <= route.ttl <= 86400:
+            raise DeployError(f"{name}: invalid DNS TTL {route.ttl}")
+        routes[name] = route
+    return routes
+
+
 def _run(
     argv: Sequence[str],
     *,
@@ -117,6 +156,174 @@ def _remote_script(target: Target, script: str, *, timeout: int = 30):
 def _git_output(*args: str) -> str:
     result = _run(["git", "-C", str(ANIMA_DIR), *args])
     return result.stdout.decode().strip()
+
+
+def _secret(name: str) -> str:
+    """Read a credential through the repository's secret CLI."""
+    result = _run(["secret", "get", name])
+    value = result.stdout.decode().strip()
+    if not value:
+        raise DeployError(f"secret {name!r} is empty")
+    return value
+
+
+class CloudflareAPI:
+    """Minimal authenticated client for the tunnel and DNS deployment path."""
+
+    base_url = "https://api.cloudflare.com/client/v4"
+
+    def __init__(self):
+        self.account_id = _secret("cloudflare.account_id")
+        self.headers = {
+            "X-Auth-Email": _secret("cloudflare.email"),
+            "X-Auth-Key": _secret("cloudflare.global_api_key"),
+            "Content-Type": "application/json",
+        }
+
+    def request(self, method: str, path: str, body=None):
+        data = json.dumps(body).encode() if body is not None else None
+        request = urllib.request.Request(
+            f"{self.base_url}{path}", data=data, headers=self.headers,
+            method=method,
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                payload = json.load(response)
+        except (urllib.error.URLError, json.JSONDecodeError) as error:
+            raise DeployError(f"Cloudflare API request failed: {error}") from error
+        if not payload.get("success"):
+            errors = ", ".join(item.get("message", "unknown error")
+                               for item in payload.get("errors", []))
+            raise DeployError(f"Cloudflare API rejected request: {errors}")
+        return payload.get("result")
+
+
+def _query(**values) -> str:
+    return urllib.parse.urlencode(values)
+
+
+def _ensure_cloudflare_route(route: PublicRoute, target: Target) -> str:
+    """Idempotently provision a remotely-managed tunnel and proxied CNAME."""
+    if not target.deployable or not target.remote_root or not target.port:
+        raise DeployError(f"{route.target}: public route target is not deployable")
+    api = CloudflareAPI()
+    tunnels = api.request(
+        "GET", f"/accounts/{api.account_id}/cfd_tunnel?" +
+        _query(name=route.tunnel_name, is_deleted="false"),
+    )
+    if tunnels:
+        tunnel = tunnels[0]
+    else:
+        tunnel = api.request(
+            "POST", f"/accounts/{api.account_id}/cfd_tunnel",
+            {"name": route.tunnel_name, "config_src": "cloudflare"},
+        )
+    tunnel_id = tunnel["id"]
+    api.request(
+        "PUT",
+        f"/accounts/{api.account_id}/cfd_tunnel/{tunnel_id}/configurations",
+        {"config": {"ingress": [
+            {"hostname": route.hostname,
+             "service": f"http://127.0.0.1:{target.port}"},
+            {"service": "http_status:404"},
+        ]}},
+    )
+
+    zones = api.request("GET", "/zones?" + _query(name=route.zone))
+    if len(zones) != 1:
+        raise DeployError(f"expected one Cloudflare zone for {route.zone}")
+    zone_id = zones[0]["id"]
+    record_body = {
+        "type": "CNAME",
+        "name": route.hostname,
+        "content": f"{tunnel_id}.cfargotunnel.com",
+        "proxied": True,
+        "ttl": route.ttl,
+    }
+    records = api.request(
+        "GET", f"/zones/{zone_id}/dns_records?" +
+        _query(type="CNAME", name=route.hostname),
+    )
+    if records:
+        api.request("PUT", f"/zones/{zone_id}/dns_records/{records[0]['id']}",
+                    record_body)
+    else:
+        api.request("POST", f"/zones/{zone_id}/dns_records", record_body)
+
+    token = api.request(
+        "GET", f"/accounts/{api.account_id}/cfd_tunnel/{tunnel_id}/token")
+    _install_tunnel_connector(target, route, token)
+    return tunnel_id
+
+
+def _install_tunnel_connector(target: Target, route: PublicRoute, token: str) -> None:
+    """Install cloudflared and its token-file-backed user service."""
+    assert target.remote_root
+    root = target.remote_root
+    binary = root / "bin" / "cloudflared"
+    token_file = root / "shared" / "cloudflared" / "token"
+    unit_path = root / f"{route.service}.service"
+    prepare = f"""
+mkdir -p {shlex.quote(str(binary.parent))} {shlex.quote(str(token_file.parent))}
+if [ ! -x {shlex.quote(str(binary))} ]; then
+  curl -fsSL {shlex.quote(route.cloudflared_url)} -o {shlex.quote(str(binary))}.tmp
+  chmod 0755 {shlex.quote(str(binary))}.tmp
+  mv {shlex.quote(str(binary))}.tmp {shlex.quote(str(binary))}
+fi
+umask 077
+cat > {shlex.quote(str(token_file))}.tmp
+mv {shlex.quote(str(token_file))}.tmp {shlex.quote(str(token_file))}
+"""
+    _run(
+        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
+         target.ssh_alias, f"bash -ceu {shlex.quote(prepare)}"],
+        timeout=180, input_bytes=token.encode(),
+    )
+    unit = render_tunnel_service(target, route)
+    install = f"""
+printf %s {shlex.quote(unit)} > {shlex.quote(str(unit_path))}
+systemctl --user link {shlex.quote(str(unit_path))} >/dev/null
+systemctl --user daemon-reload
+systemctl --user enable --now {shlex.quote(route.service)}.service >/dev/null
+systemctl --user restart {shlex.quote(route.service)}.service
+"""
+    _remote_script(target, install)
+
+
+def render_tunnel_service(target: Target, route: PublicRoute) -> str:
+    """Render the secret-safe cloudflared user service."""
+    if not target.remote_root or not target.service:
+        raise DeployError(f"{target.name}: public route target is not deployable")
+    root = target.remote_root
+    binary = root / "bin" / "cloudflared"
+    token_file = root / "shared" / "cloudflared" / "token"
+    return f"""[Unit]
+Description=Cloudflare Tunnel for {route.hostname}
+After=network-online.target {target.service}.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart={binary} tunnel run --token-file {token_file}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+"""
+
+
+def _public_health(route: PublicRoute, attempts: int = 20) -> bool:
+    for _ in range(attempts):
+        request = urllib.request.Request(f"https://{route.hostname}/")
+        try:
+            with urllib.request.urlopen(request, timeout=5) as response:
+                if response.status == 200:
+                    return True
+        except urllib.error.URLError:
+            pass
+        time.sleep(1)
+    return False
 
 
 def _assert_published_head() -> str:
@@ -361,6 +568,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--status", action="store_true")
     parser.add_argument("--gpu-status", action="store_true")
     parser.add_argument("--rollback", action="store_true")
+    parser.add_argument("--public-route")
     return parser.parse_args(argv)
 
 
@@ -368,6 +576,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     try:
         targets = load_targets(args.config)
+        if args.public_route:
+            routes = load_public_routes(args.config)
+            if args.public_route not in routes:
+                raise DeployError(f"unknown public route {args.public_route!r}")
+            route = routes[args.public_route]
+            if route.target not in targets:
+                raise DeployError(f"unknown route target {route.target!r}")
+            tunnel_id = _ensure_cloudflare_route(route, targets[route.target])
+            if not _public_health(route):
+                raise DeployError(f"{route.hostname}: public health check failed")
+            print(f"public route healthy: {route.hostname} ({tunnel_id})")
+            return 0
         if args.gpu_status:
             results = [status(target) for target in targets.values()]
             for _, report in results:

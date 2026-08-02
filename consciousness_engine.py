@@ -235,6 +235,15 @@ class ConsciousnessEngine:
 
         self._init_coupling()
 
+    def snapshot(self) -> Dict:
+        """Capture every mutable field that can influence the next step."""
+        return copy.deepcopy(self.__dict__)
+
+    def restore(self, snapshot: Dict) -> None:
+        """Restore a state produced by :meth:`snapshot`."""
+        self.__dict__.clear()
+        self.__dict__.update(copy.deepcopy(snapshot))
+
     # ─── Cell lifecycle ─────────────────────────────────
 
     def _check_threshold_reachable(self, grace=200, margin=0.5, quantile=0.9,

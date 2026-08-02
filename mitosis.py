@@ -196,6 +196,21 @@ class MitosisEngine:
         for _ in range(initial_cells):
             self._create_cell()
 
+    def snapshot(self) -> Dict:
+        """Capture the complete mutable runtime state for causal probes.
+
+        Hidden tensors alone are not a restorable engine state: population
+        membership, histories, counters, calibration and merge bookkeeping all
+        affect the next transition.  Keeping the protocol on the canonical
+        engine prevents benchmark adapters from guessing which fields matter.
+        """
+        return copy.deepcopy(self.__dict__)
+
+    def restore(self, snapshot: Dict) -> None:
+        """Restore a state produced by :meth:`snapshot`."""
+        self.__dict__.clear()
+        self.__dict__.update(copy.deepcopy(snapshot))
+
     # ─── Cell lifecycle ───
 
     def _create_cell(self, parent: Optional[Cell] = None) -> Cell:

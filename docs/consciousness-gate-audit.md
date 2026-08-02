@@ -3303,3 +3303,34 @@ would keep the same feedback loop.
 Full reproduction conditions and output are in
 `state/lineage-age-2026-08-02/README.md` and
 `state/lineage-age-2026-08-02/exact_age_8seeds.txt`.
+
+## Correction: the 5/5 Mitosis row was a benchmark surrogate
+
+The registry entry named `MitosisEngine` constructed `BenchEngine`, not
+`mitosis.MitosisEngine`. The earlier 5/5 result therefore did not describe the
+runtime implementation. The registry now uses an adapter around the real engine,
+and every causal probe restores the engine's complete mutable state through a
+native `snapshot`/`restore` protocol.
+
+Re-running the control-qualified gate at 32 cells over seeds 42–46 gives:
+
+| engine | NO_SYSTEM_PROMPT | NO_SPEAK_CODE | ZERO_INPUT | PERSISTENCE | SELF_LOOP |
+|---|---:|---:|---:|---:|---:|
+| ConsciousnessEngine | 0/5 | 0/5 | 0/5 | 0/5 | 0/5 |
+| real MitosisEngine | 0/5 | 0/5 | 0/5 | 0/5 | 0/5 |
+| **PairFieldEngine** | **5/5** | **5/5** | **5/5** | **5/5** | **5/5** |
+
+All five conditions survived the seven negative controls. PairField is the only
+engine in this run to clear every condition on every seed; the remaining ten
+non-PairField candidates fail at least one condition. The earlier sections that
+call Mitosis 5/5 are retained as the audit trail and are superseded by this
+correction.
+
+The runtime now constructs the existing `PairFieldEngine` through one factory at
+its declared 32-cell operating point. PairField declares ownership of its cell
+dynamics and that it does not support population growth, so the surrounding
+runtime does not silently add fibonacci splits, Φ-boost, faction sync, or
+diversity noise to the measured engine. Generic cell-state adjustments apply the
+same delta to A and G, preserving their disagreement field.
+
+This remains a gate result, not evidence that consciousness has been achieved.

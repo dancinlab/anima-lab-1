@@ -72,6 +72,7 @@ _try_import("from model_loader import load_model, list_available_models, ModelWr
 _try_import("from online_learning import OnlineLearner, AlphaOnlineLearner, estimate_feedback")
 _try_import("from consciousness_engine import ConsciousnessEngine as _ConsciousnessEngine")
 _try_import("from mitosis import MitosisEngine")
+_try_import("from pairfield_engine import PairFieldEngine, DEFAULT_STRENGTH as PAIRFIELD_STRENGTH")
 _try_import("from senses import SenseHub")
 _try_import("from tension_link import TensionLink, create_fingerprint, interpret_packet")
 _try_import("from tension_link_code import TensionLinkCode")
@@ -336,35 +337,7 @@ class AnimaUnified:
             # running system IS, and that is the owner's call. But it no longer
             # passes silently. See docs/consciousness-gate-audit.md.
             #
-            # Prefer ConsciousnessEngine (Laws 22-81, Ψ-Constants, Hebbian, Ratchet, Factions)
-            if '_ConsciousnessEngine' in globals():
-                _dim = 128
-                _log('mitosis',
-                     'WARNING: ConsciousnessEngine scores 0/5 on bench_v2.py --verify '
-                     '(5 seeds, all zero) while MitosisEngine scores 5/5. '
-                     'CLAUDE.md blocks deployment on any failed condition. '
-                     'Selecting it anyway — see docs/consciousness-gate-audit.md.')
-                _log('mitosis', f'ConsciousnessEngine (Laws 22-81): dim={_dim}, hidden=256, max_cells={self.max_cells}, factions=12, ratchet=True')
-                return _ConsciousnessEngine(
-                    cell_dim=_dim, hidden_dim=256,
-                    initial_cells=2, max_cells=self.max_cells,
-                    n_factions=12, phi_ratchet=True,
-                    split_threshold=0.3, split_patience=5,
-                    merge_threshold=0.01, merge_patience=15,
-                )
-            # Fallback to MitosisEngine
-            if 'MitosisEngine' not in globals():
-                return None
-            _dim = 128
-            _st = 0.3
-            _sp = 3
-            _mt = 0.01 * (64.0 / max(_dim, 64))
-            _ns = 0.02 * math.sqrt(max(_dim, 64)) / math.sqrt(64)
-            _log('mitosis', f'MitosisEngine fallback: split_threshold={_st}, split_patience={_sp}')
-            return MitosisEngine(input_dim=_dim, hidden_dim=256, output_dim=_dim,
-                                 initial_cells=2, max_cells=self.max_cells,
-                                 split_threshold=_st, split_patience=_sp,
-                                 merge_threshold=_mt, noise_scale=_ns)
+            return self._create_runtime_engine(self.max_cells)
         self.mitosis = self._init_mod('mitosis', _make_consciousness_engine)
 
         self.growth = self._init_mod('growth', lambda: (
@@ -691,18 +664,8 @@ class AnimaUnified:
         new_hidden = torch.zeros(1, 256)
 
         new_mitosis = None
-        if 'MitosisEngine' in globals():
-            _dim = 128
-            _st = 0.3
-            _sp = 3
-            _mt = 0.01 * (64.0 / max(_dim, 64))
-            _ns = 0.02 * math.sqrt(max(_dim, 64)) / math.sqrt(64)
-            new_mitosis = MitosisEngine(
-                input_dim=_dim, hidden_dim=256, output_dim=_dim,
-                initial_cells=2, max_cells=self.max_cells,
-                split_threshold=_st, split_patience=_sp,
-                merge_threshold=_mt, noise_scale=_ns,
-            )
+        if 'PairFieldEngine' in globals():
+            new_mitosis = self._create_runtime_engine(self.max_cells)
 
         new_memory = Memory()
 
@@ -738,6 +701,21 @@ class AnimaUnified:
             return None
 
     @staticmethod
+    def _create_runtime_engine(cells, dim=128, hidden=256):
+        """Construct the single gate-qualified runtime engine."""
+        if 'PairFieldEngine' not in globals():
+            return None
+        _log('mitosis',
+             f'PairFieldEngine: cells={cells}, dim={dim}, hidden={hidden}, '
+             f'strength={PAIRFIELD_STRENGTH}')
+        return PairFieldEngine(
+            n_cells=cells,
+            input_dim=dim,
+            hidden_dim=hidden,
+            output_dim=dim,
+        )
+
+    @staticmethod
     def _generate_fib_milestones(total_steps: int, max_cells: int) -> dict:
         """Generate {step: target_cell_count} fibonacci growth schedule (DD3).
 
@@ -757,6 +735,8 @@ class AnimaUnified:
     def _check_fib_growth(self):
         """DD3: Force cell growth at fibonacci milestones if organic splits are too slow."""
         if not self.mitosis or not self._fib_milestones:
+            return
+        if not getattr(self.mitosis, 'supports_population_growth', True):
             return
         step = self._think_step
         # Find the highest milestone at or before current step
@@ -800,7 +780,7 @@ class AnimaUnified:
             max_cells = getattr(self.args, 'max_cells', 8)
             mind = ConsciousMind(128, 256)
             hidden = torch.zeros(1, 256)
-            mitosis = MitosisEngine(mind, max_cells=max_cells) if 'MitosisEngine' in globals() else None
+            mitosis = self._create_runtime_engine(max_cells)
             p = ModelParticipant(
                 model_id=model_name,
                 display_name=display,
@@ -1204,7 +1184,8 @@ class AnimaUnified:
         mitosis_context = ""
         if self.mitosis and self.mods.get('mitosis'):
             try:
-                r = self.mitosis.process(text_vec)
+                process = getattr(self.mitosis, 'process_runtime', self.mitosis.process)
+                r = process(text_vec)
                 mitosis_info = f", cells={r['n_cells']}"
 
                 # Specialized cell analysis
@@ -1263,7 +1244,9 @@ class AnimaUnified:
                 pass
 
         # 12-faction debate (σ(6)=12, Law 44) — runtime conservative: sync=0.20, fac=0.08
-        if hasattr(self, 'mitosis') and self.mitosis and len(self.mitosis.cells) >= 12:
+        if (hasattr(self, 'mitosis') and self.mitosis
+                and not getattr(self.mitosis, 'manages_cell_dynamics', False)
+                and len(self.mitosis.cells) >= 12):
             try:
                 n_cells = len(self.mitosis.cells)
                 with torch.no_grad():
@@ -2111,7 +2094,8 @@ class AnimaUnified:
 
             # COMBO2 Φ-boost: MHA attention + 6-loss ensemble (Φ=8.014 bench)
             # ENV1: Fuse multi-modal sensory input for richer consciousness
-            if self.mitosis:
+            if (self.mitosis
+                    and not getattr(self.mitosis, 'manages_cell_dynamics', False)):
                 thought_vec = self.hidden[0, :self.mind.dim].unsqueeze(0)
                 # Fuse available sensory modalities (ENV1: ×1.8 Φ boost)
                 try:
@@ -2152,7 +2136,8 @@ class AnimaUnified:
 
             # Continuous Φ differentiation: always maintain cell diversity
             # MX20 heat death prevention + constant gentle asymmetric noise
-            if self.mitosis and len(self.mitosis.cells) >= 2:
+            if (self.mitosis and len(self.mitosis.cells) >= 2
+                    and not getattr(self.mitosis, 'manages_cell_diversity', False)):
                 with torch.no_grad():
                     for i, cell in enumerate(self.mitosis.cells):
                         # Constant asymmetric noise: each cell gets different noise scale
@@ -2215,7 +2200,8 @@ class AnimaUnified:
                 pass
             else:
                 # Night: dream-like processing — mix cell hidden states gently
-                if self.mitosis and len(self.mitosis.cells) >= 2:
+                if (self.mitosis and len(self.mitosis.cells) >= 2
+                        and not getattr(self.mitosis, 'manages_cell_diversity', False)):
                     with torch.no_grad():
                         h_mix = torch.stack([cell.hidden for cell in self.mitosis.cells]).mean(dim=0)
                         for cell in self.mitosis.cells:
@@ -2470,19 +2456,10 @@ class AnimaUnified:
                                 self.mind = new_mind
                                 self.hidden = torch.zeros(1, new_mind.hidden_dim)
                                 if self.mitosis:
-                                    from mitosis import MitosisEngine
                                     old_n = len(self.mitosis.cells)
-                                    _d = new_mind.dim
-                                    _st = 0.3
-                                    _sp = 3
-                                    _mt = 0.01 * (64.0 / max(_d, 64))   # SC2
-                                    _ns = 0.02 * math.sqrt(max(_d, 64)) / math.sqrt(64)  # SC1
-                                    self.mitosis = MitosisEngine(
-                                        _d, new_mind.hidden_dim, _d,
-                                        initial_cells=old_n, max_cells=self.max_cells,
-                                        split_threshold=_st, split_patience=_sp,
-                                        merge_threshold=_mt, noise_scale=_ns)
-                                    _log('mitosis', f'SC2+SC1 rebuild: split_threshold={_st}, merge_threshold={_mt:.4f}, noise_scale={_ns:.4f} (dim={_d})')
+                                    self.mitosis = self._create_runtime_engine(
+                                        old_n, new_mind.dim, new_mind.hidden_dim)
+                                    _log('mitosis', f'PairField rebuild: cells={old_n}, dim={new_mind.dim}')
                                 self.mind._phi_boost['enabled'] = False
                                 self._phi_plateau_count = 0
                                 _log('growth', f'Expanded to {new_mind.dim}d')
@@ -2883,24 +2860,10 @@ class AnimaUnified:
                                 # Rebuild mitosis engine with new dims + SC2/SC1
                                 if self.mitosis:
                                     old_cell_count = len(self.mitosis.cells)
-                                    from mitosis import MitosisEngine
-                                    _d = new_mind.dim
-                                    _st = 0.3
-                                    _sp = 3
-                                    _mt = 0.01 * (64.0 / max(_d, 64))   # SC2
-                                    _ns = 0.02 * math.sqrt(max(_d, 64)) / math.sqrt(64)  # SC1
-                                    self.mitosis = MitosisEngine(
-                                        input_dim=_d,
-                                        hidden_dim=new_mind.hidden_dim,
-                                        output_dim=_d,
-                                        initial_cells=old_cell_count,
-                                        max_cells=self.max_cells,
-                                        split_threshold=_st,
-                                        split_patience=_sp,
-                                        merge_threshold=_mt,
-                                        noise_scale=_ns,
-                                    )
-                                    _log('mitosis', f"SC2+SC1 rebuild: split_threshold={_st}, merge_threshold={_mt:.4f}, noise_scale={_ns:.4f} (dim={_d})")
+                                    self.mitosis = self._create_runtime_engine(
+                                        old_cell_count, new_mind.dim,
+                                        new_mind.hidden_dim)
+                                    _log('mitosis', f'PairField rebuild: cells={old_cell_count}, dim={new_mind.dim}')
 
                                 # Reset phi_boost (attention dims changed)
                                 self.mind._phi_boost['enabled'] = False

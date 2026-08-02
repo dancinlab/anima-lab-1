@@ -1429,7 +1429,7 @@ class _CEAdapter:
 
     def __init__(self, nc, dim, hidden):
         from consciousness_engine import ConsciousnessEngine as CE
-        self.engine = CE(cell_dim=dim, hidden_dim=hidden, initial_cells=2,
+        self.engine = CE(cell_dim=dim, hidden_dim=hidden, initial_cells=nc,
                          max_cells=nc, n_factions=min(12, nc // 2))
         self.n_factions = self.engine.n_factions
         self.n_cells = nc
@@ -1454,6 +1454,45 @@ class _CEAdapter:
         for cell, row in zip(self.engine.cell_states, states):
             cell.hidden = row.view_as(cell.hidden).detach().clone()
 
+    def snapshot(self):
+        return self.engine.snapshot()
+
+    def restore(self, state):
+        self.engine.restore(state)
+
+
+class _MitosisAdapter:
+    """Adapt the production MitosisEngine, not the benchmark surrogate."""
+
+    def __init__(self, nc, dim, hidden):
+        from mitosis import MitosisEngine
+        self.engine = MitosisEngine(
+            input_dim=dim,
+            hidden_dim=hidden,
+            output_dim=dim,
+            initial_cells=nc,
+            max_cells=nc,
+        )
+        self.n_cells = nc
+        self.n_factions = min(8, nc // 2)
+
+    def process(self, x):
+        result = self.engine.process(x)
+        return result['output'], result.get('mean_inter', 0.0)
+
+    def get_hiddens(self):
+        return torch.stack([cell.hidden.squeeze(0) for cell in self.engine.cells])
+
+    def set_hiddens(self, states):
+        for cell, row in zip(self.engine.cells, states):
+            cell.hidden = row.view_as(cell.hidden).detach().clone()
+
+    def snapshot(self):
+        return self.engine.snapshot()
+
+    def restore(self, state):
+        self.engine.restore(state)
+
 
 def _make_ce(nc, d, h):
     try:
@@ -1471,7 +1510,7 @@ def _make_pairfield(nc, d, h):
 ENGINE_REGISTRY = {
     "ConsciousnessEngine": _make_ce,
     "PairField":        _make_pairfield,
-    "MitosisEngine":    lambda nc, d, h: BenchEngine(nc, d, h, d, min(8, nc // 2)),
+    "MitosisEngine":    _MitosisAdapter,
     "OscillatorLaser":  lambda nc, d, h: OscillatorLaser(nc, d, h, d, min(8, nc // 2)),
     "QuantumEngine":    lambda nc, d, h: QuantumEngine(nc, d, h, d, min(8, nc // 2)),
     "Trinity":          lambda nc, d, h: TrinityEngine(nc, d, h, d, min(12, nc // 4)),

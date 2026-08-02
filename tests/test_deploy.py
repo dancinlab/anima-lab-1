@@ -16,6 +16,14 @@ def test_repository_target_config_uses_ssh_aliases():
     assert targets["summer"].requirements == "requirements-runtime.txt"
 
 
+def test_repository_public_route_uses_target_ssot():
+    routes = deploy.load_public_routes()
+
+    assert set(routes) == {"anima"}
+    assert routes["anima"].target == "summer"
+    assert routes["anima"].hostname == "anima.basedonapps.com"
+
+
 def test_container_copies_runtime_requirements():
     dockerfile = (deploy.ANIMA_DIR / "Dockerfile").read_text(encoding="utf-8")
 
@@ -68,6 +76,66 @@ def test_service_rejects_research_only_target():
 
     with pytest.raises(deploy.DeployError, match="no runtime configuration"):
         deploy.render_service(target)
+
+
+def test_tunnel_service_reads_secret_from_token_file():
+    target = deploy.load_targets()["summer"]
+    route = deploy.load_public_routes()["anima"]
+
+    unit = deploy.render_tunnel_service(target, route)
+
+    assert "--token-file" in unit
+    assert " tunnel run --token " not in unit
+    assert "anima-lab-1.service" in unit
+
+
+def test_public_route_reuses_tunnel_and_creates_canonical_dns_record(monkeypatch):
+    route = deploy.load_public_routes()["anima"]
+    target = deploy.load_targets()[route.target]
+    calls = []
+    installed = []
+
+    class FakeAPI:
+        account_id = "account"
+
+        def request(self, method, path, body=None):
+            calls.append((method, path, body))
+            if path.startswith("/accounts/account/cfd_tunnel?"):
+                return [{"id": "tunnel-id"}]
+            if path == "/zones?name=basedonapps.com":
+                return [{"id": "zone-id"}]
+            if path.startswith("/zones/zone-id/dns_records?"):
+                return []
+            if path.endswith("/token"):
+                return "tunnel-token"
+            return {}
+
+    monkeypatch.setattr(deploy, "CloudflareAPI", FakeAPI)
+    monkeypatch.setattr(
+        deploy, "_install_tunnel_connector",
+        lambda route_target, public_route, token:
+            installed.append((route_target, public_route, token)),
+    )
+
+    tunnel_id = deploy._ensure_cloudflare_route(route, target)
+
+    assert tunnel_id == "tunnel-id"
+    assert installed == [(target, route, "tunnel-token")]
+    dns_create = next(
+        call for call in calls
+        if call[0:2] == ("POST", "/zones/zone-id/dns_records")
+    )
+    assert dns_create[2] == {
+        "type": "CNAME",
+        "name": "anima.basedonapps.com",
+        "content": "tunnel-id.cfargotunnel.com",
+        "proxied": True,
+        "ttl": 1,
+    }
+    assert not any(
+        method == "POST" and path == "/accounts/account/cfd_tunnel"
+        for method, path, _body in calls
+    )
 
 
 def test_deploy_requires_published_head(monkeypatch):

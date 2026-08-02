@@ -12,10 +12,19 @@ requirements = "requirements-runtime.txt"
 port = 8765
 runtime_args = [
   "--web",
-  "--max-cells", "64",
+  "--max-cells", "32",
   "--no-camera",
   "--no-vision",
   "--no-telepathy",
   "--no-cloud",
   "--no-conscious-lm",
 ]
+
+[public_routes.anima]
+target = "summer"
+hostname = "anima.basedonapps.com"
+zone = "basedonapps.com"
+tunnel_name = "anima-lab-1"
+service = "anima-lab-1-tunnel"
+cloudflared_url = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64"
+ttl = 1

@@ -61,6 +61,7 @@ WHAT STAYED OUT
 
 import argparse
 import os
+from dataclasses import dataclass, field
 
 import torch
 
@@ -131,6 +132,12 @@ class PairFieldEngine:
         self.strength = strength
         self.peak = 0.0
         self.step_count = 0
+        self.max_cells = n_cells
+        self.event_log = []
+        self.manages_cell_diversity = True
+        self.manages_cell_dynamics = True
+        self.supports_population_growth = False
+        self._tension_histories = [[] for _ in range(n_cells)]
 
     def process(self, x):
         out_a, _ta = self.A.process(x)
@@ -143,6 +150,11 @@ class PairFieldEngine:
         # disagreement, then restored to its own norm. Nothing decides what
         # either side should become; the push is whatever their histories are.
         field = ha - hg
+        per_cell_tension = (field ** 2).mean(dim=1)
+        for history, tension in zip(self._tension_histories, per_cell_tension):
+            history.append(float(tension))
+            if len(history) > 100:
+                del history[:-100]
         rows_a = self.A.coupling.abs().sum(1, keepdim=True).clamp(min=1.0)
         rows_g = self.G.coupling.abs().sum(1, keepdim=True).clamp(min=1.0)
         new_a = ha + self.strength * (self.A.coupling @ field) / rows_a
@@ -163,6 +175,47 @@ class PairFieldEngine:
 
         self.step_count += 1
         return out_a + out_g, float((field ** 2).mean())
+
+    @property
+    def cells(self):
+        """Expose the canonical runtime cell protocol over side A."""
+        return [_PairCell(self, index) for index in range(self.n_cells)]
+
+    def process_runtime(self, x, label=""):
+        """Process input using the MitosisEngine-compatible runtime protocol."""
+        output, mean_inter = self.process(x)
+        per_cell = []
+        for cell in self.cells:
+            per_cell.append({
+                'cell_id': cell.cell_id,
+                'output': cell.hidden[..., :self.output_dim],
+                'tension': cell.avg_tension,
+                'curiosity': 0.0,
+                'specialty': label or 'general',
+            })
+        return {
+            'output': output,
+            'per_cell': per_cell,
+            'inter_tensions': {},
+            'max_inter': mean_inter,
+            'mean_inter': mean_inter,
+            'events': [],
+            'n_cells': self.n_cells,
+        }
+
+    def status(self):
+        return {
+            'n_cells': self.n_cells,
+            'max_cells': self.max_cells,
+            'step': self.step_count,
+            'cells': [
+                {'id': cell.cell_id, 'specialty': cell.specialty,
+                 'avg_tension': cell.avg_tension}
+                for cell in self.cells
+            ],
+            'splits': 0,
+            'merges': 0,
+        }
 
     def get_hiddens(self):
         return self.A.get_hiddens()
@@ -201,6 +254,8 @@ class PairFieldEngine:
             "G_rng": self.G._gen.get_state(),
             "step_count": self.step_count,
             "peak": self.peak,
+            "tension_histories": [history.copy()
+                                  for history in self._tension_histories],
         }
 
     def restore(self, handle):
@@ -212,6 +267,8 @@ class PairFieldEngine:
         self.G._gen.set_state(handle["G_rng"])
         self.step_count = handle["step_count"]
         self.peak = handle["peak"]
+        self._tension_histories = [history.copy()
+                                   for history in handle["tension_histories"]]
 
     def parameters_for_training(self):
         return list(self.A.mind.parameters()) + list(self.G.mind.parameters())
@@ -237,7 +294,50 @@ class PairFieldEngine:
             side.coupling = blob['coupling']
             side.mind.load_state_dict(blob['mind'])
             side.ruled = blob['ruled']
+            self.strength = blob['strength']
         return self
+
+
+@dataclass
+class _PairCell:
+    """Live view of one PairField row for the shared runtime protocol."""
+
+    engine: PairFieldEngine
+    index: int
+    specialty: str = 'general'
+    hidden_history: list = field(default_factory=list)
+
+    @property
+    def cell_id(self):
+        return self.index
+
+    @property
+    def id(self):
+        return self.index
+
+    @property
+    def hidden(self):
+        return self.engine.A.hiddens[self.index:self.index + 1]
+
+    @hidden.setter
+    def hidden(self, value):
+        new_a = value.reshape(-1)
+        delta = new_a - self.engine.A.hiddens[self.index]
+        self.engine.A.hiddens[self.index] = new_a
+        self.engine.G.hiddens[self.index] += delta
+
+    @property
+    def tension_history(self):
+        return self.engine._tension_histories[self.index]
+
+    @property
+    def avg_tension(self):
+        history = self.tension_history[-20:]
+        return sum(history) / len(history) if history else 0.0
+
+    @property
+    def mind(self):
+        return self.engine.A.mind
 
 
 def _self_check(cells=32, dim=32, hidden=64, steps=1000):
