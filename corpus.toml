@@ -3,7 +3,7 @@ version = 3
 legacy_source = "data/corpus_v2.txt"
 markdown_sources = ["../anima", "."]
 text_sources = ["data/.corpus_cache/ko_wiki.txt"]
-excluded_sources = ["docs/corpus-rebuild.md"]
+excluded_sources = ["CLAUDE.md", "docs/corpus-rebuild.md"]
 
 [corpus.outputs]
 full = "data/corpus_v3.txt"

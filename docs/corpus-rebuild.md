@@ -3,7 +3,8 @@
 `data/corpus_v2.txt` is 70MB and measurably not language (QD-10). This records
 the defect, the rebuild, and the end-to-end check that the result is usable.
 `corpus.toml` is the build, split, and evaluation SSOT; regenerate with
-`python3 build_corpus.py`.
+`python3 build_corpus.py`. A configured source missing on a host is a hard
+error, so the builder cannot silently produce a different corpus there.
 
 ## The defect
 

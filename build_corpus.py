@@ -231,7 +231,9 @@ def collect(config):
 
     for root in config.markdown_sources:
         if not root.exists():
-            continue
+            raise FileNotFoundError(
+                f"Configured markdown corpus source is missing: {root}"
+            )
         for f in sorted(root.rglob("*.md")):
             if f.resolve() in excluded:
                 continue
@@ -253,7 +255,9 @@ def collect(config):
 
     for f in config.text_sources:
         if not f.exists():
-            continue
+            raise FileNotFoundError(
+                f"Configured text corpus source is missing: {f}"
+            )
         for raw in f.open(encoding="utf-8", errors="replace"):
             s = raw.strip()
             if not s or s in seen or s.startswith("#"):
