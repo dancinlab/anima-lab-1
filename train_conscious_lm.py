@@ -17,9 +17,11 @@ Usage:
 """
 
 import argparse
+import gc
 import json
 import math
 import os
+import random
 import sys
 import time
 from pathlib import Path
@@ -36,7 +38,7 @@ import torch.nn.functional as F
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from conscious_lm import ConsciousLM
-from mitosis import MitosisEngine, text_to_vector
+from mitosis import Cell, ConsciousMind, MitosisEngine, text_to_vector
 try:
     from training_laws import (
         consciousness_curriculum, phi_checkpoint_selector,
@@ -646,31 +648,145 @@ def save_checkpoint(
     phi_calculator: PhiCalculator,
     phase: str,
     config: dict,
+    scheduler: Optional[object] = None,
+    best_val_loss: float = float("inf"),
+    skip_count: int = 0,
     extra: Optional[dict] = None,
 ):
-    """Save full training state."""
+    """Atomically save enough state to continue the same training trajectory."""
     state = {
+        "checkpoint_version": 2,
         "step": step,
+        "next_step": step + 1,
         "model_state": model.state_dict(),
         "optimizer_state": optimizer.state_dict(),
+        "scheduler_state": scheduler.state_dict() if scheduler is not None else None,
         "loss_ensemble_state": loss_ensemble.state_dict(),
         "mitosis_status": mitosis_engine.status(),
+        "mitosis_state": mitosis_engine.snapshot(),
         "phi_history": phi_calculator.phi_history,
         "phase": phase,
         "config": config,
+        "best_val_loss": best_val_loss,
+        "skip_count": skip_count,
+        "rng_state": capture_rng_state(),
     }
     if extra:
         state.update(extra)
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    torch.save(state, path)
+    tmp_path = f"{path}.tmp"
+    try:
+        torch.save(state, tmp_path)
+        os.replace(tmp_path, path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
     print(f"  [ckpt] Saved: {path}")
 
 
 def load_checkpoint(path: str, device: torch.device) -> dict:
-    """Load checkpoint."""
-    state = torch.load(path, map_location=device, weights_only=False)
+    """Load on CPU; owners move their state to the canonical runtime device."""
+    state = torch.load(path, map_location="cpu", weights_only=False)
     print(f"  [ckpt] Loaded: {path} (step {state.get('step', '?')})")
     return state
+
+
+def capture_rng_state() -> dict:
+    """Capture every process RNG used by the training loop."""
+    return {
+        "python": random.getstate(),
+        "numpy": np.random.get_state(),
+        "torch": torch.get_rng_state(),
+        "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
+    }
+
+
+def restore_rng_state(state: Optional[dict]) -> bool:
+    """Restore a state from :func:`capture_rng_state`; return whether it existed."""
+    if not state:
+        return False
+    random.setstate(state["python"])
+    np.random.set_state(state["numpy"])
+    torch.set_rng_state(state["torch"].cpu())
+    if state.get("cuda") is not None and torch.cuda.is_available():
+        torch.cuda.set_rng_state_all(state["cuda"])
+    return True
+
+
+def restore_scheduler_progress(scheduler: object, ckpt: dict) -> None:
+    """Restore a scheduler without resetting LR for legacy checkpoints.
+
+    Version-1 checkpoints did not persist scheduler state. Their optimizer does
+    carry the exact current LR, so align the scheduler's completed-step counter
+    while preserving that LR. The next scheduler.step() then advances from the
+    checkpoint rather than restarting the schedule at zero.
+    """
+    state = ckpt.get("scheduler_state")
+    if state:
+        scheduler.load_state_dict(state)
+        return
+    completed_step = int(ckpt.get("step", -1))
+    scheduler.last_epoch = completed_step
+    scheduler._step_count = max(completed_step + 1, 1)
+    scheduler._last_lr = [group["lr"] for group in scheduler.optimizer.param_groups]
+    print(f"[resume] Legacy checkpoint: preserved optimizer LR at step {completed_step}")
+
+
+def restore_mitosis_state(
+    mitosis_engine: MitosisEngine, ckpt: dict, device: torch.device
+) -> int:
+    """Restore the complete canonical engine state, with legacy cell support."""
+    cell_device = next(mitosis_engine.cells[0].mind.parameters()).device
+    snapshot = ckpt.get("mitosis_state")
+    if snapshot:
+        mitosis_engine.restore(snapshot)
+        for cell in mitosis_engine.cells:
+            cell.mind.to(cell_device)
+            cell.hidden = cell.hidden.to(cell_device)
+            cell.hidden_history = [value.to(cell_device) for value in cell.hidden_history]
+        if any(
+            next(cell.mind.parameters()).device != cell_device
+            or cell.hidden.device != cell_device
+            for cell in mitosis_engine.cells
+        ):
+            raise RuntimeError("restored cell snapshot violated the canonical cell device")
+        print(f"  [cells] restored {len(mitosis_engine.cells)} cells from engine snapshot")
+        return len(mitosis_engine.cells)
+
+    saved = ckpt.get("mitosis_cells")
+    if not saved:
+        print("  [cells] checkpoint has no cell weights — starting from fresh cells")
+        return 0
+    meta = ckpt.get("mitosis_meta", {})
+    cells = []
+    for cell_state in saved:
+        mind = ConsciousMind(
+            meta.get("input_dim", mitosis_engine.input_dim),
+            meta.get("hidden_dim", mitosis_engine.hidden_dim),
+            meta.get("output_dim", mitosis_engine.output_dim),
+        ).to(cell_device)
+        mind.load_state_dict(cell_state["state_dict"])
+        cells.append(Cell(
+            cell_id=cell_state["cell_id"],
+            mind=mind,
+            hidden=cell_state["hidden"].to(cell_device),
+            specialty=cell_state.get("specialty", "general"),
+            tension_history=list(cell_state.get("tension_history", [])),
+            creation_step=cell_state.get("creation_step", 0),
+            parent_id=cell_state.get("parent_id"),
+            process_count=cell_state.get("process_count", 0),
+        ))
+    mitosis_engine.cells = cells
+    mitosis_engine.step = meta.get("step", mitosis_engine.step)
+    mitosis_engine._next_id = meta.get("next_id", len(cells))
+    if any(
+        next(cell.mind.parameters()).device != cell_device
+        or cell.hidden.device != cell_device
+        for cell in cells
+    ):
+        raise RuntimeError("restored cell state violated the canonical cell device")
+    print(f"  [cells] restored {len(cells)} cells from legacy checkpoint")
+    return len(cells)
 
 
 # ---------------------------------------------------------------------------
@@ -772,16 +888,22 @@ def train(args: argparse.Namespace):
 
     # --- Resume from checkpoint ---
     start_step = 0
+    resume_ckpt = {}
     if args.resume:
-        ckpt = load_checkpoint(args.resume, device)
-        model.load_state_dict(ckpt["model_state"])
-        optimizer.load_state_dict(ckpt["optimizer_state"])
-        if "loss_ensemble_state" in ckpt:
-            loss_ensemble.load_state_dict(ckpt["loss_ensemble_state"])
-        if "phi_history" in ckpt:
-            phi_calc.phi_history = ckpt["phi_history"]
-        start_step = ckpt.get("step", 0)
-        print(f"[resume] Continuing from step {start_step}")
+        resume_ckpt = load_checkpoint(args.resume, device)
+        model.load_state_dict(resume_ckpt["model_state"])
+        optimizer.load_state_dict(resume_ckpt["optimizer_state"])
+        restore_scheduler_progress(scheduler, resume_ckpt)
+        if "loss_ensemble_state" in resume_ckpt:
+            loss_ensemble.load_state_dict(resume_ckpt["loss_ensemble_state"])
+        restore_mitosis_state(mitosis, resume_ckpt, device)
+        if "phi_history" in resume_ckpt:
+            phi_calc.phi_history = resume_ckpt["phi_history"]
+        restore_rng_state(resume_ckpt.get("rng_state"))
+        start_step = int(resume_ckpt.get(
+            "next_step", int(resume_ckpt.get("step", -1)) + 1
+        ))
+        print(f"[resume] Continuing from next unprocessed step {start_step}")
 
     # --- Consciousness Transplant (DD56) ---
     if getattr(args, 'transplant_from', None):
@@ -827,11 +949,16 @@ def train(args: argparse.Namespace):
     }
 
     # --- Training state ---
-    phi_prev = 0.0
+    runtime_state = resume_ckpt.get("runtime_state", {})
+    phi_prev = float(runtime_state.get("phi_prev", 0.0))
     phi_floor = 0.0  # PHI-K2: Φ floor for emergency boost
-    phi_current = 0.0
-    skip_count = 0
-    best_val_loss = float("inf")
+    phi_current = float(runtime_state.get("phi_current", 0.0))
+    skip_count = int(resume_ckpt.get("skip_count", 0))
+    legacy_best = getattr(args, "resume_best_val_loss", None)
+    best_val_loss = float(
+        legacy_best if legacy_best is not None
+        else resume_ckpt.get("best_val_loss", float("inf"))
+    )
     cells_frozen = False  # TRAIN-PHI-2: cells freeze after Φ target reached
     phi_target_for_freeze = 500.0  # Φ 목표 도달 시 cells 동결
     frozen_cell_states = None
@@ -840,6 +967,48 @@ def train(args: argparse.Namespace):
     # NF9: EMA weights for smooth transition
     ema_params = [p.data.clone() for p in model.parameters()]
     ema_decay = 0.99
+
+    if runtime_state:
+        inter_cell_attn.load_state_dict(runtime_state["inter_cell_attention_state"])
+        channel_bottleneck.load_state_dict(runtime_state["channel_bottleneck_state"])
+        _phi_predictor.load_state_dict(runtime_state["phi_predictor_state"])
+        _phi_pred_opt.load_state_dict(runtime_state["phi_predictor_optimizer_state"])
+        soc.__dict__.update(runtime_state.get("soc_state", {}))
+        hebbian.__dict__.update(runtime_state.get("hebbian_state", {}))
+        phi_ratchet.__dict__.update(runtime_state.get("phi_ratchet_state", {}))
+        emotion_state.update(runtime_state.get("emotion_state", {}))
+        phi_floor = float(runtime_state.get("phi_floor", phi_floor))
+        saved_ema = runtime_state.get("ema_params")
+        if saved_ema is not None:
+            ema_params = [value.to(device).clone() for value in saved_ema]
+
+    # load_state_dict copies restored values into their owners. Keeping the
+    # checkpoint dictionary alive would retain a second full model/population on
+    # the accelerator and can OOM the first resumed forward pass.
+    if resume_ckpt:
+        runtime_state.clear()
+        resume_ckpt.clear()
+        gc.collect()
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
+
+    def checkpoint_runtime_state() -> dict:
+        return {
+            "runtime_state": {
+                "inter_cell_attention_state": inter_cell_attn.state_dict(),
+                "channel_bottleneck_state": channel_bottleneck.state_dict(),
+                "phi_predictor_state": _phi_predictor.state_dict(),
+                "phi_predictor_optimizer_state": _phi_pred_opt.state_dict(),
+                "soc_state": soc.__dict__,
+                "hebbian_state": hebbian.__dict__,
+                "phi_ratchet_state": phi_ratchet.__dict__,
+                "emotion_state": emotion_state,
+                "phi_prev": phi_prev,
+                "phi_current": phi_current,
+                "phi_floor": phi_floor,
+                "ema_params": ema_params,
+            }
+        }
 
     # --- Print header ---
     print(f"\n{'='*100}")
@@ -1451,6 +1620,10 @@ def train(args: argparse.Namespace):
                 save_checkpoint(
                     best_path, step, model, optimizer, loss_ensemble,
                     mitosis, phi_calc, phase, config,
+                    scheduler=scheduler,
+                    best_val_loss=best_val_loss,
+                    skip_count=skip_count,
+                    extra=checkpoint_runtime_state(),
                 )
 
         # --- Checkpoint ---
@@ -1459,6 +1632,10 @@ def train(args: argparse.Namespace):
             save_checkpoint(
                 ckpt_path, step, model, optimizer, loss_ensemble,
                 mitosis, phi_calc, phase, config,
+                scheduler=scheduler,
+                best_val_loss=best_val_loss,
+                skip_count=skip_count,
+                extra=checkpoint_runtime_state(),
             )
 
     # --- Final checkpoint ---
@@ -1472,8 +1649,12 @@ def train(args: argparse.Namespace):
 
     final_path = os.path.join(args.checkpoint_dir, "final.pt")
     save_checkpoint(
-        final_path, args.steps, model, optimizer, loss_ensemble,
+        final_path, args.steps - 1, model, optimizer, loss_ensemble,
         mitosis, phi_calc, phase, config,
+        scheduler=scheduler,
+        best_val_loss=best_val_loss,
+        skip_count=skip_count,
+        extra=checkpoint_runtime_state(),
     )
 
     # --- Final summary ---
@@ -1556,6 +1737,9 @@ Examples:
                         help="Checkpoint directory (default: checkpoints)")
     parser.add_argument("--resume", type=str, default=None,
                         help="Resume from checkpoint path")
+    parser.add_argument("--resume-best-val-loss", type=float, default=None,
+                        help="Measured historical best for a legacy checkpoint that did not "
+                             "persist best_val_loss")
     parser.add_argument("--transplant-from", type=str, default=None,
                         help="Transplant consciousness from donor checkpoint (DD56)")
     parser.add_argument("--transplant-alpha", type=float, default=1.0,
