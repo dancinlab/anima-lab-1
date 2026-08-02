@@ -10,14 +10,15 @@ Trains ConsciousLM from scratch using benchmark-verified techniques:
   v5: SOC (CX92 self-organized criticality), Hebbian LTP/LTD, Φ Ratchet (PERSIST3)
 
 Usage:
-  python train_conscious_lm.py --steps 100000                    # auto-detect data/corpus.txt
-  python train_conscious_lm.py --data data/corpus.txt --steps 50000
+  python train_conscious_lm.py --steps 100000                    # canonical corpus.toml split
+  python train_conscious_lm.py --data train.txt --val-data val.txt --steps 50000
   python train_conscious_lm.py --data data/corpus.txt --dim 384 --layers 6
   python train_conscious_lm.py --resume checkpoints/step_10000.pt
 """
 
 import argparse
 import gc
+import hashlib
 import json
 import math
 import os
@@ -38,6 +39,11 @@ import torch.nn.functional as F
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from conscious_lm import ConsciousLM
+from build_corpus import (
+    load_config as load_corpus_config,
+    sampled_byte_overlap,
+)
+from corpus_quality import warn_if_degenerate
 from mitosis import Cell, ConsciousMind, MitosisEngine, text_to_vector
 try:
     from training_laws import (
@@ -299,7 +305,119 @@ def load_text_data(path: str) -> torch.Tensor:
             all_bytes = bytearray(f.read())
 
     print(f"[data] Loaded {len(all_bytes):,} bytes from {path}")
+    warn_if_degenerate(str(path))
     return torch.tensor(list(all_bytes), dtype=torch.long)
+
+
+def file_sha256(path: Path, chunk_size: int = 1024 * 1024) -> str:
+    """Return a streaming content identity without loading another corpus copy."""
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(chunk_size), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def prepare_corpus_data(args: argparse.Namespace):
+    """Load the canonical train/validation pair and its checkpoint identity.
+
+    A separate held-out file is preferred. Arbitrary legacy corpora retain the
+    historical 90/10 split, but that fallback is explicit in the identity so a
+    resume cannot silently change what ``best_val_loss`` means.
+    """
+    corpus_config = load_corpus_config()
+    requested_train = Path(args.data) if args.data else corpus_config.train_output
+    requested_validation = Path(args.val_data) if args.val_data else None
+
+    if requested_validation is None:
+        try:
+            is_canonical_train = (
+                requested_train.resolve() == corpus_config.train_output.resolve()
+            )
+        except FileNotFoundError:
+            is_canonical_train = False
+        if is_canonical_train and corpus_config.validation_output.exists():
+            requested_validation = corpus_config.validation_output
+
+    if not requested_train.exists():
+        if args.data:
+            raise FileNotFoundError(f"Data file not found: {requested_train}")
+        raise FileNotFoundError(
+            f"Canonical corpus not found: {requested_train}. "
+            "Build it with `python3 build_corpus.py`."
+        )
+
+    source_hash = file_sha256(requested_train)
+    if requested_validation is not None:
+        if not requested_validation.exists():
+            raise FileNotFoundError(
+                f"Validation data file not found: {requested_validation}"
+            )
+        validation_hash = file_sha256(requested_validation)
+        if source_hash == validation_hash:
+            raise RuntimeError("training and validation corpora have identical content")
+        overlap, hits, count = sampled_byte_overlap(
+            requested_train,
+            requested_validation,
+            corpus_config.audit_window_bytes,
+            corpus_config.audit_samples,
+            corpus_config.split_seed,
+        )
+        print(f"[data] split audit: {corpus_config.audit_window_bytes}-byte "
+              f"overlap={hits}/{count} ({overlap:.2%})")
+        if overlap > corpus_config.maximum_overlap:
+            raise RuntimeError(
+                f"validation overlap {overlap:.2%} exceeds configured maximum "
+                f"{corpus_config.maximum_overlap:.2%}"
+            )
+        train_data = load_text_data(str(requested_train))
+        val_data = load_text_data(str(requested_validation))
+        identity = {
+            "mode": "separate",
+            "train_sha256": source_hash,
+            "train_bytes": len(train_data),
+            "validation_sha256": validation_hash,
+            "validation_bytes": len(val_data),
+        }
+        print(f"[data] train={len(train_data):,} val={len(val_data):,} bytes "
+              "(separate held-out corpus)")
+        return train_data, val_data, identity
+
+    data = load_text_data(str(requested_train))
+    split_idx = int((1.0 - corpus_config.validation_fraction) * len(data))
+    train_data = data[:split_idx]
+    val_data = data[split_idx:]
+    identity = {
+        "mode": "sequential-fallback",
+        "source_sha256": source_hash,
+        "source_bytes": len(data),
+        "split_index": split_idx,
+    }
+    print(f"[data] train={len(train_data):,} val={len(val_data):,} bytes "
+          "(legacy sequential fallback; pass --val-data for held-out validation)")
+    return train_data, val_data, identity
+
+
+def validate_resume_corpus(
+    checkpoint: dict, current_identity: dict, allow_change: bool = False
+) -> bool:
+    """Reject a silent corpus change; return whether an allowed change occurred."""
+    previous = checkpoint.get("config", {}).get("data_identity")
+    if previous is None:
+        if allow_change:
+            print("[resume] Legacy corpus transition allowed; validation best will reset")
+            return True
+        print("[resume] Legacy checkpoint has no corpus identity; current identity recorded")
+        return False
+    if previous == current_identity:
+        return False
+    if not allow_change:
+        raise RuntimeError(
+            "checkpoint corpus identity differs from the current corpus; "
+            "use --allow-data-change only for an intentional curriculum transition"
+        )
+    print("[resume] Corpus transition explicitly allowed; validation best will reset")
+    return True
 
 
 def generate_demo_data(n_bytes: int = 500_000) -> torch.Tensor:
@@ -380,6 +498,45 @@ def get_batch(
     y_bwd = torch.stack(y_bwd_list)
 
     return x.to(device), y_fwd.to(device), y_bwd.to(device)
+
+
+def evaluate_language_model(
+    model: ConsciousLM,
+    data: torch.Tensor,
+    batch_size: int,
+    block_size: int,
+    device: torch.device,
+    evaluation_bytes: int,
+) -> Tuple[float, float]:
+    """Evaluate fixed, evenly spaced contexts without consuming training RNG."""
+    max_start = len(data) - block_size - 1
+    if max_start <= 0:
+        raise ValueError(f"Data too short ({len(data)}) for block_size={block_size}")
+    contexts = min(max(1, evaluation_bytes // block_size), max_start)
+    positions = [
+        int(max_start * index / max(contexts - 1, 1))
+        for index in range(contexts)
+    ]
+    total_loss = 0.0
+    total_tokens = 0
+    model.eval()
+    with torch.no_grad():
+        for offset in range(0, len(positions), batch_size):
+            starts = positions[offset:offset + batch_size]
+            x = torch.stack([data[start:start + block_size] for start in starts]).to(device)
+            target = torch.stack([
+                data[start + 1:start + block_size + 1] for start in starts
+            ]).to(device)
+            logits, _, _ = model(x)
+            loss = F.cross_entropy(
+                logits.view(-1, model.vocab_size),
+                target.view(-1),
+                reduction="sum",
+            )
+            total_loss += loss.item()
+            total_tokens += target.numel()
+    mean_loss = total_loss / total_tokens
+    return mean_loss, mean_loss / math.log(2)
 
 
 # ---------------------------------------------------------------------------
@@ -684,9 +841,9 @@ def save_checkpoint(
     print(f"  [ckpt] Saved: {path}")
 
 
-def load_checkpoint(path: str, device: torch.device) -> dict:
+def load_checkpoint(path: str, device: torch.device, mmap: bool = False) -> dict:
     """Load on CPU; owners move their state to the canonical runtime device."""
-    state = torch.load(path, map_location="cpu", weights_only=False)
+    state = torch.load(path, map_location="cpu", weights_only=False, mmap=mmap)
     print(f"  [ckpt] Loaded: {path} (step {state.get('step', '?')})")
     return state
 
@@ -806,24 +963,7 @@ def train(args: argparse.Namespace):
     print(f"[device] {device}")
 
     # --- Data ---
-    if args.data:
-        data = load_text_data(args.data)
-    else:
-        # Auto-detect corpus
-        default_corpus = Path(__file__).parent / "data" / "corpus.txt"
-        if default_corpus.exists():
-            print(f"[data] Auto-detected: {default_corpus}")
-            data = load_text_data(str(default_corpus))
-        else:
-            print("[!] No data. Use --data <path> or create data/corpus.txt")
-            print("    python prepare_corpus.py --size 50")
-            sys.exit(1)
-
-    n = len(data)
-    split_idx = int(0.9 * n)
-    train_data = data[:split_idx]
-    val_data = data[split_idx:]
-    print(f"[data] train={len(train_data):,} val={len(val_data):,} bytes")
+    train_data, val_data, data_identity = prepare_corpus_data(args)
 
     # --- Model ---
     model = ConsciousLM(
@@ -889,8 +1029,14 @@ def train(args: argparse.Namespace):
     # --- Resume from checkpoint ---
     start_step = 0
     resume_ckpt = {}
+    corpus_changed = False
     if args.resume:
         resume_ckpt = load_checkpoint(args.resume, device)
+        corpus_changed = validate_resume_corpus(
+            resume_ckpt,
+            data_identity,
+            allow_change=getattr(args, "allow_data_change", False),
+        )
         model.load_state_dict(resume_ckpt["model_state"])
         optimizer.load_state_dict(resume_ckpt["optimizer_state"])
         restore_scheduler_progress(scheduler, resume_ckpt)
@@ -946,6 +1092,7 @@ def train(args: argparse.Namespace):
         "batch_size": args.batch_size,
         "steps": args.steps,
         "max_cells": args.max_cells,
+        "data_identity": data_identity,
     }
 
     # --- Training state ---
@@ -955,7 +1102,7 @@ def train(args: argparse.Namespace):
     phi_current = float(runtime_state.get("phi_current", 0.0))
     skip_count = int(resume_ckpt.get("skip_count", 0))
     legacy_best = getattr(args, "resume_best_val_loss", None)
-    best_val_loss = float(
+    best_val_loss = float("inf") if corpus_changed else float(
         legacy_best if legacy_best is not None
         else resume_ckpt.get("best_val_loss", float("inf"))
     )
@@ -1022,6 +1169,11 @@ def train(args: argparse.Namespace):
 
     # --- Training loop ---
     t0 = time.time()
+    evaluation_bytes = (
+        args.eval_bytes
+        if getattr(args, "eval_bytes", None) is not None
+        else load_corpus_config().evaluation_bytes
+    )
 
     for step in range(start_step, args.steps):
         phase = get_phase(step, args.steps, args.phase, talk5=getattr(args, 'talk5', False))
@@ -1224,7 +1376,12 @@ def train(args: argparse.Namespace):
 
         # Loss 2: Tension variance (encourage diversity across layers)
         # NF4: Clamp tension variance to prevent explosion during mitosis
-        t_var = torch.clamp(t_stack.var(dim=0).mean(), max=100.0)
+        # Preserve the sample-variance objective for normal multi-layer runs,
+        # while keeping the supported one-layer configuration finite.
+        correction = 1 if t_stack.shape[0] > 1 else 0
+        t_var = torch.clamp(
+            t_stack.var(dim=0, correction=correction).mean(), max=100.0
+        )
         loss_tension_var = -torch.log(t_var + 1e-8)
 
         # Loss 3: Phi differentiation (CL5)
@@ -1542,6 +1699,7 @@ def train(args: argparse.Namespace):
         if torch.isnan(total_loss) or torch.isinf(total_loss):
             print(f"  [NaN] Skipping step {step} (loss={total_loss.item()})")
             phi_prev = phi_current
+            skip_count += 1
             continue
         total_loss.backward()
         # NF1: Gradient clipping (already present)
@@ -1600,19 +1758,17 @@ def train(args: argparse.Namespace):
 
         # --- Validation ---
         if step % args.eval_every == 0 and step > 0 and len(val_data) > args.block_size + 1:
-            model.eval()
-            with torch.no_grad():
-                vx, vy_fwd, _ = get_batch(
-                    val_data, min(args.batch_size, 32), args.block_size, device
-                )
-                vl_a, _, _ = model(vx)
-                val_loss = F.cross_entropy(
-                    vl_a.view(-1, model.vocab_size), vy_fwd.view(-1)
-                ).item()
-                val_bpc = val_loss / math.log(2)
+            val_loss, val_bpc = evaluate_language_model(
+                model,
+                val_data,
+                min(args.batch_size, 32),
+                args.block_size,
+                device,
+                evaluation_bytes,
+            )
 
             print(f"  [val] loss={val_loss:.4f}  BPC={val_bpc:.4f}  "
-                  f"(best={best_val_loss:.4f})")
+                  f"(best={best_val_loss:.4f}, bytes={evaluation_bytes})")
 
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
@@ -1682,6 +1838,55 @@ def train(args: argparse.Namespace):
     return model
 
 
+def evaluate_checkpoint(args: argparse.Namespace) -> None:
+    """Measure one checkpoint on fixed train and validation contexts."""
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+    print(f"[device] {device}")
+    train_data, validation_data, _ = prepare_corpus_data(args)
+    checkpoint = load_checkpoint(args.evaluate_checkpoint, device, mmap=True)
+    saved = checkpoint.get("config", {})
+    dimension = int(saved.get("dim", args.dim))
+    layers = int(saved.get("layers", args.layers))
+    heads = int(saved.get("heads", args.heads))
+    block_size = int(saved.get("block_size", args.block_size))
+    model = ConsciousLM(
+        vocab_size=256,
+        d_model=dimension,
+        n_head=heads,
+        n_layer=layers,
+        block_size=block_size,
+        dropout=0.37,
+    ).to(device)
+    model_state = checkpoint["model_state"]
+    if "self_head.weight" in model_state and not hasattr(model, "self_head"):
+        # NF9 checkpoints predate the repository merge of the optional
+        # strange-loop head. It is prediction-inert at evaluation time, but the
+        # parameter must exist for an exact state restore.
+        model.self_head = nn.Linear(dimension, layers, bias=False).to(device)
+    model.load_state_dict(model_state)
+    checkpoint.clear()
+    gc.collect()
+
+    corpus_config = load_corpus_config()
+    evaluation_bytes = args.eval_bytes or corpus_config.evaluation_bytes
+    batch_size = args.batch_size
+    train_loss, train_bpc = evaluate_language_model(
+        model, train_data, batch_size, block_size, device, evaluation_bytes
+    )
+    validation_loss, validation_bpc = evaluate_language_model(
+        model, validation_data, batch_size, block_size, device, evaluation_bytes
+    )
+    print(f"[eval] checkpoint={args.evaluate_checkpoint}")
+    print(f"[eval] train loss={train_loss:.4f} BPC={train_bpc:.4f}")
+    print(f"[eval] validation loss={validation_loss:.4f} BPC={validation_bpc:.4f} "
+          f"bytes={evaluation_bytes}")
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -1692,8 +1897,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python train_conscious_lm.py --steps 100000                           # auto-detect corpus
-  python train_conscious_lm.py --data data/corpus.txt --steps 50000     # explicit data
+  python train_conscious_lm.py --steps 100000                           # corpus.toml pair
+  python train_conscious_lm.py --data train.txt --val-data val.txt --steps 50000
   python train_conscious_lm.py --data data/corpus.txt --dim 768 --layers 12
   python train_conscious_lm.py --resume checkpoints/step_10000.pt       # resume training
         """,
@@ -1702,7 +1907,8 @@ Examples:
     # Data
     parser.add_argument("--data", type=str, default=None,
                         help="Path to training text (.txt, .jsonl, .bin)")
-    # --demo removed: use data/corpus.txt (auto-detected) or --data
+    parser.add_argument("--val-data", type=str, default=None,
+                        help="Independent validation corpus (canonical pair is auto-detected)")
 
     # Model architecture
     parser.add_argument("--dim", type=int, default=384,
@@ -1740,6 +1946,9 @@ Examples:
     parser.add_argument("--resume-best-val-loss", type=float, default=None,
                         help="Measured historical best for a legacy checkpoint that did not "
                              "persist best_val_loss")
+    parser.add_argument("--allow-data-change", action="store_true",
+                        help="Allow an intentional corpus transition on resume and reset "
+                             "the validation best")
     parser.add_argument("--transplant-from", type=str, default=None,
                         help="Transplant consciousness from donor checkpoint (DD56)")
     parser.add_argument("--transplant-alpha", type=float, default=1.0,
@@ -1752,9 +1961,16 @@ Examples:
                         help="Print progress every N steps (default: 100)")
     parser.add_argument("--eval-every", type=int, default=1000,
                         help="Evaluate on val set every N steps (default: 1000)")
+    parser.add_argument("--eval-bytes", type=int, default=None,
+                        help="Fixed validation span size (default: corpus.toml)")
+    parser.add_argument("--evaluate-checkpoint", type=str, default=None,
+                        help="Evaluate a checkpoint without training")
 
     args = parser.parse_args()
-    train(args)
+    if args.evaluate_checkpoint:
+        evaluate_checkpoint(args)
+    else:
+        train(args)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 """Regression tests for trajectory-preserving ConsciousLM checkpoints."""
 
+import argparse
 import random
 
 import numpy as np
@@ -7,12 +8,16 @@ import pytest
 import torch
 
 from mitosis import MitosisEngine
+from conscious_lm import ConsciousLM
 from train_conscious_lm import (
     capture_rng_state,
+    evaluate_language_model,
+    prepare_corpus_data,
     restore_mitosis_state,
     restore_rng_state,
     restore_scheduler_progress,
     save_checkpoint,
+    validate_resume_corpus,
 )
 
 
@@ -108,3 +113,74 @@ def test_checkpoint_is_atomic_and_restores_engine_snapshot(tmp_path):
     assert restore_mitosis_state(restored, checkpoint, torch.device("cpu")) == 2
     assert restored.step == 9
     assert [cell.cell_id for cell in restored.cells] == [0, 1]
+
+
+def test_separate_validation_corpus_has_content_identity(tmp_path):
+    train_path = tmp_path / "train.txt"
+    validation_path = tmp_path / "validation.txt"
+    train_path.write_bytes(b"training corpus bytes " * 64)
+    validation_path.write_bytes(b"held out validation material " * 64)
+
+    train_data, validation_data, identity = prepare_corpus_data(argparse.Namespace(
+        data=str(train_path),
+        val_data=str(validation_path),
+    ))
+
+    assert bytes(train_data.tolist()) == train_path.read_bytes()
+    assert bytes(validation_data.tolist()) == validation_path.read_bytes()
+    assert identity["mode"] == "separate"
+    assert identity["train_sha256"] != identity["validation_sha256"]
+
+
+def test_identical_train_and_validation_are_rejected(tmp_path):
+    corpus = tmp_path / "corpus.txt"
+    corpus.write_bytes(b"same corpus content " * 64)
+
+    with pytest.raises(RuntimeError, match="identical content"):
+        prepare_corpus_data(argparse.Namespace(
+            data=str(corpus),
+            val_data=str(corpus),
+        ))
+
+
+def test_resume_rejects_silent_corpus_change():
+    checkpoint = {"config": {"data_identity": {"source_sha256": "old"}}}
+    current = {"source_sha256": "new"}
+
+    with pytest.raises(RuntimeError, match="corpus identity differs"):
+        validate_resume_corpus(checkpoint, current)
+    assert validate_resume_corpus(checkpoint, current, allow_change=True)
+
+
+def test_legacy_resume_records_identity_without_claiming_a_change():
+    assert not validate_resume_corpus({"config": {}}, {"source_sha256": "new"})
+    assert validate_resume_corpus(
+        {"config": {}}, {"source_sha256": "new"}, allow_change=True
+    )
+
+
+def test_validation_is_deterministic_and_does_not_consume_rng():
+    model = ConsciousLM(
+        vocab_size=256,
+        d_model=16,
+        n_head=4,
+        n_layer=1,
+        block_size=8,
+        dropout=0.37,
+    )
+    data = torch.arange(128, dtype=torch.long) % 256
+    rng = torch.get_rng_state()
+    expected_next = torch.rand(1)
+    torch.set_rng_state(rng)
+
+    first = evaluate_language_model(
+        model, data, batch_size=2, block_size=8,
+        device=torch.device("cpu"), evaluation_bytes=40,
+    )
+    second = evaluate_language_model(
+        model, data, batch_size=3, block_size=8,
+        device=torch.device("cpu"), evaluation_bytes=40,
+    )
+
+    assert first == pytest.approx(second)
+    assert torch.rand(1) == pytest.approx(expected_next)

@@ -20,4 +20,6 @@ knowledge-rs/target/
 
 # built training corpora (regenerate with build_corpus.py)
 data/corpus_v3.txt
+data/corpus_v3_train.txt
+data/corpus_v3_validation.txt
 data/corpus_v3_arith.txt

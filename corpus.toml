@@ -1,0 +1,27 @@
+[corpus]
+version = 3
+legacy_source = "data/corpus_v2.txt"
+markdown_sources = ["../anima", "."]
+text_sources = ["data/.corpus_cache/ko_wiki.txt"]
+excluded_sources = ["docs/corpus-rebuild.md"]
+
+[corpus.outputs]
+full = "data/corpus_v3.txt"
+train = "data/corpus_v3_train.txt"
+validation = "data/corpus_v3_validation.txt"
+arithmetic = "data/corpus_v3_arith.txt"
+
+[corpus.filters]
+minimum_tokens = 4
+template_family_cap = 20
+template_ngram_tokens = 6
+
+[corpus.split]
+validation_fraction = 0.1
+seed = "anima-corpus-v3"
+audit_window_bytes = 64
+audit_samples = 400
+maximum_overlap = 0.06
+
+[corpus.evaluation]
+bytes = 262144

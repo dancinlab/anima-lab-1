@@ -2,7 +2,8 @@
 
 `data/corpus_v2.txt` is 70MB and measurably not language (QD-10). This records
 the defect, the rebuild, and the end-to-end check that the result is usable.
-Regenerate with `python3 build_corpus.py`.
+`corpus.toml` is the build, split, and evaluation SSOT; regenerate with
+`python3 build_corpus.py`.
 
 ## The defect
 
@@ -36,17 +37,62 @@ unique ones** — a single block repeated 2538 times.
      over 60,383 types at 33.40% type/token, **already tracked in git** in a
      hidden cache directory.
 
+## Canonical held-out split
+
+The original training scripts cut the final 10% of one ordered file and then
+measured one random validation batch. That is not a stable held-out benchmark:
+source order determines the distribution, template families can cross the
+boundary, and validation advances the same RNG used to draw training batches.
+
+The builder now assigns connected template families as one deterministic hash
+group and writes separate files:
+
+| partition | lines | bytes |
+|---|---:|---:|
+| train | 333,512 | 39,888,552 |
+| validation | 36,982 | 4,399,360 |
+
+There are **zero exact lines** shared between the partitions. A deterministic
+seeded audit found **20/400 exact 64-byte windows (5.00%)**, below the maximum in
+`corpus.toml`. Rebuilding twice produces identical SHA-256 hashes. For
+comparison, the NF9 interleaved v2 split measured 82.5% overlap with the same
+window width and 400 samples; a sequential final-10% split avoided that exact
+reuse but held out a different source distribution. The family-isolated split
+addresses both failure modes.
+
+Training now defaults to this pair, rejects a held-out corpus above the overlap
+limit, stores both content hashes in every checkpoint, and rejects a silent
+corpus change on resume. Validation averages a fixed 256KB of evenly spaced
+contexts and does not consume training RNG.
+
 ## Result
 
 | | tokens | word types | type/token | top bigram |
 |---|---|---|---|---|
 | v2 Korean | 2,702,000 | 2,427 | 0.09% | — |
-| **v3 Korean** | 1,356,204 | **122,183** | **9.01%** | 1,079 |
+| **v3 Korean** | 1,020,650 | **122,093** | **11.96%** | 557 |
 | v2 English | 3,424,951 | 2,109 | 0.06% | — |
-| **v3 English** | 3,839,941 | **61,875** | **1.61%** | 6,832 |
+| **v3 English** | 3,524,796 | **60,970** | **1.73%** | 6,832 |
 
 Korean vocabulary is **50× larger** at 100× the type/token ratio; English is 29×
 larger. The template signature — every top bigram sharing one count — is gone.
+
+## NF9 generalization audit
+
+The step-40,000 NF9 checkpoint was trained on v2. On `summer` RTX 5070, the
+same checkpoint and the same fixed 256KB span measured:
+
+| corpus | partition | CE | BPC |
+|---|---|---:|---:|
+| v2 | train | 0.2796 | 0.4034 |
+| v2 | sequential final 10% | 1.6493 | 2.3794 |
+| v3 | train | 4.9422 | 7.1302 |
+| v3 | family-isolated validation | 4.9749 | 7.1773 |
+
+The historical v2 validation best of 0.3652 came from one stochastic batch and
+is not comparable to the fixed-context result. NF9 has learned the repetitive
+v2 distribution but does not generalize to the natural-language corpus. Its
+low in-distribution CE therefore cannot support a language-quality claim.
 
 ## Verified end to end
 
