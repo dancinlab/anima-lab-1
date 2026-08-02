@@ -14,7 +14,7 @@ RUN mkdir -p /var/run/sshd && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
 # Python 패키지
-COPY requirements.txt /tmp/
+COPY requirements.txt requirements-runtime.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # cloudflared

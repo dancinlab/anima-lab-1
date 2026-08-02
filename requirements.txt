@@ -1,11 +1,8 @@
 # Anima Core
-torch>=2.0.0
-numpy
-websockets
+-r requirements-runtime.txt
 
 # Cloud / API
 boto3
-requests
 
 # Sensors
 opencv-python
@@ -17,5 +14,4 @@ accelerate
 peft          # LoRA adapters for HFDecoder (v11 --d-engine hf, e.g. Mistral 7B)
 
 # Utils
-scipy
 matplotlib

@@ -1,0 +1,78 @@
+from pathlib import Path, PurePosixPath
+
+import pytest
+
+import deploy
+
+
+def test_repository_target_config_uses_ssh_aliases():
+    targets = deploy.load_targets()
+
+    assert set(targets) == {"aiden", "summer"}
+    assert targets["aiden"].ssh_alias == "aiden"
+    assert not targets["aiden"].deployable
+    assert targets["summer"].ssh_alias == "summer"
+    assert targets["summer"].deployable
+    assert targets["summer"].requirements == "requirements-runtime.txt"
+
+
+def test_container_copies_runtime_requirements():
+    dockerfile = (deploy.ANIMA_DIR / "Dockerfile").read_text(encoding="utf-8")
+
+    assert "COPY requirements.txt requirements-runtime.txt /tmp/" in dockerfile
+
+
+def test_config_rejects_relative_remote_root(tmp_path: Path):
+    config = tmp_path / "targets.toml"
+    config.write_text(
+        """[targets.bad]\nssh_alias='bad'\nrole='runtime'\nremote_root='relative'\n""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(deploy.DeployError, match="must be absolute"):
+        deploy.load_targets(config)
+
+
+def test_config_rejects_broad_remote_root(tmp_path: Path):
+    config = tmp_path / "targets.toml"
+    config.write_text(
+        """[targets.bad]\nssh_alias='bad'\nrole='runtime'\nremote_root='/srv'\n""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(deploy.DeployError, match="too broad"):
+        deploy.load_targets(config)
+
+
+def test_service_is_rendered_from_target_config():
+    target = deploy.Target(
+        name="gpu",
+        ssh_alias="gpu",
+        role="runtime",
+        remote_root=PurePosixPath("/srv/anima"),
+        service="anima",
+        port=9000,
+        runtime_args=("--web", "--max-cells", "32"),
+    )
+
+    unit = deploy.render_service(target)
+
+    assert "WorkingDirectory=/srv/anima/current" in unit
+    assert "/srv/anima/venv/bin/python -u /srv/anima/current/anima_unified.py" in unit
+    assert "--web --max-cells 32 --port 9000" in unit
+    assert "KillSignal=SIGINT" in unit
+
+
+def test_service_rejects_research_only_target():
+    target = deploy.Target(name="gpu", ssh_alias="gpu", role="gpu-research")
+
+    with pytest.raises(deploy.DeployError, match="no runtime configuration"):
+        deploy.render_service(target)
+
+
+def test_deploy_requires_published_head(monkeypatch):
+    revisions = iter(("local", "remote"))
+    monkeypatch.setattr(deploy, "_git_output", lambda *args: next(revisions))
+
+    with pytest.raises(deploy.DeployError, match="origin/main"):
+        deploy._assert_published_head()

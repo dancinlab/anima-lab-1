@@ -1,0 +1,6 @@
+# Headless web runtime. Extended training/sensor dependencies live in requirements.txt.
+torch>=2.0.0
+numpy
+websockets
+requests
+scipy

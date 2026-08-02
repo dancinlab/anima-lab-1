@@ -1,0 +1,21 @@
+[targets.aiden]
+ssh_alias = "aiden"
+role = "gpu-research"
+
+[targets.summer]
+ssh_alias = "summer"
+role = "gpu-research-runtime"
+remote_root = "/home/summer/services/anima-lab-1"
+service = "anima-lab-1"
+python = "python3"
+requirements = "requirements-runtime.txt"
+port = 8765
+runtime_args = [
+  "--web",
+  "--max-cells", "64",
+  "--no-camera",
+  "--no-vision",
+  "--no-telepathy",
+  "--no-cloud",
+  "--no-conscious-lm",
+]
