@@ -23,9 +23,12 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Sequence
 
+from training_runtime import TrainingRun, load_training_run
+
 
 ANIMA_DIR = Path(__file__).resolve().parent
 DEFAULT_CONFIG = ANIMA_DIR / "deploy.targets.toml"
+DEFAULT_TRAINING_CONFIG = ANIMA_DIR / "training.toml"
 SAFE_NAME = re.compile(r"^[A-Za-z0-9_.@-]+$")
 HOSTNAME = re.compile(r"^(?=.{1,253}$)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$")
 
@@ -443,6 +446,136 @@ WantedBy=default.target
 """
 
 
+def render_training_service(
+    target: Target,
+    run: TrainingRun,
+    release: PurePosixPath,
+) -> str:
+    """Render a checkpoint-resuming GPU research service."""
+    if not target.remote_root:
+        raise DeployError(f"{target.name} has no research root")
+    if run.target != target.name:
+        raise DeployError(f"run {run.name} targets {run.target}, not {target.name}")
+    executable = release / "training_runtime.py"
+    # The trainer imports ``training_runtime`` from the research root, so both
+    # the supervisor and child must read the same root-level configuration.
+    config = target.remote_root / "training.toml"
+    command = [
+        target.python,
+        "-u",
+        str(executable),
+        "--supervise",
+        run.name,
+        "--config",
+        str(config),
+        "--root",
+        str(target.remote_root),
+    ]
+    exec_start = " ".join(shlex.quote(part) for part in command)
+    return f"""[Unit]
+Description=Anima GPU research ({run.name})
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory={target.remote_root}
+ExecStart={exec_start}
+Restart=on-failure
+RestartSec={run.policy.restart_delay_seconds}
+TimeoutStopSec={run.policy.terminate_grace_seconds + 5}
+KillMode=control-group
+KillSignal=SIGTERM
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
+"""
+
+
+def deploy_training(
+    target: Target,
+    run: TrainingRun,
+    revision: str | None = None,
+) -> str:
+    """Install an immutable supervisor release and start one research run."""
+    if not target.remote_root:
+        raise DeployError(f"{target.name} has no research root")
+    if run.target != target.name:
+        raise DeployError(f"run {run.name} targets {run.target}, not {target.name}")
+    revision = revision or _assert_published_head()
+    root = target.remote_root
+    supervisor_root = root / "supervisor"
+    release = supervisor_root / "releases" / revision
+    prepare = f"""
+mkdir -p {shlex.quote(str(supervisor_root / 'releases'))}
+if [ ! -d {shlex.quote(str(release))} ]; then
+  mkdir {shlex.quote(str(release))}
+fi
+"""
+    _remote_script(target, prepare)
+    archive = subprocess.Popen(
+        [
+            "git", "-C", str(ANIMA_DIR), "archive", "--format=tar.gz",
+            revision, "training_runtime.py", "training.toml",
+        ],
+        stdout=subprocess.PIPE,
+    )
+    assert archive.stdout is not None
+    extract = subprocess.run(
+        [*_ssh_argv(target), f"tar -xzf - -C {shlex.quote(str(release))}"],
+        stdin=archive.stdout,
+        capture_output=True,
+        timeout=60,
+    )
+    archive.stdout.close()
+    archive_code = archive.wait(timeout=30)
+    if archive_code or extract.returncode:
+        message = extract.stderr.decode(errors="replace").strip()
+        raise DeployError(f"training supervisor upload failed: {message}")
+    unit = render_training_service(target, run, release)
+    unit_path = supervisor_root / f"{run.service}.service"
+    install = f"""
+cp {shlex.quote(str(release / 'training_runtime.py'))} {shlex.quote(str(root / 'training_runtime.py'))}.tmp
+mv {shlex.quote(str(root / 'training_runtime.py'))}.tmp {shlex.quote(str(root / 'training_runtime.py'))}
+cp {shlex.quote(str(release / 'training.toml'))} {shlex.quote(str(root / 'training.toml'))}.tmp
+mv {shlex.quote(str(root / 'training.toml'))}.tmp {shlex.quote(str(root / 'training.toml'))}
+printf %s {shlex.quote(unit)} > {shlex.quote(str(unit_path))}.tmp
+mv {shlex.quote(str(unit_path))}.tmp {shlex.quote(str(unit_path))}
+ln -sfn {shlex.quote(str(release))} {shlex.quote(str(supervisor_root / 'current'))}
+systemctl --user link {shlex.quote(str(unit_path))} >/dev/null
+systemctl --user daemon-reload
+systemctl --user enable --now {shlex.quote(run.service)}.service >/dev/null
+systemctl --user restart {shlex.quote(run.service)}.service
+"""
+    _remote_script(target, install)
+    for _ in range(20):
+        active = _ssh(
+            target,
+            f"systemctl --user is-active {shlex.quote(run.service)}.service",
+            check=False,
+        )
+        if active.stdout.decode().strip() == "active":
+            return revision
+        time.sleep(1)
+    raise DeployError(f"{run.service}: training service did not become active")
+
+
+def training_status(target: Target, run: TrainingRun) -> tuple[bool, str]:
+    """Return stable systemd state without invoking a potentially hung GPU API."""
+    result = _ssh(
+        target,
+        "systemctl --user show "
+        f"{shlex.quote(run.service)}.service "
+        "--property=ActiveState,SubState,MainPID,NRestarts --no-pager",
+        check=False,
+    )
+    report = result.stdout.decode(errors="replace").strip()
+    active = result.returncode == 0 and "ActiveState=active" in report
+    return active, report or f"{run.service}: unavailable"
+
+
 def _install_runtime(target: Target, release: PurePosixPath) -> None:
     if not target.remote_root or not target.service:
         raise DeployError(f"{target.name} has no runtime configuration")
@@ -578,6 +711,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--gpu-status", action="store_true")
     parser.add_argument("--rollback", action="store_true")
     parser.add_argument("--public-route")
+    parser.add_argument("--training-run")
+    parser.add_argument("--training-status", action="store_true")
+    parser.add_argument("--training-config", type=Path, default=DEFAULT_TRAINING_CONFIG)
     return parser.parse_args(argv)
 
 
@@ -585,6 +721,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     try:
         targets = load_targets(args.config)
+        if args.training_run:
+            run = load_training_run(args.training_run, args.training_config)
+            if run.target not in targets:
+                raise DeployError(f"unknown training target {run.target!r}")
+            target = targets[run.target]
+            if args.training_status:
+                ok, report = training_status(target, run)
+                print(report)
+                return 0 if ok else 1
+            revision = deploy_training(target, run)
+            print(f"deployed training {run.name} {revision[:12]} to {target.name}")
+            return 0
         if args.public_route:
             routes = load_public_routes(args.config)
             if args.public_route not in routes:
@@ -618,7 +766,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         revision = deploy(target, args.model)
         print(f"deployed {revision[:12]} to {target.name}")
         return 0
-    except (DeployError, OSError, subprocess.SubprocessError) as error:
+    except (DeployError, OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"deploy failed: {error}", file=sys.stderr)
         return 1
 

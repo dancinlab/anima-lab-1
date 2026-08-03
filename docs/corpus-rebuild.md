@@ -114,6 +114,27 @@ avalanche size, plus a checkpointed p90 latency governor with hysteresis. All
 cell-growth values come from `training.toml`; resumed and canonical runs share
 the same policy rather than target-specific constants.
 
+### Continued v3 validation and GPU stall recovery
+
+The same fixed 256KB validation continued improving after step 41,000:
+
+| step | validation CE | validation BPC | cells |
+|---:|---:|---:|---:|
+| 42,000 | 1.7109 | 2.4683 | 7,187 |
+| 43,000 | 1.6476 | 2.3770 | 7,187 |
+| 44,000 | 1.6070 | 2.3184 | 7,187 |
+| 45,000 | 1.5779 | 2.2764 | 7,187 |
+| 46,000 | 1.5561 | 2.2450 | 7,187 |
+| 47,000 | 1.5335 | 2.2123 | 7,187 |
+
+At step 47,900 the CUDA driver stopped making progress while leaving both the
+trainer and GPU API callers alive. The checkpoint remained intact and the GPU
+recovered as soon as the exact stalled training process received SIGTERM. GPU
+runs now use the repository supervisor: step progress, restart deadline,
+process-group termination, host, command, and checkpoint all come from
+`training.toml` and `deploy.targets.toml`; systemd resumes the atomic best
+checkpoint after a stall.
+
 ## Verified end to end
 
 Lexical metrics alone would not show the corpus is *usable*. Rebuilding QD-12's

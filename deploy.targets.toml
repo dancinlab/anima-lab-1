@@ -1,6 +1,7 @@
 [targets.aiden]
 ssh_alias = "aiden"
 role = "gpu-research"
+remote_root = "/home/aiden/anima-clm-pure"
 
 [targets.summer]
 ssh_alias = "summer"

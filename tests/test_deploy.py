@@ -10,6 +10,7 @@ def test_repository_target_config_uses_ssh_aliases():
 
     assert set(targets) == {"aiden", "summer"}
     assert targets["aiden"].ssh_alias == "aiden"
+    assert str(targets["aiden"].remote_root) == "/home/aiden/anima-clm-pure"
     assert not targets["aiden"].deployable
     assert targets["summer"].ssh_alias == "summer"
     assert targets["summer"].proxy_jump == "aiden"
@@ -77,6 +78,20 @@ def test_service_rejects_research_only_target():
 
     with pytest.raises(deploy.DeployError, match="no runtime configuration"):
         deploy.render_service(target)
+
+
+def test_training_service_uses_supervised_run_ssot():
+    target = deploy.load_targets()["aiden"]
+    run = deploy.load_training_run("nf9_v3")
+    release = PurePosixPath("/home/aiden/anima-clm-pure/supervisor/releases/revision")
+
+    unit = deploy.render_training_service(target, run, release)
+
+    assert "training_runtime.py --supervise nf9_v3" in unit
+    assert "--config /home/aiden/anima-clm-pure/training.toml" in unit
+    assert "--root /home/aiden/anima-clm-pure" in unit
+    assert "Restart=on-failure" in unit
+    assert "KillMode=control-group" in unit
 
 
 def test_ssh_uses_configured_proxy_jump():

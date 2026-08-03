@@ -6,3 +6,34 @@ quantile = 0.9
 recovery_ratio = 0.8
 divisions_per_step = 2
 gpu_reserve_mib = 768
+
+[supervisor]
+stall_seconds = 900
+poll_seconds = 10
+terminate_grace_seconds = 30
+restart_delay_seconds = 15
+
+[runs.nf9_v3]
+target = "aiden"
+service = "anima-training-nf9-v3"
+entrypoint = "train_conscious_lm_nf9.py"
+checkpoint = "checkpoints/clm_pure_300m_nf9_v3/best.pt"
+log = "logs/clm_pure_300m_nf9_v3.log"
+environment = ["PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True"]
+args = [
+  "--data", "data/corpus_v3_train.txt",
+  "--val-data", "data/corpus_v3_validation.txt",
+  "--dim", "896",
+  "--layers", "12",
+  "--heads", "14",
+  "--block-size", "256",
+  "--batch-size", "4",
+  "--lr", "1e-4",
+  "--steps", "200000",
+  "--save-every", "10000",
+  "--eval-every", "1000",
+  "--log-every", "100",
+  "--max-cells", "0",
+  "--checkpoint-dir", "checkpoints/clm_pure_300m_nf9_v3",
+  "--resume-growth-halted",
+]

@@ -14,6 +14,22 @@ python3 deploy.py --gpu-status
 python3 anima_unified.py --web
 ```
 
+GPU 장기 학습은 `training.toml`의 run 정의와 supervisor 정책을 단일 기준으로
+사용한다. tmux 명령을 별도로 복제하지 않는다.
+
+```bash
+# origin/main의 supervisor를 aiden에 배포하고 설정된 best.pt에서 재개
+python3 deploy.py --training-run nf9_v3
+
+# GPU API를 호출하지 않고 systemd 학습 상태 확인
+python3 deploy.py --training-run nf9_v3 --training-status
+```
+
+supervisor는 설정된 시간 동안 새 step이 출력되지 않으면 전체 프로세스 그룹을
+종료한다. systemd가 서비스를 다시 시작하며 학습기는 atomic `best.pt`에서
+복원한다. CUDA 드라이버가 Python 프로세스만 살려 둔 채 멈추는 경우에도 다음
+SSH 점검을 기다리지 않고 자동 복구한다.
+
 ## 배포
 
 ```bash
